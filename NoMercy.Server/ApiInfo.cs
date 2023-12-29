@@ -9,7 +9,7 @@ public partial class ApiInfo
     public static async Task RequestInfo()
     {
         var client = new HttpClient();
-        var response = await client.GetAsync("https://api.nomercy.tv/v1/info");
+        var response = await client.GetAsync("https://api-dev2.nomercy.tv/v1/info");
         var content = await response.Content.ReadAsStringAsync();
         
         var data = JsonConvert.DeserializeObject<ApiInfo>(content);
@@ -124,6 +124,9 @@ public class Download
 
     [JsonProperty("filter", NullValueHandling = NullValueHandling.Ignore)]
     public string Filter { get; set; } = string.Empty;
+    
+    [JsonProperty("last_updated")]
+    public DateTime LastUpdated { get; set; }
 }
 
 public class Keys

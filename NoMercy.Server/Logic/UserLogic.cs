@@ -4,8 +4,8 @@ namespace NoMercy.Server.Logic;
 
 public class UserLogic
 {
-    private List<User> Users { get; } = new()
-    {
+    private List<User> Users { get; } =
+    [
         new User
         {
             Id = new Guid("3221ec74-cbed-4280-93e6-258c0edcd1f4"),
@@ -15,6 +15,7 @@ public class UserLogic
             Manage = true,
             Allowed = true
         },
+
         new User
         {
             Id = new Guid("6aa35c70-7136-44f3-baba-e1d464433426"),
@@ -24,7 +25,7 @@ public class UserLogic
             Manage = true,
             Allowed = true
         }
-    };
+    ];
 
     public List<User> GetUsers()
     {

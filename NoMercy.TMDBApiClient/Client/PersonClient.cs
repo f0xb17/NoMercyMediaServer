@@ -1,6 +1,7 @@
 ﻿using NoMercy.TMDBApi.Helpers;
 using NoMercy.TMDBApi.Models.People;
 
+
 namespace NoMercy.TMDBApi.Client;
 
 public class PersonClient : BaseClient

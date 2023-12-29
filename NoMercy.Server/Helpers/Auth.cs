@@ -11,8 +11,8 @@ namespace NoMercy.Server.Helpers;
 public static class Auth
 {
     private static readonly string BaseUrl = "https://auth-dev2.nomercy.tv/realms/NoMercyTV";
-    private static readonly string AuthBaseUrl = $@"{BaseUrl}";
-    private static readonly string TokenUrl = $@"{AuthBaseUrl}/protocol/openid-connect/token";
+    private static readonly string AuthBaseUrl = $"{BaseUrl}";
+    private static readonly string TokenUrl = $"{AuthBaseUrl}/protocol/openid-connect/token";
     
     private static string? PublicKey { set; get; }
     private static string? TokenClientId { set; get; } = "nomercy-server";
@@ -61,7 +61,7 @@ public static class Auth
     
     private static void GetTokenByBrowser()
     {
-        string redirectUri =HttpUtility.UrlEncode(@$"http://localhost:" + Networking.InternalServerPort + "/sso-callback");
+        string redirectUri =HttpUtility.UrlEncode($"http://localhost:" + Networking.InternalServerPort + "/sso-callback");
         string url = "https://auth-dev2.nomercy.tv/realms/NoMercyTV/protocol/openid-connect/auth?redirect_uri=" +
                      redirectUri + "&client_id=nomercy-server&response_type=code&scope=openid%20offline_access%20email%20profile";
 
@@ -101,7 +101,7 @@ public static class Auth
         tmp.Write(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(data, Formatting.Indented)));
         tmp.Close();
 
-        Console.WriteLine(@"Tokens refreshed");
+        Console.WriteLine("Tokens refreshed");
         
         AccessToken = data.access_token;
         RefreshToken = data.refresh_token;
@@ -139,7 +139,7 @@ public static class Auth
 
     private static void GetAuthKeys()
     {
-        Console.WriteLine(@"Getting auth keys");
+        Console.WriteLine("Getting auth keys");
         HttpClient client = new HttpClient();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         string response = client.GetStringAsync(AuthBaseUrl).Result;
@@ -181,11 +181,11 @@ public static class Auth
         int expiresInDays = _jwtSecurityToken.ValidTo.AddDays(-5).Subtract(DateTime.UtcNow).Days;
         if(expiresInDays >= 0)
         {
-            Console.WriteLine(@"Token is still valid for {0} day{1}", expiresInDays, expiresInDays == 1 ? "" : "s");
+            Console.WriteLine("Token is still valid for {0} day{1}", expiresInDays, expiresInDays == 1 ? "" : "s");
             return;
         };
         
-        Console.WriteLine(@"Refreshing token");
+        Console.WriteLine("Refreshing token");
         
         HttpClient client = new HttpClient();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -206,7 +206,7 @@ public static class Auth
     }
     public static void GetTokenByAuthorizationCode(string code)
     {
-        Console.WriteLine(@"Getting token by authorization code");
+        Console.WriteLine("Getting token by authorization code");
         if (TokenClientId == null || TokenClientSecret == null)
             throw new Exception("Auth keys not initialized");
         

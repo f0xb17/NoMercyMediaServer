@@ -1,13 +1,12 @@
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore;
 using Mono.Nat;
 
 namespace NoMercy.Server.Helpers;
 
-public abstract class Networking
+public abstract partial class Networking
 {
     private static INatDevice? _device;
 
@@ -23,9 +22,11 @@ public abstract class Networking
     public static int InternalServerPort { get; set; } = 7626;
     public static int ExternalServerPort { get; set; } = 7626;
     
-    public static string InternalAddress { get; set; } = $@"https://{Regex.Replace(InternalIp, @"\.", "-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
+    public static string InternalAddress { get; set; } = 
+        $"https://{MyRegex().Replace(InternalIp, "-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
     
-    public static string ExternalAddress { get; set; } = $@"https://{Regex.Replace(ExternalIp ?? "", @"\.", "-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
+    public static string ExternalAddress { get; set; } = 
+        $"https://{MyRegex().Replace(ExternalIp, "-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
 
     private static string? GetInternalIp()
     {
@@ -59,7 +60,7 @@ public abstract class Networking
         ExternalIp = _device.GetExternalIP().ToString();
         if (ExternalIp == "") ExternalIp = GetExternalIp();
 
-        Console.WriteLine(@"External IP discovered: " + ExternalIp);
+        Console.WriteLine("External IP discovered: " + ExternalIp);
     }
     
     public static IWebHost TempServer()
@@ -79,4 +80,7 @@ public abstract class Networking
             });
         }).Build();
     }
+
+    [GeneratedRegex(@"\.")]
+    private static partial Regex MyRegex();
 }

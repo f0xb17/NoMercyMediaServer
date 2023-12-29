@@ -1,22 +1,41 @@
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore;
 using ElectronNET.API;
+using NoMercy.Server.Helpers;
 
-namespace NoMercy
+namespace NoMercy.Server;
+
+public abstract class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
-        {
-            CreateWebHostBuilder(args).Build().Run();
-        }
+        CreateWebHostBuilder(args).Build().Run();
+    }
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args)
+    private static IWebHostBuilder CreateWebHostBuilder(string[] args)
+    {
+        AppFiles.CreateAppFolders();
+        Networking.Discover();
+        Auth.Init();
+        
+        Task.Run(async () =>
         {
-            return WebHost.CreateDefaultBuilder(args)
-                .ConfigureLogging((hostingContext, logging) => { logging.AddConsole(); })
-                .UseElectron(args)
-                .UseStartup<Startup>();
-        }
+            await ApiInfo.RequestInfo();
+            await Register.Init();
+        }).Wait();
+
+        Task.Run(async () =>
+        {
+            await Binaries.DownloadAll();
+
+            Task.Delay(20000).Wait();
+            Console.WriteLine($"Internal Address: {Networking.InternalAddress}");
+            Console.WriteLine($"External Address: {Networking.ExternalAddress}");
+        });
+            
+        return WebHost.CreateDefaultBuilder(args)
+            .ConfigureKestrel(Certificate.KestrelConfig)
+            .UseElectron(args)
+            .UseUrls("https://0.0.0.0:7626")
+            .UseStartup<Startup>();
     }
 }

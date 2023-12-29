@@ -26,18 +26,25 @@ public static class Binaries
     public static async  Task DownloadAll()
     {
         
+        // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
         foreach (Download program in Downloads)
         {
+            string destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Name);
+            var creationTime = Directory.GetCreationTimeUtc(destinationDirectoryName);
+            
+            int days = creationTime.Subtract(program.LastUpdated).Days;
+
+            if (Directory.Exists(destinationDirectoryName) && days > 0) continue;
+
             await Download(program);
             await Extract(program);
             await Cleanup(program);
         }
     }
-
-
+    
     private static async Task Download(Download program)
     {
-        Console.WriteLine($@"Downloading {program.Name}");
+        Console.WriteLine($"Downloading {program.Name}");
         
         var result = await Client.GetAsync(program.Url);
         var content = await result.Content.ReadAsByteArrayAsync();
@@ -52,7 +59,7 @@ public static class Binaries
         string sourceArchiveFileName = Path.Combine(AppFiles.BinariesPath, Path.GetFileName(program.Url?.ToString() ?? ""));
         string destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Name);
         
-        Console.WriteLine($@"Extracting {program.Name}");
+        Console.WriteLine($"Extracting {program.Name}");
         
         if(Directory.Exists(destinationDirectoryName))
             Directory.Delete(destinationDirectoryName, true);

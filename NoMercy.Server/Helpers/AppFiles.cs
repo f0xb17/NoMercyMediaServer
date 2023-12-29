@@ -93,7 +93,7 @@ public static class AppFiles
 
         foreach (var path in AllPaths().Where(path => !Directory.Exists(path)))
         {
-            Console.WriteLine($@"Creating directory: {path}");
+            Console.WriteLine($"Creating directory: {path}");
             Directory.CreateDirectory(path);
         }
     }

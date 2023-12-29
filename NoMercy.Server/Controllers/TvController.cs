@@ -1,5 +1,5 @@
 //using Microsoft.AspNetCore.Mvc;
-//using NoMercy.TMDBApi.Client;
+//
 //using NoMercy.TMDBApi.Models.TV;
 
 //namespace NoMercy.Server.Controllers;

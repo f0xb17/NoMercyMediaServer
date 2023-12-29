@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
 using NoMercy.Server.Helpers;
 
 namespace NoMercy.Server.Database.Migrations;

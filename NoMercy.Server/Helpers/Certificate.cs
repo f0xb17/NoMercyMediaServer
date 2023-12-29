@@ -71,14 +71,14 @@ public static class Certificate
     {
         if (ValidateSslCertificate())
         {
-            Console.WriteLine(@"SSL Certificate is valid");
+            Console.WriteLine("SSL Certificate is valid");
             await Task.CompletedTask;
         };
 
-        Console.WriteLine(@"Renewing SSL Certificate...");
+        Console.WriteLine("Renewing SSL Certificate...");
 
         var client = new HttpClient();
-        client.Timeout = new TimeSpan(0, 3, 0);
+        client.Timeout = new TimeSpan(0, 10, 0);
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Auth.AccessToken);
         
@@ -96,11 +96,11 @@ public static class Certificate
         if (File.Exists(AppFiles.CertFile))
             File.Delete(AppFiles.CertFile);
         
-        await File.WriteAllTextAsync(AppFiles.KeyFile, @$"{data.private_key}");
-        await File.WriteAllTextAsync(AppFiles.CaFile, @$"{data.certificate_authority}");
+        await File.WriteAllTextAsync(AppFiles.KeyFile, $"{data.private_key}");
+        await File.WriteAllTextAsync(AppFiles.CaFile, $"{data.certificate_authority}");
         await File.WriteAllTextAsync(AppFiles.CertFile, @$"{data.certificate}\n{data.issuer_certificate}");
         
-        Console.WriteLine(@"SSL Certificate renewed");
+        Console.WriteLine("SSL Certificate renewed");
 
         await Task.CompletedTask;
     }

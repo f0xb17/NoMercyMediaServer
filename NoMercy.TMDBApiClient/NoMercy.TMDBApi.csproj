@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp8.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <Authors>NoMercy Entertainment</Authors>
@@ -11,6 +11,7 @@
         <Company>NoMercy Entertainment</Company>
         <Product>NoMercy TMDB API Client</Product>
         <RootNamespace>NoMercy.TMDBApi</RootNamespace>
+        <LangVersion>12</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
