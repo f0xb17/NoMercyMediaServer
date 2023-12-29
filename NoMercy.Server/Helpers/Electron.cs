@@ -56,11 +56,24 @@ public static class ElectronWindows
 
     private static async Task MainWindow()
     {
-        _mainWindow = await Electron.WindowManager.CreateWindowAsync();
+        _splashScreen.Hide();
+        _mainWindow = await Electron.WindowManager.CreateWindowAsync(
+            new BrowserWindowOptions
+            {
+                Center = true,
+                Frame = true,
+                Icon = AppFiles.AppIcon,
+                WebPreferences = WebPreferences,
+            });
         
         _mainWindow.SetParentWindow(_dummyScreen);
         
-        _splashScreen.Hide();
+        _mainWindow.SetResizable(true);
+        _mainWindow.SetMaximizable(true);
+        _mainWindow.SetTitle("NoMercy MediaServer C#");
+        _mainWindow.SetMenuBarVisibility(false);
+        _mainWindow.SetClosable(true);
+        _mainWindow.SetResizable(true);
         
         _mainWindow.LoadURL("https://vue-dev2.nomercy.tv");
         
@@ -71,13 +84,8 @@ public static class ElectronWindows
         {
             _mainWindow.SetSize((int)h, (int)w);
             _mainWindow.SetMinimumSize(1320, 860);
-            _mainWindow.SetResizable(true);
-            _mainWindow.SetMaximizable(true);
+            
             _mainWindow.Center();
-            _mainWindow.SetTitle("NoMercy MediaServer C#");
-            _mainWindow.SetMenuBarVisibility(false);
-            _mainWindow.SetClosable(true);
-            _mainWindow.SetResizable(true);
         };
         
         _mainWindow.WebContents.OnDidFinishLoad += () =>
@@ -100,17 +108,29 @@ public static class ElectronWindows
                 Maximizable = false,
                 Center = true,
                 Frame = true,
+                Closable = false,
                 Icon = AppFiles.AppIcon,
-                WebPreferences = WebPreferences
+                WebPreferences = WebPreferences,
             }
         );
-        
+        _dummyScreen.SetMenuBarVisibility(false);
     }
 
     private static async Task SplashScreen()
     {
-        _splashScreen = await Electron.WindowManager.CreateWindowAsync();
+        _splashScreen = await Electron.WindowManager.CreateWindowAsync(
+            new BrowserWindowOptions
+            {
+                Center = true,
+                TitleBarStyle = TitleBarStyle.hidden,
+                Icon = AppFiles.AppIcon,
+                WebPreferences = WebPreferences
+            });
+        
         _splashScreen.SetParentWindow(_dummyScreen);
+        
+        _splashScreen.SetMenuBarVisibility(false);
+        _splashScreen.SetTitle("NoMercy MediaServer C#");
         
         _splashScreen.LoadURL("https://cdn.nomercy.tv/splash.html");
 
@@ -118,10 +138,7 @@ public static class ElectronWindows
         {
             _splashScreen.SetSize(600, 300);
             _splashScreen.Center();
-            _splashScreen.SetTitle("NoMercy MediaServer C#");
-            _splashScreen.SetMenuBarVisibility(false);
-            _splashScreen.SetClosable(true);
-            _splashScreen.SetResizable(true);
+            
             _splashScreen.Show();
         };
     }

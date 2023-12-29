@@ -10,24 +10,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4cba0c70-164e-4c13-8500-c98979197e36" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/ApiInfo.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ApiInfo.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Controllers/TvController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Controllers/TvController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Database/Migrations/Tvs.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Database/Migrations/Tvs.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.NoMercy.Server/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.NoMercy.Server/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Helpers/AppFiles.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Helpers/AppFiles.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Helpers/Auth.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Helpers/Auth.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Helpers/Binaries.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Helpers/Binaries.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Helpers/Certificate.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Helpers/Certificate.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Helpers/Electron.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Helpers/Electron.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Helpers/Networking.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Helpers/Networking.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Helpers/Register.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Helpers/Register.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Logic/UserLogic.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Logic/UserLogic.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/NoMercy.Server.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/NoMercy.Server.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/NoMercy.Server.sln" beforeDir="false" afterPath="$PROJECT_DIR$/NoMercy.Server.sln" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Startup.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Startup.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../NoMercy.TMDBApiClient/Client/PersonClient.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../NoMercy.TMDBApiClient/Client/PersonClient.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../NoMercy.TMDBApiClient/Client/TvClient.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../NoMercy.TMDBApiClient/Client/TvClient.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../NoMercy.TMDBApiClient/NoMercy.TMDBApi.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../NoMercy.TMDBApiClient/NoMercy.TMDBApi.csproj" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,6 +41,8 @@
     "ASKED_ADD_EXTERNAL_FILES": "true",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "Shell Script.Electron start.executor": "Debug",
+    "Shell Script.Electron watch.executor": "Debug",
     "Shell Script.NoMercy Electronize watch.executor": "Debug",
     "git-widget-placeholder": "master",
     "ignore.virus.scanning.warn.message": "true",
@@ -64,7 +51,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.sourceCode.C#",
+    "settings.editor.selected.configurable": "reference.settingsdialog.IDE.editor.colors.Color Scheme Font",
     "vue.rearranger.settings.migration": "true"
   },
   "keyToStringList": {
@@ -75,7 +62,7 @@
     ]
   }
 }]]></component>
-  <component name="RunManager" selected="Shell Script.NoMercy Electronize watch">
+  <component name="RunManager" selected="Shell Script.Electron watch">
     <configuration name="NoMercy.Server: IIS Express" type="LaunchSettings" factoryName=".NET Launch Settings Profile">
       <option name="LAUNCH_PROFILE_PROJECT_FILE_PATH" value="$PROJECT_DIR$/NoMercy.Server.csproj" />
       <option name="LAUNCH_PROFILE_TFM" value="net8.0" />
@@ -121,7 +108,22 @@
         <option name="Build" />
       </method>
     </configuration>
-    <configuration name="NoMercy Electronize watch" type="ShConfigurationType">
+    <configuration name="Electron start" type="ShConfigurationType">
+      <option name="SCRIPT_TEXT" value="electronize start" />
+      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
+      <option name="SCRIPT_PATH" value="electronize start /watch" />
+      <option name="SCRIPT_OPTIONS" value="" />
+      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
+      <option name="INTERPRETER_PATH" value="powershell.exe" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="EXECUTE_IN_TERMINAL" value="false" />
+      <option name="EXECUTE_SCRIPT_FILE" value="false" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="Electron watch" type="ShConfigurationType">
       <option name="SCRIPT_TEXT" value="electronize start /watch" />
       <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
       <option name="SCRIPT_PATH" value="electronize start /watch" />
@@ -140,7 +142,8 @@
       <item itemvalue=".NET Launch Settings Profile.NoMercy.Server: http" />
       <item itemvalue=".NET Launch Settings Profile.NoMercy.Server: https" />
       <item itemvalue=".NET Launch Settings Profile.NoMercy.Server: IIS Express" />
-      <item itemvalue="Shell Script.NoMercy Electronize watch" />
+      <item itemvalue="Shell Script.Electron watch" />
+      <item itemvalue="Shell Script.Electron start" />
     </list>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
@@ -152,7 +155,7 @@
       <option name="presentableId" value="Default" />
       <updated>1703817898542</updated>
       <workItem from="1703817899839" duration="10332000" />
-      <workItem from="1703829948249" duration="15905000" />
+      <workItem from="1703829948249" duration="19993000" />
     </task>
     <servers />
   </component>
@@ -162,5 +165,9 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>

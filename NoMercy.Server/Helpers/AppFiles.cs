@@ -55,7 +55,7 @@ public static class AppFiles
     public static readonly string MediaDatabase = Path.Combine(DataPath, "media.db");
     public static readonly string QueueDatabase = Path.Combine(DataPath, "queue.db");
 
-    public static List<string> AllPaths()
+    public static IEnumerable<string> AllPaths()
     {
         return [
             AppDataPath,
