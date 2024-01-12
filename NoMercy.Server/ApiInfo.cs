@@ -9,7 +9,8 @@ public partial class ApiInfo
     public static async Task RequestInfo()
     {
         var client = new HttpClient();
-        var response = await client.GetAsync("https://api-dev2.nomercy.tv/v1/info");
+        client.Timeout = TimeSpan.FromSeconds(15);
+        var response = await client.GetAsync("https://api-dev.nomercy.tv/v1/info");
         var content = await response.Content.ReadAsStringAsync();
         
         var data = JsonConvert.DeserializeObject<ApiInfo>(content);

@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Runtime.InteropServices;
+using NoMercy.Helpers;
 
 namespace NoMercy.Server.Helpers;
 
@@ -44,7 +45,7 @@ public static class Binaries
     
     private static async Task Download(Download program)
     {
-        Console.WriteLine($"Downloading {program.Name}");
+        Console.WriteLine($@"Downloading {program.Name}");
         
         var result = await Client.GetAsync(program.Url);
         var content = await result.Content.ReadAsByteArrayAsync();
@@ -59,7 +60,7 @@ public static class Binaries
         string sourceArchiveFileName = Path.Combine(AppFiles.BinariesPath, Path.GetFileName(program.Url?.ToString() ?? ""));
         string destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Name);
         
-        Console.WriteLine($"Extracting {program.Name}");
+        Console.WriteLine($@"Extracting {program.Name}");
         
         if(Directory.Exists(destinationDirectoryName))
             Directory.Delete(destinationDirectoryName, true);

@@ -5,6 +5,7 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Newtonsoft.Json;
+using NoMercy.Helpers;
 
 namespace NoMercy.Server.Helpers;
 
@@ -71,18 +72,19 @@ public static class Certificate
     {
         if (ValidateSslCertificate())
         {
-            Console.WriteLine("SSL Certificate is valid");
+            Console.WriteLine(@"SSL Certificate is valid");
             await Task.CompletedTask;
+            return;
         };
 
-        Console.WriteLine("Renewing SSL Certificate...");
+        Console.WriteLine(@"Renewing SSL Certificate...");
 
         var client = new HttpClient();
         client.Timeout = new TimeSpan(0, 10, 0);
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Auth.AccessToken);
         
-        var response = client.GetStringAsync("https://api-dev2.nomercy.tv/v1/server/renewcertificate?server_id=" + SystemInfo.DeviceId).Result;
+        var response = client.GetStringAsync("https://api-dev.nomercy.tv/v1/server/renewcertificate?server_id=" + SystemInfo.DeviceId).Result;
         
         dynamic data = JsonConvert.DeserializeObject(response) 
                        ?? throw new Exception("Failed to deserialize JSON");
@@ -100,7 +102,7 @@ public static class Certificate
         await File.WriteAllTextAsync(AppFiles.CaFile, $"{data.certificate_authority}");
         await File.WriteAllTextAsync(AppFiles.CertFile, @$"{data.certificate}\n{data.issuer_certificate}");
         
-        Console.WriteLine("SSL Certificate renewed");
+        Console.WriteLine(@"SSL Certificate renewed");
 
         await Task.CompletedTask;
     }

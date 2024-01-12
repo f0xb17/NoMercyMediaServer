@@ -5,12 +5,13 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Web;
 using Newtonsoft.Json;
+using NoMercy.Helpers;
 
 namespace NoMercy.Server.Helpers;
 
 public static class Auth
 {
-    private static readonly string BaseUrl = "https://auth-dev2.nomercy.tv/realms/NoMercyTV";
+    private static readonly string BaseUrl = "https://auth-dev.nomercy.tv/realms/NoMercyTV";
     private static readonly string AuthBaseUrl = $"{BaseUrl}";
     private static readonly string TokenUrl = $"{AuthBaseUrl}/protocol/openid-connect/token";
     
@@ -62,7 +63,7 @@ public static class Auth
     private static void GetTokenByBrowser()
     {
         string redirectUri =HttpUtility.UrlEncode($"http://localhost:" + Networking.InternalServerPort + "/sso-callback");
-        string url = "https://auth-dev2.nomercy.tv/realms/NoMercyTV/protocol/openid-connect/auth?redirect_uri=" +
+        string url = "https://auth-dev.nomercy.tv/realms/NoMercyTV/protocol/openid-connect/auth?redirect_uri=" +
                      redirectUri + "&client_id=nomercy-server&response_type=code&scope=openid%20offline_access%20email%20profile";
 
         TempServer = Networking.TempServer();
@@ -93,7 +94,7 @@ public static class Auth
         
         if (data.access_token == null || data.refresh_token == null || data.expires_in == null)
         {
-            throw new Exception("Failed to get authentication tokens");
+            throw new Exception("Failed to get authentication tokens: " + response);
         }
 
         var tmp = File.OpenWrite(AppFiles.TokenFile);
@@ -101,7 +102,7 @@ public static class Auth
         tmp.Write(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(data, Formatting.Indented)));
         tmp.Close();
 
-        Console.WriteLine("Tokens refreshed");
+        Console.WriteLine(@"Tokens refreshed");
         
         AccessToken = data.access_token;
         RefreshToken = data.refresh_token;
@@ -139,7 +140,7 @@ public static class Auth
 
     private static void GetAuthKeys()
     {
-        Console.WriteLine("Getting auth keys");
+        Console.WriteLine(@"Getting auth keys");
         HttpClient client = new HttpClient();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         string response = client.GetStringAsync(AuthBaseUrl).Result;
@@ -185,7 +186,7 @@ public static class Auth
             return;
         };
         
-        Console.WriteLine("Refreshing token");
+        Console.WriteLine(@"Refreshing token");
         
         HttpClient client = new HttpClient();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -206,7 +207,7 @@ public static class Auth
     }
     public static void GetTokenByAuthorizationCode(string code)
     {
-        Console.WriteLine("Getting token by authorization code");
+        Console.WriteLine(@"Getting token by authorization code");
         if (TokenClientId == null || TokenClientSecret == null)
             throw new Exception("Auth keys not initialized");
         

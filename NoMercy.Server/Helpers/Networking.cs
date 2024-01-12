@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore;
 using Mono.Nat;
+using NoMercy.Helpers;
 
 namespace NoMercy.Server.Helpers;
 
@@ -22,11 +23,9 @@ public abstract partial class Networking
     public static int InternalServerPort { get; set; } = 7626;
     public static int ExternalServerPort { get; set; } = 7626;
     
-    public static string InternalAddress { get; set; } = 
-        $"https://{MyRegex().Replace(InternalIp, "-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
-    
-    public static string ExternalAddress { get; set; } = 
-        $"https://{MyRegex().Replace(ExternalIp, "-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
+    public static string InternalAddress { get; private set; } = "";
+
+    public static string ExternalAddress { get; private set; } = "";
 
     private static string? GetInternalIp()
     {
@@ -36,8 +35,10 @@ public abstract partial class Networking
 
         var endPoint = socket.LocalEndPoint as IPEndPoint;
 
-        var localIp = endPoint?.Address.ToString();
+        var localIp = endPoint!.Address.ToString();
 
+        InternalAddress = $"https://{MyRegex().Replace(localIp, "-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
+        
         return localIp;
     }
 
@@ -45,8 +46,8 @@ public abstract partial class Networking
     {
         var client = new HttpClient();
 
-        var externalIp = client.GetStringAsync("https://api-dev2.nomercy.tv/server/ip").Result;
-
+        var externalIp = client.GetStringAsync("https://api-dev.nomercy.tv/server/ip").Result;
+        
         return externalIp;
     }
 
@@ -59,8 +60,8 @@ public abstract partial class Networking
 
         ExternalIp = _device.GetExternalIP().ToString();
         if (ExternalIp == "") ExternalIp = GetExternalIp();
-
-        Console.WriteLine("External IP discovered: " + ExternalIp);
+        
+        ExternalAddress = $"https://{MyRegex().Replace(ExternalIp, "-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
     }
     
     public static IWebHost TempServer()
