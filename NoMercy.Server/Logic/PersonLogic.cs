@@ -1,102 +1,156 @@
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using NoMercy.Database;
+using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.People;
-using NoMercy.Providers.TMDB.Models.Shared;
 using NoMercy.Providers.TMDB.Models.TV;
+using NoMercy.Server.Jobs;
+using Exception = System.Exception;
 using Person = NoMercy.Database.Models.Person;
 
 namespace NoMercy.Server.Logic;
 
-public class PersonLogic
+public class PersonLogic(TvShowAppends show)
 {
-    public PersonLogic()
+    private readonly List<PersonAppends> _personAppends = [];
+
+    private async Task FetchPeopleByCast()
     {
-    }
-
-    private static List<PersonAppends> PersonAppends { get; } = [];
-
-    private static async Task FetchPeopleByCast(IEnumerable<AggregatedCast> cast)
-    {    
-        await Parallel.ForEachAsync(cast, (person, token) =>
+        await Parallel.ForEachAsync(show.AggregateCredits.Cast, async (person, _) =>
         {
             try
             {
-                PersonClient personClient = new PersonClient(person.Id);
-                PersonAppends.Add(personClient.WithAllAppends().Result);
+                using PersonClient personClient = new PersonClient(person.Id);
+                using var personTask = personClient.WithAllAppends();
+                lock (_personAppends)
+                {
+                    _personAppends.Add(personTask.Result);
+                }
+                await Task.CompletedTask;
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Logger.MovieDb(e, NoMercy.Helpers.LogLevel.Error);
             }
-            
-            return default;
-        });
-    }
-    private static async Task FetchPeopleByCrew(IEnumerable<AggregatedCrew> crew)
-    {    
-        await Parallel.ForEachAsync(crew, (person, token) =>
-        {
-            try
-            {
-                PersonClient personClient = new PersonClient(person.Id);
-                PersonAppends.Add(personClient.WithAllAppends().Result);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-            
-            return default;
         });
     }
 
-    public static async Task FetchPeople(TvShowAppends show)
-    {        
-        await FetchPeopleByCast(show.AggregateCredits!.Cast);
-        await FetchPeopleByCrew(show.AggregateCredits!.Crew);
-        
+    private async Task FetchPeopleByCrew()
+    {
+        await Parallel.ForEachAsync(show.AggregateCredits.Crew, async (person, _) =>
+        {
+            try
+            {
+                using PersonClient personClient = new(person.Id);
+                using var personTask = personClient.WithAllAppends();
+                lock (_personAppends)
+                {
+                    _personAppends.Add(personTask.Result);
+                }
+                await Task.CompletedTask;
+            }
+            catch (Exception e)
+            {
+                Logger.MovieDb(e, NoMercy.Helpers.LogLevel.Error);
+            }
+        });
+    }
+
+    public async Task FetchPeople()
+    {
+        await FetchPeopleByCast();
+        await FetchPeopleByCrew();
+
         await Store();
+        
+        await DispatchJobs();
     }
 
-    private static async Task Store()
+    private Task Store()
     {
-        Person[] people = PersonAppends.ConvertAll<Person>(x => new Person(x)).ToArray();
-        
-        await MediaContext.Db.UpsertRange(people)
-            .On(p => new { p.Id })
-            .WhenMatched((ps, pi) => new Person()
+        try
+        {
+            lock (_personAppends)
             {
-                Id = pi.Id, 
-                Adult = pi.Adult, 
-                AlsoKnownAs = pi.AlsoKnownAs,
-                Biography = pi.Biography, 
-                BirthDay = pi.BirthDay, 
-                DeathDay = pi.DeathDay, 
-                _gender = pi._gender, 
-                Homepage = pi.Homepage, 
-                ImdbId = pi.ImdbId, 
-                KnownForDepartment = pi.KnownForDepartment, 
-                Name = pi.Name, 
-                PlaceOfBirth = pi.PlaceOfBirth, 
-                Popularity = pi.Popularity, 
-                Profile = pi.Profile,
-                TitleSort = pi.Name, 
-            })
-            .RunAsync();
+                Person[] people = _personAppends.ConvertAll<Person>(x => new Person(x)).ToArray();
+
+                using MediaContext mediaContext = new MediaContext();
+                mediaContext.People.UpsertRange(people)
+                    .On(p => new { p.Id })
+                    .WhenMatched((ps, pi) => new Person()
+                    {
+                        Id = pi.Id,
+                        Adult = pi.Adult,
+                        AlsoKnownAs = pi.AlsoKnownAs,
+                        Biography = pi.Biography,
+                        BirthDay = pi.BirthDay,
+                        DeathDay = pi.DeathDay,
+                        _gender = pi._gender,
+                        Homepage = pi.Homepage,
+                        ImdbId = pi.ImdbId,
+                        KnownForDepartment = pi.KnownForDepartment,
+                        Name = pi.Name,
+                        PlaceOfBirth = pi.PlaceOfBirth,
+                        Popularity = pi.Popularity,
+                        Profile = pi.Profile,
+                        TitleSort = pi.Name,
+                        _colorPalette = pi._colorPalette,
+                    })
+                    .Run();
+
+                Logger.MovieDb($@"TvShow {show.Name} stored {people.Length} people");
+                
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.MovieDb(e, NoMercy.Helpers.LogLevel.Error);
+            throw;
+        }
         
+        return Task.CompletedTask;
     }
     
-    
+    private async Task DispatchJobs()
+    {
+        lock (_personAppends)
+        {
+            foreach (var person in _personAppends)
+            {
+                ColorPaletteJob colorPaletteJob = new(person.Id, "person");
+                JobDispatcher.Dispatch(colorPaletteJob, "data");
+            }
+        }
+
+        await Task.CompletedTask;
+    }
+
+    public static async Task GetPalette(int id)
+    {
+        await using MediaContext mediaContext = new MediaContext();
+
+        var person = await mediaContext.People
+            .FirstOrDefaultAsync(e => e.Id == id);
+
+        if (person is { _colorPalette: "", Profile: not null })
+        {
+            var palette = await ImageLogic.GenerateColorPalette(profilePath: person.Profile);
+            person._colorPalette = palette;
+            await mediaContext.SaveChangesAsync();
+        }
+    }
+
+
     // private async Task FetchTranslations()
     // {
     //     try
     //     {
+    //        await using MediaContext mediaContext = new MediaContext();
+
     //         var translations = Show!.Translations!.Translations.ToList()
     //             .ConvertAll<Translation>(x => new Translation(x, Show!)).ToArray();
     //     
-    //         await MediaContext.Db.Translations
+    //         await mediaContext.Translations
     //             .UpsertRange(translations)
     //             .On(t => new { t.Iso31661, t.Iso6391, t.TvId })
     //             .WhenMatched((ts, ti) => new Translation()
@@ -120,8 +174,19 @@ public class PersonLogic
     //     }
     //     catch (Exception e)
     //     {
-    //         Console.WriteLine(e);
+    //         Logger.MovieDb(e, NoMercy.Helpers.LogLevel.Error);
     //         throw;
     //     }
     // }
+
+    public void Dispose()
+    {
+        lock (_personAppends)
+        {
+            _personAppends.Clear();
+        }
+
+        GC.Collect();
+        GC.WaitForFullGCComplete();
+    }
 }

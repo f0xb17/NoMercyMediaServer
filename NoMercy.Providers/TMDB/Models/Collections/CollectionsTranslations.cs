@@ -3,9 +3,9 @@ using NoMercy.Providers.TMDB.Models.Shared;
 
 namespace NoMercy.Providers.TMDB.Models.Collections;
 
-public class CollectionsTranslations(List<CollectionsTranslation> translations) : SharedTranslations
+public class CollectionsTranslations(CollectionsTranslation[] translations) : SharedTranslations
 {
-    [JsonProperty("translations")] public new List<CollectionsTranslation> Translations { get; set; } = translations;
+    [JsonProperty("translations")] public new CollectionsTranslation[] Translations { get; set; } = translations;
 }
 
 public class CollectionsTranslation : SharedTranslation

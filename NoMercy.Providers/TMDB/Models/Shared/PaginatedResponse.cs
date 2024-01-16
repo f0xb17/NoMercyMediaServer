@@ -6,7 +6,7 @@ public class PaginatedResponse<T>
 {
     [JsonProperty("page")] public int Page { get; set; }
 
-    [JsonProperty("results")] public List<T> Results { get; set; } = new();
+    [JsonProperty("results")] public T[] Results { get; set; } = [];
 
     [JsonProperty("total_pages")] public int TotalPages { get; set; }
 

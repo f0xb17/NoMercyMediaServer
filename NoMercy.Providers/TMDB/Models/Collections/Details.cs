@@ -15,7 +15,7 @@ public class Details
 
     [JsonProperty("backdrop_path")] public string? BackdropPath { get; set; }
 
-    [JsonProperty("parts")] public List<Part> Parts { get; set; } = new();
+    [JsonProperty("parts")] public Part[] Parts { get; set; } = [];
 }
 
 public class Part
@@ -25,7 +25,7 @@ public class Part
 
     [JsonProperty("backdrop_path")] public object? BackdropPath { get; set; }
 
-    [JsonProperty("genre_ids")] public List<int> GenreIds { get; set; } = new();
+    [JsonProperty("genre_ids")] public int[] GenreIds { get; set; } = [];
 
     [JsonProperty("id")] public int Id { get; set; }
 

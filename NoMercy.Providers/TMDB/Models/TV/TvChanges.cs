@@ -7,7 +7,7 @@ public class TvChanges
 {
     [JsonProperty("key")] public string Key { get; set; }
 
-    [JsonProperty("items")] public List<Item> Items { get; set; }
+    [JsonProperty("items")] public Item[] Items { get; set; } = [];
 }
 
 public class Item

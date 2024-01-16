@@ -4,7 +4,7 @@ namespace NoMercy.Providers.TMDB.Models.Episode;
 
 public class EpisodeChanges
 {
-    [JsonProperty("changes")] public List<Change> Changes { get; set; } = new();
+    [JsonProperty("changes")] public Change[] Changes { get; set; } = [];
 }
 
 public class Change
@@ -12,7 +12,7 @@ public class Change
 
     [JsonProperty("key")] public string Key { get; set; } = string.Empty;
 
-    [JsonProperty("items")] public List<Item> Items { get; set; } = new();
+    [JsonProperty("items")] public Item[] Items { get; set; } = [];
 }
 
 public class Item

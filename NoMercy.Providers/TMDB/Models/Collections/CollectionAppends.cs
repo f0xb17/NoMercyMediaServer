@@ -14,7 +14,7 @@ public class CollectionAppends(Ci images, CombinedTranslations translations)
 
 public class Ci(Backdrop[] backdrops, Poster[] posters)
 {
-    [JsonProperty("backdrops")] public List<Backdrop> Backdrops { get; set; } = new();
+    [JsonProperty("backdrops")] public Backdrop[] Backdrops { get; set; } = [];
 
-    [JsonProperty("posters")] public List<Poster> Posters { get; set; } = new();
+    [JsonProperty("posters")] public Poster[] Posters { get; set; } = [];
 }

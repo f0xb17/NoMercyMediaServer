@@ -29,7 +29,7 @@ public class MovieAppends : MovieDetails
 
     [JsonProperty("watch/providers")] public MovieWatchProviders? WatchProviders { get; set; }
 
-    [JsonProperty("genres")] public new List<Genre>? Genres { get; set; }
+    [JsonProperty("genres")] public new Genre[] Genres { get; set; } = [];
 
     [JsonProperty("release_dates")] public MovieReleaseDates? ReleaseDates { get; set; }
 

@@ -8,7 +8,7 @@ public class Movie
 
     [JsonProperty("backdrop_path")] public string? BackdropPath { get; set; }
 
-    [JsonProperty("genres")] public List<int>? GenresIds { get; set; }
+    [JsonProperty("genres")] public int[]? GenresIds { get; set; } = [];
 
     [JsonProperty("id")] public int Id { get; set; }
 

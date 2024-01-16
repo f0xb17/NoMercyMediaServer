@@ -20,7 +20,7 @@ namespace NoMercy.Database.Models
         
         public required DateTime Time { get; set; }
         
-        public virtual Device Device { get; set; }
-        public virtual User User { get; set; }
+        public virtual Device Device { get; } = null!;
+        public virtual User User { get; } = null!;
     }
 }

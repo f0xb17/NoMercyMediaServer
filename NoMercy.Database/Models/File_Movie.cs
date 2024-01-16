@@ -8,7 +8,7 @@ namespace NoMercy.Database.Models
         public required string FileId { get; set; }
         public required int MovieId { get; set; }
 
-        public virtual File File { get; set; }
-        public virtual Movie Movie { get; set; }        
+        public virtual File File { get; } = null!;
+        public virtual Movie Movie { get; }        
     }
 }

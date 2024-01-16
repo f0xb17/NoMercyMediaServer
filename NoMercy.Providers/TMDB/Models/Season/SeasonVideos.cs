@@ -4,7 +4,7 @@ namespace NoMercy.Providers.TMDB.Models.Season;
 
 public class Videos
 {
-    [JsonProperty("results")] public List<Result> Results { get; set; } = new();
+    [JsonProperty("results")] public Result[] Results { get; set; } = [];
 }
 
 public class Result

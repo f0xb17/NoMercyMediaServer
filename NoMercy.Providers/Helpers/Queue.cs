@@ -124,22 +124,26 @@ public class Queue(QueueOptions options)
         lock(_tasks)
             _tasks.Add(uniqueId, async () =>
             {
-            try
-            {
-                var result = await task();
-                Resolve?.Invoke(this, new QueueEventArgs { Result = result });
-                tcs.SetResult(result);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(@"Url failed: {0} {1}", url, ex.Message);
-                Reject?.Invoke(this, new QueueEventArgs { Error = ex });
-                tcs.SetException(ex);
-            }
-            finally
-            {
-                Semaphore.Release();
-            }
+                try
+                {
+                    var result = await task();
+                    Resolve?.Invoke(this, new QueueEventArgs { Result = result });
+                    tcs.SetResult(result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(@"Url failed: {0} {1}", url, ex.Message);
+                    Reject?.Invoke(this, new QueueEventArgs { Error = ex });
+                    tcs.SetException(ex);
+                }
+                finally
+                {
+                    Semaphore.Release();
+                    lock (_tasks)
+                    {
+                        _tasks.Remove(uniqueId);
+                    }
+                }
             });
 
         if (Options.Start && _state != State.Stopped) StartQueue();

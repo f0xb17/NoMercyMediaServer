@@ -12,7 +12,7 @@ namespace NoMercy.Database.Models
             Id = s.Id;
             Title = s.Name;
             AirDate = s.AirDate;
-            EpisodeCount = s.Episodes.Count;
+            EpisodeCount = s.Episodes.Length;
             Overview = s.Overview;
             Poster = s.PosterPath;
             SeasonNumber = s.SeasonNumber;
@@ -32,14 +32,14 @@ namespace NoMercy.Database.Models
         public int SeasonNumber { get; set; }
         
         public int TvId { get; set; }
-        public virtual Tv Tv { get; set; }
+        public virtual Tv Tv { get; } = null!;
             
-        public virtual ICollection<Episode> Episodes { get; set; } = new HashSet<Episode>();
-        public virtual ICollection<Cast> Casts { get; set; } = new HashSet<Cast>();
-        public virtual ICollection<Crew> Crews { get; set; } = new HashSet<Crew>();
-        public virtual ICollection<Media> Medias { get; set; } = new HashSet<Media>();
-        public virtual ICollection<Image> Images { get; set; } = new HashSet<Image>();
-        public virtual ICollection<GuestStar> GuestStars { get; set; } = new HashSet<GuestStar>();
-        public virtual ICollection<Translation> Translations { get; set; } = new HashSet<Translation>();
+        public virtual ICollection<Episode>? Episodes { get; } = new HashSet<Episode>();
+        public virtual ICollection<Cast>? Casts { get; } = new HashSet<Cast>();
+        public virtual ICollection<Crew>? Crews { get; } = new HashSet<Crew>();
+        public virtual ICollection<Media>? Medias { get; } = new HashSet<Media>();
+        public virtual ICollection<Image>? Images { get; } = new HashSet<Image>();
+        public virtual ICollection<GuestStar>? GuestStars { get; } = new HashSet<GuestStar>();
+        public virtual ICollection<Translation>? Translations { get; } = new HashSet<Translation>();
     }
 }

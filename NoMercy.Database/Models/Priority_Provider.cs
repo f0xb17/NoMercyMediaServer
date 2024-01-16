@@ -9,6 +9,6 @@ namespace NoMercy.Database.Models
         public required string Country { get; set; }
         public required string ProviderId { get; set; }
 
-        public virtual Provider Provider { get; set; }        
+        public virtual Provider Provider { get; }        
     }
 }

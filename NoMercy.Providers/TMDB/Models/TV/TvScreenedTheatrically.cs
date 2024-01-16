@@ -6,7 +6,7 @@ public class TvScreenedTheatrically
 {
     [JsonProperty("id")] public int Id { get; set; }
 
-    [JsonProperty("results")] public List<ScreenedTheatricallyResult> Results { get; set; }
+    [JsonProperty("results")] public ScreenedTheatricallyResult[] Results { get; set; } = [];
 }
 
 public class ScreenedTheatricallyResult

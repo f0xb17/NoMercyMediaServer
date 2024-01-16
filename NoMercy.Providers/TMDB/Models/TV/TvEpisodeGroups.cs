@@ -5,7 +5,7 @@ namespace NoMercy.Providers.TMDB.Models.TV;
 
 public class TvEpisodeGroups
 {
-    [JsonProperty("results")] public List<EpisodeGroupsResult> Results { get; set; }
+    [JsonProperty("results")] public EpisodeGroupsResult[] Results { get; set; } = [];
 
     [JsonProperty("id")] public int Id { get; set; }
 }

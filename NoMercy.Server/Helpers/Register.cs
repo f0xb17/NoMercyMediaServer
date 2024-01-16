@@ -19,7 +19,7 @@ public static class Register
             {"platform", SystemInfo.Platform}
         };
         
-        Console.WriteLine(@"Registering server, this takes a moment...");
+        Logger.Register(@"Registering server, this takes a moment...");
         
         var client = new HttpClient();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -31,7 +31,7 @@ public static class Register
         
         if (data == null) throw new Exception("Failed to register server");
         
-        Console.WriteLine(@"Server registered successfully");
+        Logger.Register(@"Server registered successfully");
         
         AssignServer().Wait();
         
@@ -56,7 +56,7 @@ public static class Register
         
         if (data == null) throw new Exception("Failed to assign server");
         
-        Console.WriteLine(@"Server assigned successfully");
+        Logger.Register(@"Server assigned successfully");
         
         Certificate.RenewSslCertificate().Wait();
         

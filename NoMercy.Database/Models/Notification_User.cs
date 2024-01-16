@@ -8,7 +8,7 @@ namespace NoMercy.Database.Models
         public required string NotificationId { get; set; }
         public required string UserId { get; set; }
 
-        public virtual Notification Notification { get; set; }
+        public virtual Notification Notification { get; } = null!;
         public virtual User User { get; set; }        
     }
 }

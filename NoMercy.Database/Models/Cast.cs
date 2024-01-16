@@ -48,12 +48,12 @@ namespace NoMercy.Database.Models
         public int? SeasonId { get; set; }
         public int? EpisodeId { get; set; }
         
-        public virtual ICollection<Person>? People { get; set; } = new HashSet<Person>();
+        public virtual ICollection<Person>? People { get; } = new HashSet<Person>();
 
-        public virtual Movie Movie { get; set; }
-        public virtual Tv Tv { get; set; }
-        public virtual Season Season { get; set; }
-        public virtual Episode Episode { get; set; }
+        public virtual Movie? Movie { get; set; }
+        public virtual Tv? Tv { get; set; }
+        public virtual Season? Season { get; set; }
+        public virtual Episode? Episode { get; set; }
         
     }
 }

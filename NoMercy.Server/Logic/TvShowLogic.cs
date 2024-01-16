@@ -1,105 +1,114 @@
+using System.Drawing.Imaging;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.People;
 using NoMercy.Providers.TMDB.Models.TV;
+using NoMercy.Server.Helpers;
+using NoMercy.Server.Jobs;
+using LogLevel = NoMercy.Helpers.LogLevel;
 using Person = NoMercy.Database.Models.Person;
 using Translation = NoMercy.Database.Models.Translation;
 
 namespace NoMercy.Server.Logic;
 
-public class TvShowLogic
+public class TvShowLogic(int id, Library library)
 {
-    private TvClient TvClient { get; set; }
-    private Library Library { get; set; }
+    private TvClient TvClient { get; } = new(id);
     private string MediaType { get; set; } = null!;
     private string Folder { get; set; } = null!;
 
     public TvShowAppends? Show { get; set; }
-    
-    public TvShowLogic(int id, Library library)
-    {
-        Library = library;
-        TvClient = new TvClient(id);
-    }
 
     public async Task Process()
     {
-        var tv = MediaContext.Db!.Tvs.FirstOrDefaultAsync(t => t.Id == TvClient.Id).Result;
-        if (tv != null)
+        // await using MediaContext mediaContext = new MediaContext();
+        
+        // await mediaContext.Tvs.FirstOrDefaultAsync(t => t.Id == TvClient.Id);
+        // if (tv != null)
+        // {
+        //     Logger.MovieDb($@"TvShow {Show!.Name} already exists", tv.Title);
+        //     return;
+        // }
+
+        Show = await TvClient.WithAllAppends();
+        if (Show == null)
         {
-            Console.WriteLine(@"TvShow {0} already exists", tv.Title);
+            Logger.MovieDb($@"TvShow {TvClient.Id} not found");
             return;
         }
         
-        Show = TvClient!.WithAllAppends().Result;
-
         Folder = FindFolder();
+        Logger.MovieDb(Folder, LogLevel.Info);
         MediaType = GetMediaType();
-
+        
         await Store();
         
-        await SeasonLogic.FetchSeasons(Show);
-        Console.WriteLine(@"Fetched Seasons for {0}", Show.Name);
+        PersonLogic personLogic = new PersonLogic(Show);
+        await personLogic.FetchPeople();
+        personLogic.Dispose();
         
-        await PersonLogic.FetchPeople(Show);
-        Console.WriteLine(@"Fetched People for {0}", Show.Name);
+        
+        // await StoreGenres();
+        // Logger.MovieDb($@"TvShow {Show!.Name} Genres stored");
+        
+        // await StoreKeywords();
+        // Logger.MovieDb($@"TvShow {Show!.Name} Keywords stored");
+        
+        // await StoreAggregateCredits();
+        // Logger.MovieDb($@"TvShow {Show!.Name} AggregateCredits stored");
+        
+        await StoreAlternativeTitles();
         //
-        // await FetchGenres();
-        // Console.WriteLine(@"Fetched Genres for {0}", Show.Name);
-        //
-        // await FetchKeywords();
-        // Console.WriteLine(@"Fetched Keywords for {0}", Show.Name);
-        //
-        // await FetchAggregateCredits();
-        // Console.WriteLine(@"Fetched AggregateCredits for {0}", Show.Name);
-        //
-        await FetchAlternativeTitles();
-        Console.WriteLine(@"Fetched AlternativeTitles for {0}", Show.Name);
-        //
-        // await FetchCompanies();
-        // Console.WriteLine(@"Fetched Companies for {0}", Show.Name);
-        //
-        // await FetchNetworks();
-        // Console.WriteLine(@"Fetched Networks for {0}", Show.Name);
-        //
-        await FetchCast();
-        Console.WriteLine(@"Fetched Cast for {0}", Show.Name);
+        // await StoreCompanies();
+        // Logger.MovieDb($@"TvShow {Show!.Name} Companies stored");
         
-        await FetchCrew();
-        Console.WriteLine(@"Fetched Crew for {0}", Show.Name);
+        // await StoreNetworks();
+        // Logger.MovieDb($@"TvShow {Show!.Name} Networks stored");
         
-        // await FetchImages();
-        // Console.WriteLine(@"Fetched Images for {0}", Show.Name);
+        await StoreCast();
         
-        // await FetchVideos();
-        // Console.WriteLine(@"Fetched Videos for {0}", Show.Name);
+        await StoreCrew();
         
-        // await FetchRecommendations();
-        // Console.WriteLine(@"Fetched Recommendations for {0}", Show.Name);
+        // await StoreImages();
+        // Logger.MovieDb($@"TvShow {Show!.Name} Images stored");
         
-        // await FetchSimilar();
-        // Console.WriteLine(@"Fetched Similar for {0}", Show.Name);
+        // await StoreVideos();
+        // Logger.MovieDb($@"TvShow {Show!.Name} Videos stored");
         
-        // await FetchContentRatings();
-        // Console.WriteLine(@"Fetched ContentRatings for {0}", Show.Name);
+        // await StoreRecommendations();
+        // Logger.MovieDb($@"TvShow {Show!.Name} Recommendations stored");
         
-        await FetchTranslations();
-        Console.WriteLine(@"Fetched Translations for {0}", Show.Name);
+        // await StoreSimilar();
+        // Logger.MovieDb($@"TvShow {Show!.Name} Similar stored");
         
-        // await FetchWatchProviders();
-        // Console.WriteLine(@"Fetched WatchProviders for {0}", Show.Name);
+        // await StoreContentRatings();
+        // Logger.MovieDb($@"TvShow {Show!.Name} ContentRatings stored");
         
+        await StoreTranslations();
+        
+        // await StoreWatchProviders();
+        // Logger.MovieDb($@"TvShow {Show.Name} WatchProviders stored");
+        
+        await DispatchJobs();
+        
+        SeasonLogic seasonLogic = new SeasonLogic(Show);
+        await seasonLogic.FetchSeasons();
+        seasonLogic.Dispose();
+
     }
 
-    private async Task FetchAlternativeTitles()
+    private async Task StoreAlternativeTitles()
     {
-        var alternativeTitles = Show!.AlternativeTitles!.Results.ToList()
+        var alternativeTitles = Show!.AlternativeTitles.Results.ToList()
             .ConvertAll<AlternativeTitle>(x => new AlternativeTitle(x)).ToArray();
         
-        await MediaContext.Db.AlternativeTitles
-            .UpsertRange(alternativeTitles)
+        await using MediaContext mediaContext = new MediaContext();
+        
+        await mediaContext.AlternativeTitles.UpsertRange(alternativeTitles)
             .On(a => new { a.Title })
             .WhenMatched((ats, ati) => new AlternativeTitle()
             {
@@ -107,22 +116,25 @@ public class TvShowLogic
                 Iso31661 = ati.Iso31661,
             })
             .RunAsync();
+        
+        Logger.MovieDb($@"TvShow {Show!.Name} AlternativeTitles stored");
     }
 
-    private async Task FetchAggregateCredits()
+    private async Task StoreAggregateCredits()
     {
         await Task.CompletedTask;
     }
 
-    private async Task FetchCast()
+    private async Task StoreCast()
     {
         try
         {
-            var cast = Show!.Credits!.Cast.ToList()
+            var cast = Show!.Credits.Cast.ToList()
                 .ConvertAll<Cast>(x => new Cast(x, Show!)).ToArray();
 
-            await MediaContext.Db.Casts
-                .UpsertRange(cast)
+            await using MediaContext mediaContext = new MediaContext();
+        
+            await mediaContext.Casts.UpsertRange(cast)
                 .On(c => new { c.Id })
                 .WhenMatched((cs, ci) => new Cast()
                 {
@@ -134,23 +146,26 @@ public class TvShowLogic
                     EpisodeId = ci.EpisodeId,
                 })
                 .RunAsync();
+            
+            Logger.MovieDb($@"TvShow {Show!.Name} Cast stored");
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Logger.MovieDb(e, LogLevel.Error);
             throw;
         }
     }
     
-    private async Task FetchCrew()
+    private async Task StoreCrew()
     {
         try
         {
-            var crew = Show!.Credits!.Crew
+            var crew = Show!.Credits.Crew.ToList()
                 .ConvertAll<Crew>(x => new Crew(x, Show!)).ToArray();
         
-            await MediaContext.Db.Crews
-                .UpsertRange(crew)
+            await using MediaContext mediaContext = new MediaContext();
+        
+            await mediaContext.Crews.UpsertRange(crew)
                 .On(c => new { c.Id })
                 .WhenMatched((cs, ci) => new Crew()
                 {
@@ -162,28 +177,31 @@ public class TvShowLogic
                     EpisodeId = ci.EpisodeId,
                 })
                 .RunAsync();
+            
+            Logger.MovieDb($@"TvShow {Show!.Name} Crew stored", LogLevel.Info);
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Logger.MovieDb(e, LogLevel.Error);
             throw;
         }
     }
 
-    private async Task FetchWatchProviders()
+    private async Task StoreWatchProviders()
     {
         await Task.CompletedTask;
     }
 
-    private async Task FetchTranslations()
+    private async Task StoreTranslations()
     {
         try
         {
-            var translations = Show!.Translations!.Translations.ToList()
-                .ConvertAll<Translation>(x => new Translation(x, Show!)).ToArray();
+            var translations = Show!.Translations.Translations.ToList()
+                .ConvertAll<Translation>(x => new Translation(x, Show!)).ToArray() ?? [];
         
-            await MediaContext.Db.Translations
-                .UpsertRange(translations)
+            await using MediaContext mediaContext = new MediaContext();
+        
+            await mediaContext.Translations.UpsertRange(translations)
                 .On(t => new { t.Iso31661, t.Iso6391, t.TvId })
                 .WhenMatched((ts, ti) => new Translation()
                 {
@@ -206,52 +224,52 @@ public class TvShowLogic
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Logger.MovieDb(e, LogLevel.Error);
             throw;
         }
     }
 
-    private async Task FetchContentRatings()
+    private async Task StoreContentRatings()
     {
         await Task.CompletedTask;
     }
 
-    private async Task FetchSimilar()
+    private async Task StoreSimilar()
     {
         await Task.CompletedTask;
     }
 
-    private async Task FetchRecommendations()
+    private async Task StoreRecommendations()
     {
         await Task.CompletedTask;
     }
 
-    private async Task FetchVideos()
+    private async Task StoreVideos()
     {
         await Task.CompletedTask;
     }
 
-    private async Task FetchImages()
+    private async Task StoreImages()
     {
         await Task.CompletedTask;
     }
 
-    private async Task FetchNetworks()
+    private async Task StoreNetworks()
     {
         await Task.CompletedTask;
     }
 
-    private async Task FetchCompanies()
+    private async Task StoreCompanies()
     {
         await Task.CompletedTask;
     }
 
-    private async Task FetchKeywords()
+    private async Task StoreKeywords()
     {
         await Task.CompletedTask;
     }
 
-    private async Task FetchGenres()
+    private async Task StoreGenres()
     {
         await Task.CompletedTask;
     }
@@ -263,52 +281,93 @@ public class TvShowLogic
         return defaultMediaType;
     }
 
-    private static string FindFolder()
+    private string FindFolder()
     {
-        const string defaultFolder = "/American.Dad.(2005)";
-
-        return defaultFolder;
+        return FileNameParsers.CreateBaseFolder(Show!);
     }
     
     private async Task Store()
     {
-        Tv tvResponse = new Tv(Show!, Library.Id, Folder, MediaType);
-        Console.WriteLine(@"Storing TvShow {0}", Show!.Name);
+        if (Show == null)
+        {
+            Logger.MovieDb($@"TvShow {TvClient.Id} not found");
+            return;
+        }
+        
+        Tv tvResponse = new Tv(Show, library.Id, Folder, MediaType);
 
-        await MediaContext.Db.Tvs.Upsert(tvResponse)
+        await using MediaContext mediaContext = new MediaContext();
+        
+        await mediaContext.Tvs.Upsert(tvResponse)
             .On(v => new { v.Id })
-            .WhenMatched(v => new Tv()
+            .WhenMatched((ts, ti) => new Tv()
             {
-                Id = tvResponse.Id,
-                Backdrop = tvResponse.Backdrop,
-                Duration = tvResponse.Duration,
-                FirstAirDate = tvResponse.FirstAirDate,
-                Homepage = tvResponse.Homepage,
-                ImdbId = tvResponse.ImdbId,
-                InProduction = tvResponse.InProduction,
-                LastEpisodeToAir = tvResponse.LastEpisodeToAir,
-                NextEpisodeToAir = tvResponse.NextEpisodeToAir,
-                NumberOfEpisodes = tvResponse.NumberOfEpisodes,
-                NumberOfSeasons = tvResponse.NumberOfSeasons,
-                OriginCountry = tvResponse.OriginCountry,
-                OriginalLanguage = tvResponse.OriginalLanguage,
-                Overview = tvResponse.Overview,
-                Popularity = tvResponse.Popularity,
-                Poster = tvResponse.Poster,
-                SpokenLanguages = tvResponse.SpokenLanguages,
-                Status = tvResponse.Status,
-                Tagline = tvResponse.Tagline,
-                Title = tvResponse.Title,
-                TitleSort = tvResponse.TitleSort,
-                Trailer = tvResponse.Trailer,
-                TvdbId = tvResponse.TvdbId,
-                Type = tvResponse.Type,
-                VoteAverage = tvResponse.VoteAverage,
-                VoteCount = tvResponse.VoteCount,
+                Id = ti.Id,
+                Backdrop = ti.Backdrop,
+                Duration = ti.Duration,
+                FirstAirDate = ti.FirstAirDate,
+                Homepage = ti.Homepage,
+                ImdbId = ti.ImdbId,
+                InProduction = ti.InProduction,
+                LastEpisodeToAir = ti.LastEpisodeToAir,
+                NextEpisodeToAir = ti.NextEpisodeToAir,
+                NumberOfEpisodes = ti.NumberOfEpisodes,
+                NumberOfSeasons = ti.NumberOfSeasons,
+                OriginCountry = ti.OriginCountry,
+                OriginalLanguage = ti.OriginalLanguage,
+                Overview = ti.Overview,
+                Popularity = ti.Popularity,
+                Poster = ti.Poster,
+                SpokenLanguages = ti.SpokenLanguages,
+                Status = ti.Status,
+                Tagline = ti.Tagline,
+                Title = ti.Title,
+                TitleSort = ti.TitleSort,
+                Trailer = ti.Trailer,
+                TvdbId = ti.TvdbId,
+                Type = ti.Type,
+                VoteAverage = ti.VoteAverage,
+                VoteCount = ti.VoteCount,
+                Folder = ti.Folder,
+                LibraryId = ti.LibraryId,
+                MediaType = ti.MediaType,
+                _colorPalette = ti._colorPalette,
+                UpdatedAt = ti.UpdatedAt,
             })
             .RunAsync();
         
-        Console.WriteLine(@"Stored TvShow {0}", Show.Name);
-        
+        Logger.MovieDb($@"TvShow {Show.Name} TvShow stored");
     }
+
+    private Task DispatchJobs()
+    {
+        ColorPaletteJob colorPaletteJob = new ColorPaletteJob(id: Show.Id, model: "tv");
+        JobDispatcher.Dispatch(colorPaletteJob, "data");
+        
+        return Task.CompletedTask;
+    }
+    
+    public static async Task GetPalette(int id)
+    {
+        await using MediaContext mediaContext = new MediaContext();
+        
+
+        var show = await mediaContext.Tvs
+            .FirstOrDefaultAsync(e => e.Id == id);
+
+        if (show is { _colorPalette: "" })
+        {
+            var palette = await ImageLogic.GenerateColorPalette(posterPath: show.Poster, backdropPath: show.Backdrop);
+            show._colorPalette = palette;
+            await mediaContext.SaveChangesAsync();
+        }
+    }
+    
+    public void Dispose()
+    {
+        Show = null;
+        GC.Collect();
+        GC.WaitForFullGCComplete();
+    }
+    
 }

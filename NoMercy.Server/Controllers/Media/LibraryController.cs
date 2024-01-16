@@ -9,6 +9,7 @@ namespace NoMercy.Server.Controllers.Media;
 public class LibraryController : Controller
 {
     [HttpGet]
+    [Authorize()]
     public IActionResult Index()
     {
         return Ok();

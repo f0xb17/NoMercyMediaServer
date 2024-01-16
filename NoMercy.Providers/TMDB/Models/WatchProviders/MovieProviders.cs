@@ -5,5 +5,5 @@ namespace NoMercy.Providers.TMDB.Models.WatchProviders;
 
 public class MovieProviders
 {
-    [JsonProperty("results")] public List<Provider> Results { get; set; } = new();
+    [JsonProperty("results")] public Provider[] Results { get; set; } = [];
 }

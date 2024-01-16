@@ -8,7 +8,7 @@ namespace NoMercy.Database.Models
         public required string GenreId { get; set; }
         public required int MovieId { get; set; }
 
-        public virtual Genre Genre { get; set; }
-        public virtual Movie Movie { get; set; }        
+        public virtual Genre Genre { get; } = null!;
+        public virtual Movie Movie { get; }        
     }
 }

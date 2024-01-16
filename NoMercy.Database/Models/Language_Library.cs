@@ -8,7 +8,7 @@ namespace NoMercy.Database.Models
         public required string LanguageId { get; set; }
         public required string LibraryId { get; set; }
 
-        public virtual Language Language { get; set; }
+        public virtual Language Language { get; } = null!;
         public virtual Library Library { get; set; }        
     }
 }

@@ -5,19 +5,18 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using NoMercy.Database;
 using NoMercy.Helpers;
-using NoMercy.Server.Helpers;
+using NoMercy.Server.Jobs;
 using NoMercy.Server.Logic;
 
 namespace NoMercy.Server
 {
     public class Startup(IConfiguration configuration)
     {
-        public static ApiInfo? ApiInfo;
-
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMemoryCache();
             services.AddSingleton<UserLogic>();
+            services.AddSingleton<JobQueue>();
             services.AddDbContext<MediaContext>(options =>
             {
                 options.UseSqlite($"Data Source={AppFiles.MediaDatabase}");
@@ -116,11 +115,6 @@ namespace NoMercy.Server
                 });
             });
             
-            // const int maxParallelism = 50;
-            // services.AddSingleton(new ThrottlingDelegatingHandler(new SemaphoreSlim(maxParallelism)));
-            //
-            // services.AddHttpClient("tmdb")
-            //     .AddHttpMessageHandler<ThrottlingDelegatingHandler>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

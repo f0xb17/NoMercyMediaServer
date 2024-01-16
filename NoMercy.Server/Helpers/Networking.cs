@@ -11,11 +11,13 @@ public abstract partial class Networking
 {
     private static INatDevice? _device;
 
-    public static void Discover()
+    public static Task Discover()
     {
         NatUtility.DeviceFound += DeviceFound;
 
         NatUtility.StartDiscovery();
+        
+        return Task.CompletedTask;
     }
 
     public static string InternalIp => GetInternalIp() ?? "";

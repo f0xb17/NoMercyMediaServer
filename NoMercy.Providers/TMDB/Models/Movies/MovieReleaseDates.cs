@@ -6,14 +6,14 @@ public class MovieReleaseDates
 {
     [JsonProperty("id")] public int Id { get; set; }
 
-    [JsonProperty("results")] public List<Result> Results { get; set; } = new();
+    [JsonProperty("results")] public Result[] Results { get; set; } = [];
 }
 
 public class Result
 {
     [JsonProperty("iso_3166_1")] public string Iso31661 { get; set; } = string.Empty;
 
-    [JsonProperty("release_dates")] public List<ReleaseDate> ReleaseDates { get; set; } = new();
+    [JsonProperty("release_dates")] public ReleaseDate[] ReleaseDates { get; set; } = [];
 }
 
 public class ReleaseDate

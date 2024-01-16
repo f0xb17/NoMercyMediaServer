@@ -9,11 +9,23 @@ namespace NoMercy.Database.Models
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        public string Iso6391 { get; set; }
-        public string EnglishName { get; set; }
+        public string Iso6391 { get; set; } = string.Empty;
+        public string EnglishName { get; set; } = string.Empty;
         public string? Name { get; set; }
         
-        public virtual ICollection<Language_Library> Language_Library { get; set; } = new HashSet<Language_Library>();
+        public virtual ICollection<Language_Library> Language_Library { get; } = new HashSet<Language_Library>();
         
+        public Language()
+        {
+            
+        }
+        
+        public Language(Providers.TMDB.Models.Configuration.Language language)
+        {
+            Iso6391 = language.Iso6391;
+            EnglishName = language.EnglishName;
+            Name = language.Name;
+        }
+
     }
 }

@@ -7,7 +7,7 @@ public class SeasonAggregatedCredits
 {
     [JsonProperty("id")] public int Id { get; set; }
     
-    [JsonProperty("cast")] public List<AggregatedCast> Cast { get; set; } = new();
+    [JsonProperty("cast")] public AggregatedCast[] Cast { get; set; } = [];
 
-    [JsonProperty("crew")] public List<AggregatedCrew> Crew { get; set; } = new();
+    [JsonProperty("crew")] public AggregatedCrew[] Crew { get; set; } = [];
 }

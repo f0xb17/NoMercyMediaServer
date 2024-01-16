@@ -14,7 +14,7 @@ namespace NoMercy.Database.Models
         {
             Id = person.Id;
             Adult = person.Adult;
-            AlsoKnownAs = person.AlsoKnownAs?.Count > 0 ? JsonConvert.SerializeObject(person.AlsoKnownAs) : null;
+            AlsoKnownAs = person.AlsoKnownAs?.Length > 0 ? JsonConvert.SerializeObject(person.AlsoKnownAs) : null;
             Biography = person.Biography;
             BirthDay = person.BirthDay;
             DeathDay = person.DeathDay;
@@ -30,30 +30,6 @@ namespace NoMercy.Database.Models
         }
         public Person()
         { }
-        public static Person Insert(PersonAppends person)
-        {
-            Person p = new ()
-            {
-                Id = person.Id,
-                Adult = person.Adult,
-                AlsoKnownAs = person.AlsoKnownAs?.Count > 0 ? JsonConvert.SerializeObject(person.AlsoKnownAs) : null,
-                Biography = person.Biography,
-                BirthDay = person.BirthDay,
-                DeathDay = person.DeathDay,
-                Gender = person.Gender.ToString(),
-                Homepage = person.Homepage?.ToString(),
-                ImdbId = person.ImdbId,
-                KnownForDepartment = person.KnownForDepartment,
-                Name = person.Name,
-                PlaceOfBirth = person.PlaceOfBirth,
-                Popularity = person.Popularity,
-                Profile = person.ProfilePath,
-                TitleSort = person.Name,
-                // ColorPalette = new Dictionary<string, string>(),
-                // UpdatedAt = DateTime.Now
-            };
-            return p;
-        }
         
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int Id { get; set; }
@@ -84,9 +60,9 @@ namespace NoMercy.Database.Models
         [StringLength(255)]
         public string TitleSort { get; set; } = String.Empty;
         
-        public virtual Cast Casts { get; set; }
-        public virtual Crew Crews { get; set; }
-        
+        public virtual Cast? Casts { get; } = new();
+        public virtual Crew? Crews { get; } = new();
+
         [NotMapped]
         public string Gender
         {

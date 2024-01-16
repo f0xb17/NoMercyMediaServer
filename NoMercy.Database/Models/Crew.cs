@@ -11,6 +11,25 @@ namespace NoMercy.Database.Models
     [Index(nameof(Id),nameof(EpisodeId), IsUnique = true)]
     public class Crew
     {
+        [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
+        public string Id { get; set; }
+        public int? PersonId { get; set; }
+        public int? MovieId { get; set; }
+        public int? TvId { get; set; }
+        public int? SeasonId { get; set; }
+        public int? EpisodeId { get; set; }
+        
+        public virtual ICollection<Person>? People { get; } = new HashSet<Person>();
+        
+        public virtual Movie? Movie { get; }
+        public virtual Tv? Tv { get; }
+        public virtual Season? Season { get; }
+        public virtual Episode? Episode { get; }
+        
+        public Crew()
+        {
+        }
+
         public Crew(Providers.TMDB.Models.Shared.Crew crew, Providers.TMDB.Models.Movies.Movie movieAppends)
         {
             Id = crew.CreditId;
@@ -36,23 +55,5 @@ namespace NoMercy.Database.Models
             EpisodeId = episodeAppends.Id;
         }
         
-        public Crew()
-        {
-        }
-        
-        [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
-        public string Id { get; set; }
-        public int? PersonId { get; set; }
-        public int? MovieId { get; set; }
-        public int? TvId { get; set; }
-        public int? SeasonId { get; set; }
-        public int? EpisodeId { get; set; }
-        
-        public virtual ICollection<Person>? People { get; set; } = new HashSet<Person>();
-        
-        public virtual Movie Movie { get; set; }
-        public virtual Tv Tv { get; set; }
-        public virtual Season Season { get; set; }
-        public virtual Episode Episode { get; set; }
     }
 }

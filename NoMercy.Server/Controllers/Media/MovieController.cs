@@ -11,6 +11,7 @@ namespace NoMercy.Server.Controllers.Media;
 public class MovieController : Controller
 {
     [HttpGet]
+    [Authorize()]
     public IActionResult Index()
     {
         MovieClient movieClient = new MovieClient();
@@ -30,6 +31,7 @@ public class MovieController : Controller
     }
     
     [HttpGet]
+    [Authorize()]
     [Route("{id}")]
     public IActionResult Show(int id)
     {
@@ -40,6 +42,7 @@ public class MovieController : Controller
     }
     
     [HttpGet]
+    [Authorize()]
     [Route("{id}/details")]
     public IActionResult Details(int id)
     {

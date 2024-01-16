@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
@@ -30,7 +31,7 @@ public class ColorPalettes
     public string _colorPalette { get; set; } = string.Empty;
     
     [NotMapped]
-    public Dictionary<string, string> ColorPalette
+    public Dictionary<string, string>? ColorPalette
     {
         get => JsonConvert.DeserializeObject<Dictionary<string, string>>(_colorPalette);
         set => _colorPalette = JsonConvert.SerializeObject(value);
@@ -41,7 +42,7 @@ public class ColorPaletteTimeStamps: Timestamps
 {
     [Column("ColorPalette")]
     [StringLength(1024)]
-    private string _colorPalette { get; set; } = string.Empty;
+    public string _colorPalette { get; set; } = string.Empty;
     
     [NotMapped]
     public dynamic? ColorPalette
@@ -53,20 +54,12 @@ public class ColorPaletteTimeStamps: Timestamps
 
 public class MediaContext : DbContext
 {
-    public static MediaContext Db { get; private set; }
-    static MediaContext()
-    {
-        Db = new MediaContext();
-    }
-    
     public MediaContext(DbContextOptions<MediaContext> options) : base(options)
     {
-        Db = this;
     }
 
     public MediaContext()
     {
-        Db = this;
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
@@ -136,7 +129,7 @@ public class MediaContext : DbContext
     public virtual DbSet<Genre> Genres { get; set; }
     public virtual DbSet<GuestStar> GuestStars { get; set; }
     public virtual DbSet<Image> Images { get; set; }
-    public virtual DbSet<Job> Jobs { get; set; }
+    
     public virtual DbSet<Keyword_Movie> Keyword_Movie { get; set; }
     public virtual DbSet<Keyword_Tv> Keyword_Tv { get; set; }
     public virtual DbSet<Keyword> Keywords { get; set; }
@@ -176,4 +169,7 @@ public class MediaContext : DbContext
     public virtual DbSet<UserData> UserData { get; set; }
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<VideoFile> VideoFiles { get; set; }
+    
+    public virtual DbSet<Job> Jobs { get; set; }
+    public virtual DbSet<FailedJob> FailedJobs { get; set; }
 }

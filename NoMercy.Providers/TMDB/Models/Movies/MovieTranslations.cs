@@ -5,7 +5,7 @@ namespace NoMercy.Providers.TMDB.Models.Movies;
 
 public class MovieTranslations : SharedTranslations
 {
-    [JsonProperty("translations")] public new List<MovieTranslation> Translations { get; set; } = new();
+    [JsonProperty("translations")] public new MovieTranslation[] Translations { get; set; } = [];
 }
 
 public class MovieTranslation : SharedTranslation

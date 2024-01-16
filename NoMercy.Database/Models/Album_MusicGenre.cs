@@ -8,7 +8,7 @@ namespace NoMercy.Database.Models
         public required string AlbumId { get; set; }
         public required string MusicGenreId { get; set; }
 
-        public virtual Album Album { get; set; }
-        public virtual MusicGenre MusicGenre { get; set; }        
+        public virtual Album Album { get; } = null!;
+        public virtual MusicGenre MusicGenre { get; }        
     }
 }

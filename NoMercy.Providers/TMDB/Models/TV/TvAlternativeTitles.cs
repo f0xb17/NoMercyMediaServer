@@ -6,7 +6,7 @@ public class TvAlternativeTitles
 {
     [JsonProperty("id")] public int Id { get; set; }
 
-    [JsonProperty("results")] public List<TvAlternativeTitle> Results { get; set; }
+    [JsonProperty("results")] public TvAlternativeTitle[] Results { get; set; } = [];
 }
 
 public class TvAlternativeTitle

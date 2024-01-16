@@ -4,7 +4,7 @@ namespace NoMercy.Providers.TMDB.Models.Shared;
 
 public class Certification
 {
-    [JsonProperty("certifications")] public CertificationList Certifications { get; set; } = new CertificationList();
+    [JsonProperty("certifications")] public CertificationList Certifications { get; set; } = new();
 
     public List<CertificationItem> ToArray()
     {

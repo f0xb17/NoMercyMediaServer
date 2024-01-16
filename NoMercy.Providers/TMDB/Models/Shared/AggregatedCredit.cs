@@ -25,7 +25,7 @@ public class AggregatedCredit
 
 public class AggregatedCrew : AggregatedCredit
 {
-    [JsonProperty("jobs")] public List<Jobs> Jobs { get; set; } = new();
+    [JsonProperty("jobs")] public Jobs[] Jobs { get; set; } = [];
 }
 
 public class Roles
@@ -39,7 +39,7 @@ public class Roles
 
 public class AggregatedCast : AggregatedCredit
 {
-    [JsonProperty("roles")] public List<Roles> Roles { get; set; } = new();
+    [JsonProperty("roles")] public Roles[] Roles { get; set; } = [];
 }
 
 public class Jobs

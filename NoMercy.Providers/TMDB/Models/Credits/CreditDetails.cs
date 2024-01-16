@@ -29,9 +29,9 @@ public class Media
 
     [JsonProperty("character")] public string Character { get; set; } = string.Empty;
 
-    [JsonProperty("episodes")] public List<Episode.Episode> Episodes { get; set; } = new();
+    [JsonProperty("episodes")] public Episode.Episode[] Episodes { get; set; } = [];
 
-    [JsonProperty("seasons")] public List<S> Seasons { get; set; } = new();
+    [JsonProperty("seasons")] public Season.Season[] Seasons { get; set; } = [];
 }
 
 public class S : Season.Season

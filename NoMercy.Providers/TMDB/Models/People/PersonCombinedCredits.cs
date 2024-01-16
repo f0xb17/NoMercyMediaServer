@@ -7,7 +7,7 @@ public class PersonCombinedCredits
 {
     [JsonProperty("id")] public int Id { get; set; }
 
-    [JsonProperty("cast")] public List<Cast> Cast { get; set; } = new();
+    [JsonProperty("cast")] public Cast[] Cast { get; set; } = [];
 
-    [JsonProperty("crew")] public List<Cast> Crew { get; set; } = new();
+    [JsonProperty("crew")] public Cast[] Crew { get; set; } = [];
 }

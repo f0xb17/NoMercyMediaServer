@@ -6,7 +6,7 @@ public class TvVideos
 {
     [JsonProperty("id")] public int Id { get; set; }
 
-    [JsonProperty("results")] public List<Result> Results { get; set; } = new();
+    [JsonProperty("results")] public Result[] Results { get; set; } = [];
 }
 
 public class Result

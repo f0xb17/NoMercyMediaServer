@@ -4,13 +4,9 @@ using Microsoft.EntityFrameworkCore;
 namespace NoMercy.Database.Models
 {
     [PrimaryKey(nameof(Id))]
-    public class Library: Timestamps
+    [Index(nameof(Id), IsUnique = true)]
+    public class Library: Timestamps, IDisposable
     {
-        public Library()
-        {
-            
-        }
-
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public string Id { get; set; }
         public int AutoRefreshInterval { get; set; }
@@ -26,10 +22,10 @@ namespace NoMercy.Database.Models
         public string? Country { get; set; }
         public string? Language { get; set; }
             
-        public virtual ICollection<Folder_Library> Folder_Libraries { get; set; } = new HashSet<Folder_Library>();
-        public virtual ICollection<Language_Library> Language_Libraries { get; set; } = new HashSet<Language_Library>();
-        public virtual ICollection<EncoderProfile_Library> EncoderProfile_Libraries { get; set; } = new HashSet<EncoderProfile_Library>();
-        public virtual ICollection<Library_User> Library_Users { get; set; } = new HashSet<Library_User>();
+        public virtual ICollection<Folder_Library> Folder_Libraries { get; } = new HashSet<Folder_Library>();
+        public virtual ICollection<Language_Library> Language_Libraries { get; } = new HashSet<Language_Library>();
+        public virtual ICollection<EncoderProfile_Library> EncoderProfile_Libraries { get; } = new HashSet<EncoderProfile_Library>();
+        public virtual ICollection<Library_User> Library_Users { get; } = new HashSet<Library_User>();
         public virtual ICollection<File_Library> File_Libraries { get; set; } = new HashSet<File_Library>();
         
         public virtual ICollection<Library_Tv> Library_Tvs { get; set; } = new HashSet<Library_Tv>();
@@ -40,5 +36,15 @@ namespace NoMercy.Database.Models
         public virtual ICollection<Album_Library> Album_Libraries { get; set; } = new HashSet<Album_Library>();
         public virtual ICollection<Artist_Library> Artist_Libraries { get; set; } = new HashSet<Artist_Library>();
         
+        public Library()
+        {
+            
+        }
+        
+        public void Dispose()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
     }
 }

@@ -8,7 +8,7 @@ namespace NoMercy.Database.Models
         public required string PlaylistId { get; set; }
         public required string TrackId { get; set; }
 
-        public virtual Playlist Playlist { get; set; }
+        public virtual Playlist Playlist { get; } = null!;
         public virtual Track Track { get; set; }        
     }
 }

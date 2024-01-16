@@ -1,19 +1,47 @@
+using NoMercy.Helpers;
+using NoMercy.Server.Logic;
+using LogLevel = NoMercy.Helpers.LogLevel;
+
 namespace NoMercy.Server.Jobs;
 
-public class HiMistaaJob : IShouldQueue
+public class ColorPaletteJob : IShouldQueue
 {
-    private readonly string _param1;
-    private readonly string _param2;
+    private readonly int _id;
+    private readonly string _model;
 
-    public HiMistaaJob(string param1, string param2)
+    public ColorPaletteJob(int id, string model)
     {
-        _param1 = param1;
-        _param2 = param2;
+        // Logger.Queue($"Creating color palette job for {model} {id}", "info");
+        _id = id;
+        _model = model;
     }
 
-    public new Task Handle()
+    public async Task Handle()
     {
-        Console.WriteLine($@"HIIIII {_param1} - {_param2}");
-        return Task.CompletedTask;
+        // Logger.Queue($"Fetching color palette for {_model} {_id}", "info");
+        if (_model == "movie")
+        {
+            // await MovieLogic.GetPalette(_id);
+        }
+        else if (_model == "tv")
+        {
+            await TvShowLogic.GetPalette(_id);
+        }
+        else if (_model == "person")
+        {
+            await PersonLogic.GetPalette(_id);
+        }
+        else if (_model == "season")
+        {
+            await SeasonLogic.GetPalette(_id);
+        }
+        else if (_model == "episode")
+        {
+            await EpisodeLogic.GetPalette(_id);
+        }
+        else
+            Logger.Queue("Invalid model type", LogLevel.Error);
+        
+        await Task.CompletedTask;
     }
 }

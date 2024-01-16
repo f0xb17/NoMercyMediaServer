@@ -25,8 +25,8 @@ namespace NoMercy.Database.Models
         public int? MovieId { get; set; }
         public int? TvId { get; set; }
 
-        public virtual Movie Movie { get; set; }
-        public virtual Tv Tv { get; set; }
+        public virtual Movie Movie { get; } = null!;
+        public virtual Tv Tv { get; } = null!;
         
     }
 }

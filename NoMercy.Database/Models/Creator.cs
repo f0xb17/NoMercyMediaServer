@@ -8,8 +8,8 @@ namespace NoMercy.Database.Models
         public required int PersonId { get; set; }
         public required int TvId { get; set; }
         
-        public virtual Person Person { get; set; }
-        public virtual Tv Tv { get; set; }
+        public virtual Person Person { get; } = null!;
+        public virtual Tv Tv { get; set; } = null!;
         
     }
 }

@@ -14,6 +14,6 @@ namespace NoMercy.Database.Models
         public string? Container { get; set; }
         public string? Param { get; set; }
         
-        public virtual ICollection<EncoderProfile_Library> EncoderProfile_Library { get; set; } = new HashSet<EncoderProfile_Library>();
+        public virtual ICollection<EncoderProfile_Library> EncoderProfile_Library { get; } = new HashSet<EncoderProfile_Library>();
     }
 }

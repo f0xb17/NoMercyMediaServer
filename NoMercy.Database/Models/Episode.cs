@@ -28,7 +28,7 @@ namespace NoMercy.Database.Models
         
         public Episode()
         { }
-        
+
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int Id { get; set; }
         public string? Title { get; set; }
@@ -46,17 +46,17 @@ namespace NoMercy.Database.Models
         public int TvId { get; set; }
         public int SeasonId { get; set; }
 
-        public virtual Tv Tv { get; set; }
-        public virtual Season Season { get; set; }
+        public virtual Tv Tv { get; } = null!;
+        public virtual Season Season { get; set; } = null!;
         
-        public virtual ICollection<Cast> Casts { get; set; }
-        public virtual ICollection<Crew> Crews { get; set; }
-        public virtual ICollection<SpecialItem> SpecialItems { get; set; }
-        public virtual ICollection<VideoFile> VideoFiles { get; set; }
-        public virtual ICollection<Media> Medias { get; set; }
-        public virtual ICollection<Image> Images { get; set; }
-        public virtual ICollection<GuestStar> GuestStars { get; set; }
-        public virtual ICollection<File> Files { get; set; }
-        public virtual ICollection<Translation> Translations { get; set; }
+        public virtual ICollection<Cast>? Casts { get; set; } = null!;
+        public virtual ICollection<Crew>? Crews { get; set; } = null!;
+        public virtual ICollection<SpecialItem>? SpecialItems { get; set; } = null!;
+        public virtual ICollection<VideoFile>? VideoFiles { get; set; } = null!;
+        public virtual ICollection<Media>? Medias { get; set; } = null!;
+        public virtual ICollection<Image>? Images { get; set; } = null!;
+        public virtual ICollection<GuestStar>? GuestStars { get; set; } = null!;
+        public virtual ICollection<File>? Files { get; set; } = null!;
+        public virtual ICollection<Translation>? Translations { get; set; } = null!;
     }
 }

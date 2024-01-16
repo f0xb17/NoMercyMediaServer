@@ -2,7 +2,7 @@
 
 namespace NoMercy.Providers.TMDB.Client;
 
-public class PersonClient : BaseClient
+public class PersonClient : BaseClient, IDisposable
 {
     public PersonClient(int? id = 0, string[]? appendices = null) : base((int)id!)
     {}
@@ -14,10 +14,12 @@ public class PersonClient : BaseClient
 
     public Task<PersonAppends> WithAppends(string[] appendices)
     {
-        return Get<PersonAppends>("person/" + Id, new Dictionary<string, string>
+        var @params = new Dictionary<string, string>
         {
             ["append_to_response"] = string.Join(",", appendices)
-        });
+        };
+        
+        return Get<PersonAppends>("person/" + Id, @params);
     }
 
     public Task<PersonAppends> WithAllAppends()
@@ -39,7 +41,7 @@ public class PersonClient : BaseClient
             ["start_date"] = startDate,
             ["end_date"] = endDate
         };
-
+        
         return Get<PersonChanges>("person/" + Id + "/changes", @params);
     }
 
@@ -72,4 +74,5 @@ public class PersonClient : BaseClient
     {
         return Paginated<Person>("person/popular", limit);
     }
+
 }

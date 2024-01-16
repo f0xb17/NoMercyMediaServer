@@ -8,13 +8,13 @@ public class TvShow
 
     [JsonProperty("first_air_date")] public DateTime? FirstAirDate { get; set; }
 
-    [JsonProperty("genre_ids")] public List<int> GenreIds { get; set; } = new();
+    [JsonProperty("genre_ids")] public int[] GenreIds { get; set; } = [];
 
     [JsonProperty("id")] public int Id { get; set; }
 
     [JsonProperty("name")] public string Name { get; set; } = string.Empty;
 
-    [JsonProperty("origin_country")] public List<string> OriginCountry { get; set; } = new();
+    [JsonProperty("origin_country")] public string[] OriginCountry { get; set; } = [];
 
     [JsonProperty("original_language")] public string OriginalLanguage { get; set; } = string.Empty;
 

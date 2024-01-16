@@ -4,14 +4,14 @@ namespace NoMercy.Providers.TMDB.Models.People;
 
 public class PersonChanges
 {
-    [JsonProperty("changes")] public List<Change> Changes { get; set; } = new();
+    [JsonProperty("changes")] public Change[] Changes { get; set; } = [];
 }
 
 public class Change
 {
     [JsonProperty("key")] public string Key { get; set; } = string.Empty;
 
-    [JsonProperty("items")] public List<Tem> Items { get; set; } = new();
+    [JsonProperty("items")] public Tem[] Items { get; set; } = [];
 }
 
 public class Tem

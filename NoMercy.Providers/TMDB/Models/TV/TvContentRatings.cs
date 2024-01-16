@@ -5,7 +5,7 @@ namespace NoMercy.Providers.TMDB.Models.TV;
 public class TvContentRatings
 {
     [JsonProperty("certifications")]
-    public Dictionary<string, List<TvContentRating>> ContentRating { get; set; }
+    public Dictionary<string, TvContentRating[]> ContentRating { get; set; } = new();
 }
 
 public class TvContentRating

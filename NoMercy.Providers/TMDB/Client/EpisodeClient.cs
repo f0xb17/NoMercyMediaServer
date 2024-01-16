@@ -3,7 +3,7 @@ using NoMercy.Providers.TMDB.Models.Shared;
 
 namespace NoMercy.Providers.TMDB.Client;
 
-public class EpisodeClient : BaseClient
+public class EpisodeClient : BaseClient, IDisposable
 {
     private readonly int _episodeNumber;
     private readonly int _seasonNumber;
@@ -26,7 +26,7 @@ public class EpisodeClient : BaseClient
             ["append_to_response"] = string.Join(",", appendices)
         };
 
-        return Get<EpisodeAppends>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber);
+        return Get<EpisodeAppends>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber, @params);
     }
 
     public Task<EpisodeAppends> WithAllAppends()
@@ -43,11 +43,13 @@ public class EpisodeClient : BaseClient
 
     public Task<EpisodeChanges> Changes(string startDate, string endDate)
     {
-        return Get<EpisodeChanges>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/changes", new Dictionary<string, string>
+        var @params = new Dictionary<string, string>
         {
             ["start_date"] = startDate,
             ["end_date"] = endDate
-        });
+        };
+        
+        return Get<EpisodeChanges>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/changes", @params);
     }
 
     public Task<Credits> Credits()

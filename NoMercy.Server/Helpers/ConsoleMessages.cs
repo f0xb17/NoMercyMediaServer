@@ -1,28 +1,40 @@
 using System.Text;
+using NoMercy.Helpers;
 using Pastel;
 
 namespace NoMercy.Server.Helpers;
 
 public abstract class ConsoleMessages
 {
-    private static readonly Data Data = Startup.ApiInfo!.Data;
-    public static void ServerRunning()
+    private static string[] Colors
+    {
+        get => ApiInfo.Colors;
+    }
+
+    private static string Quote
+    {
+        get => ApiInfo.Quote;
+    }
+    
+    public static Task ServerRunning()
     {
         ConsoleExtensions.Enable();
 
         Console.WriteLine(("╔" + Repeat("═", 46) + "╗").Pastel("#00a10d"));
-        Console.WriteLine($"{_("#00a10d")}".Pastel("#00a10d") + "     " +
+        Console.WriteLine($"{_("#00a10d")}".Pastel("#00a10d") + @"     " +
                           "Secure server running: on port:".Pastel("#5ffa71") +
                           $" {Networking.InternalServerPort}     ".Pastel("#ffffff") +
                           $"{_("#00a10d")}".Pastel("#00a10d"));
-        Console.WriteLine($"{_("#00a10d")}".Pastel("#00a10d") + "      " + "visit:".Pastel("#cccccc") +
+        Console.WriteLine($"{_("#00a10d")}".Pastel("#00a10d") + @"      " + "visit:".Pastel("#cccccc") +
                           "  https://app-dev.nomercy.tv      ".Pastel("#ffffff") + $"{_("#00a10d")}".Pastel("#00a10d"));
         Console.WriteLine(("╚" + Repeat("═", 46) + "╝").Pastel("#00a10d"));
+        
+        return Task.CompletedTask;
     }
 
-    public static void Logo()
+    public static Task Logo()
     {
-        Console.WriteLine($@"{("╔" + Repeat("═", 186) + "╗").Pastel(Data.Colors[0])}");
+        Console.WriteLine($@"{("╔" + Repeat("═", 186) + "╗").Pastel(Colors[0])}");
         Console.WriteLine(
             $@"{_()}{Repeat(" ", 186)}{_()}");
         Console.WriteLine(
@@ -45,14 +57,16 @@ public abstract class ConsoleMessages
             $@"{_()}  {N()[8]} {O()[8]} {M()[8]} {E()[8]}  {R()[8]} {C()[8]} {Y()[8]}  {M()[8]} {E()[8]}  {D()[8]}  {I()[8]}  {A()[8]}  {S()[8]} {E()[8]}  {R()[8]}  {V()[8]} {E()[8]}  {R()[8]}  {_()}");
         Console.WriteLine(
             $@"{_()}  {N()[9]} {O()[9]} {M()[9]} {E()[9]}  {R()[9]} {C()[9]} {Y()[9]}  {M()[9]} {E()[9]}  {D()[9]}  {I()[9]}  {A()[9]}  {S()[9]} {E()[9]}  {R()[9]}  {V()[9]} {E()[9]}  {R()[9]}  {_()}");
-        Console.WriteLine($"{_()}                                                                   {Y()[10]}   " +                                     CreateQuote(Data.Quote, 6) + $"{_()}");
-        Console.WriteLine($@"{("╚" + Repeat("═", 186) +                                                                                                  "╝").Pastel(Data.Colors[0])}");
+        Console.WriteLine($@"{_()}                                                                   {Y()[10]}   " +                                     CreateQuote(Quote, 6) + $"{_()}");
+        Console.WriteLine($@"{("╚" + Repeat("═", 186) +                                                                                                  "╝").Pastel(Colors[0])}");
+        
+        return Task.CompletedTask;
     }
 
 
     private static string _(string? color = null)
     {
-        return "║".Pastel(color ?? Data.Colors[0]);
+        return "║".Pastel(color ?? Colors[0]);
     }
 
     private static string Repeat(string stringToRepeat, int repeat)
@@ -67,14 +81,14 @@ public abstract class ConsoleMessages
     {
         return
         [
-            "888b    888".Pastel(Data.Colors[1]),
-            "8888b   888".Pastel(Data.Colors[1]),
-            "88888b  888".Pastel(Data.Colors[1]),
-            "888Y88b 888".Pastel(Data.Colors[1]),
-            "888 Y88b888".Pastel(Data.Colors[1]),
-            "888  Y88888".Pastel(Data.Colors[1]),
-            "888   Y8888".Pastel(Data.Colors[1]),
-            "888    Y888".Pastel(Data.Colors[1]),
+            "888b    888".Pastel(Colors[1]),
+            "8888b   888".Pastel(Colors[1]),
+            "88888b  888".Pastel(Colors[1]),
+            "888Y88b 888".Pastel(Colors[1]),
+            "888 Y88b888".Pastel(Colors[1]),
+            "888  Y88888".Pastel(Colors[1]),
+            "888   Y8888".Pastel(Colors[1]),
+            "888    Y888".Pastel(Colors[1]),
             "           ",
             "           "
         ];
@@ -87,11 +101,11 @@ public abstract class ConsoleMessages
             "        ",
             "        ",
             "        ",
-            " .d888b.".Pastel(Data.Colors[2]),
-            "d88\"\"88b".Pastel(Data.Colors[2]),
-            "888  888".Pastel(Data.Colors[2]),
-            "Y88..88P".Pastel(Data.Colors[2]),
-            " \"Y88P\" ".Pastel(Data.Colors[2]),
+            " .d888b.".Pastel(Colors[2]),
+            "d88\"\"88b".Pastel(Colors[2]),
+            "888  888".Pastel(Colors[2]),
+            "Y88..88P".Pastel(Colors[2]),
+            " \"Y88P\" ".Pastel(Colors[2]),
             "        ",
             "        "
         ];
@@ -101,14 +115,14 @@ public abstract class ConsoleMessages
     {
         return
         [
-            "888b     d888".Pastel(Data.Colors[1]),
-            "8888b   d8888".Pastel(Data.Colors[1]),
-            "88888b.d88888".Pastel(Data.Colors[1]),
-            "888Y88888P888".Pastel(Data.Colors[1]),
-            "888 Y888P 888".Pastel(Data.Colors[1]),
-            "888  Y8P  888".Pastel(Data.Colors[1]),
-            "888   \"   888".Pastel(Data.Colors[1]),
-            "888       888".Pastel(Data.Colors[1]),
+            "888b     d888".Pastel(Colors[1]),
+            "8888b   d8888".Pastel(Colors[1]),
+            "88888b.d88888".Pastel(Colors[1]),
+            "888Y88888P888".Pastel(Colors[1]),
+            "888 Y888P 888".Pastel(Colors[1]),
+            "888  Y8P  888".Pastel(Colors[1]),
+            "888   \"   888".Pastel(Colors[1]),
+            "888       888".Pastel(Colors[1]),
             "             ",
             "             "
         ];
@@ -121,11 +135,11 @@ public abstract class ConsoleMessages
             "         ",
             "         ",
             "         ",
-            "  .d88b. ".Pastel(Data.Colors[2]),
-            " d8P  Y8b".Pastel(Data.Colors[2]),
-            " 88888888".Pastel(Data.Colors[2]),
-            " Y8b.    ".Pastel(Data.Colors[2]),
-            "  \"Y8888 ".Pastel(Data.Colors[2]),
+            "  .d88b. ".Pastel(Colors[2]),
+            " d8P  Y8b".Pastel(Colors[2]),
+            " 88888888".Pastel(Colors[2]),
+            " Y8b.    ".Pastel(Colors[2]),
+            "  \"Y8888 ".Pastel(Colors[2]),
             "         ",
             "         "
         ];
@@ -138,11 +152,11 @@ public abstract class ConsoleMessages
             "       ",
             "       ",
             "       ",
-            "888d888".Pastel(Data.Colors[2]),
-            "888P\"  ".Pastel(Data.Colors[2]),
-            "888    ".Pastel(Data.Colors[2]),
-            "888    ".Pastel(Data.Colors[2]),
-            "888    ".Pastel(Data.Colors[2]),
+            "888d888".Pastel(Colors[2]),
+            "888P\"  ".Pastel(Colors[2]),
+            "888    ".Pastel(Colors[2]),
+            "888    ".Pastel(Colors[2]),
+            "888    ".Pastel(Colors[2]),
             "       ",
             "       "
         ];
@@ -155,11 +169,11 @@ public abstract class ConsoleMessages
             "         ",
             "         ",
             "         ",
-            " .d8888b ".Pastel(Data.Colors[2]),
-            "d88P\"    ".Pastel(Data.Colors[2]),
-            "888      ".Pastel(Data.Colors[2]),
-            "Y88b.    ".Pastel(Data.Colors[2]),
-            " \"Y8888P ".Pastel(Data.Colors[2]),
+            " .d8888b ".Pastel(Colors[2]),
+            "d88P\"    ".Pastel(Colors[2]),
+            "888      ".Pastel(Colors[2]),
+            "Y88b.    ".Pastel(Colors[2]),
+            " \"Y8888P ".Pastel(Colors[2]),
             "        ",
             "        "
         ];
@@ -172,14 +186,14 @@ public abstract class ConsoleMessages
             "        ",
             "        ",
             "        ",
-            "888  888".Pastel(Data.Colors[2]),
-            "888  888".Pastel(Data.Colors[2]),
-            "888  888".Pastel(Data.Colors[2]),
-            "Y88b 888".Pastel(Data.Colors[2]),
-            " \"Y88888".Pastel(Data.Colors[2]),
-            "      888".Pastel(Data.Colors[2]),
-            " Y8b d88P".Pastel(Data.Colors[2]),
-            "\"Y88P\"".Pastel(Data.Colors[2])
+            "888  888".Pastel(Colors[2]),
+            "888  888".Pastel(Colors[2]),
+            "888  888".Pastel(Colors[2]),
+            "Y88b 888".Pastel(Colors[2]),
+            " \"Y88888".Pastel(Colors[2]),
+            "      888".Pastel(Colors[2]),
+            " Y8b d88P".Pastel(Colors[2]),
+            "\"Y88P\"".Pastel(Colors[2])
         ];
     }
 
@@ -187,14 +201,14 @@ public abstract class ConsoleMessages
     {
         return
         [
-            " .d8888b. ".Pastel(Data.Colors[1]),
-            "d88P  Y88b".Pastel(Data.Colors[1]),
-            "Y88b.     ".Pastel(Data.Colors[1]),
-            " \"Y888b.  ".Pastel(Data.Colors[1]),
-            "    \"Y88b.".Pastel(Data.Colors[1]),
-            "      \"888".Pastel(Data.Colors[1]),
-            "Y88b  d88P".Pastel(Data.Colors[1]),
-            " \"Y8888P\" ".Pastel(Data.Colors[1]),
+            " .d8888b. ".Pastel(Colors[1]),
+            "d88P  Y88b".Pastel(Colors[1]),
+            "Y88b.     ".Pastel(Colors[1]),
+            " \"Y888b.  ".Pastel(Colors[1]),
+            "    \"Y88b.".Pastel(Colors[1]),
+            "      \"888".Pastel(Colors[1]),
+            "Y88b  d88P".Pastel(Colors[1]),
+            " \"Y8888P\" ".Pastel(Colors[1]),
             "          ",
             "          "
         ];
@@ -207,11 +221,11 @@ public abstract class ConsoleMessages
             "        ",
             "        ",
             "        ",
-            "888  888".Pastel(Data.Colors[2]),
-            "888  888".Pastel(Data.Colors[2]),
-            "Y88  88P".Pastel(Data.Colors[2]),
-            " Y8bd8P ".Pastel(Data.Colors[2]),
-            "  Y88P  ".Pastel(Data.Colors[2]),
+            "888  888".Pastel(Colors[2]),
+            "888  888".Pastel(Colors[2]),
+            "Y88  88P".Pastel(Colors[2]),
+            " Y8bd8P ".Pastel(Colors[2]),
+            "  Y88P  ".Pastel(Colors[2]),
             "        ",
             "        "
         ];
@@ -221,14 +235,14 @@ public abstract class ConsoleMessages
     {
         return
         [
-            "d8b".Pastel(Data.Colors[2]),
-            "Y8P".Pastel(Data.Colors[2]),
+            "d8b".Pastel(Colors[2]),
+            "Y8P".Pastel(Colors[2]),
             "   ",
-            "888".Pastel(Data.Colors[2]),
-            "888".Pastel(Data.Colors[2]),
-            "888".Pastel(Data.Colors[2]),
-            "888".Pastel(Data.Colors[2]),
-            "888".Pastel(Data.Colors[2]),
+            "888".Pastel(Colors[2]),
+            "888".Pastel(Colors[2]),
+            "888".Pastel(Colors[2]),
+            "888".Pastel(Colors[2]),
+            "888".Pastel(Colors[2]),
             "   ",
             "   "
         ];
@@ -238,14 +252,14 @@ public abstract class ConsoleMessages
     {
         return
         [
-            "     888".Pastel(Data.Colors[2]),
-            "     888".Pastel(Data.Colors[2]),
-            "     888".Pastel(Data.Colors[2]),
-            " .d88888".Pastel(Data.Colors[2]),
-            "d88\" 888".Pastel(Data.Colors[2]),
-            "888  888".Pastel(Data.Colors[2]),
-            "Y88b 888".Pastel(Data.Colors[2]),
-            " \"Y88888".Pastel(Data.Colors[2]),
+            "     888".Pastel(Colors[2]),
+            "     888".Pastel(Colors[2]),
+            "     888".Pastel(Colors[2]),
+            " .d88888".Pastel(Colors[2]),
+            "d88\" 888".Pastel(Colors[2]),
+            "888  888".Pastel(Colors[2]),
+            "Y88b 888".Pastel(Colors[2]),
+            " \"Y88888".Pastel(Colors[2]),
             "        ",
             "        "
         ];
@@ -258,11 +272,11 @@ public abstract class ConsoleMessages
             "        ",
             "        ",
             "        ",
-            " 8888b. ".Pastel(Data.Colors[2]),
-            "    \"88b".Pastel(Data.Colors[2]),
-            ".d888888".Pastel(Data.Colors[2]),
-            "888  888".Pastel(Data.Colors[2]),
-            "\"Y888888".Pastel(Data.Colors[2]),
+            " 8888b. ".Pastel(Colors[2]),
+            "    \"88b".Pastel(Colors[2]),
+            ".d888888".Pastel(Colors[2]),
+            "888  888".Pastel(Colors[2]),
+            "\"Y888888".Pastel(Colors[2]),
             "        ",
             "        "
         ];

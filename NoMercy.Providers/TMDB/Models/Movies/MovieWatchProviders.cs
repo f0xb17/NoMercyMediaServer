@@ -14,11 +14,11 @@ public class PaymentType
 {
     [JsonProperty("link")] public Uri Link { get; set; } = null!;
 
-    [JsonProperty("flatrate")] public List<PaymentDetails> FlatRate { get; set; } = new();
+    [JsonProperty("flatrate")] public PaymentDetails[] FlatRate { get; set; } = [];
 
-    [JsonProperty("rent")] public List<PaymentDetails> Rent { get; set; } = new();
+    [JsonProperty("rent")] public PaymentDetails[] Rent { get; set; } = [];
 
-    [JsonProperty("buy")] public List<PaymentDetails> Buy { get; set; } = new();
+    [JsonProperty("buy")] public PaymentDetails[] Buy { get; set; } = [];
 }
 
 public class PaymentDetails

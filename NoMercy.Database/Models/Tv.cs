@@ -7,44 +7,6 @@ namespace NoMercy.Database.Models
     [PrimaryKey(nameof(Id))]
     public class Tv: ColorPaletteTimeStamps
     {
-	    public Tv(TvShowAppends tvShowAppends, string libraryId, string folder, string mediaType)
-	    {
-			Id = tvShowAppends.Id;
-			Backdrop = tvShowAppends.BackdropPath;
-			Duration = tvShowAppends.EpisodeRunTime.Length > 0 ? tvShowAppends.EpisodeRunTime[0] : 0;
-			FirstAirDate = tvShowAppends.FirstAirDate;
-			HaveEpisodes = 0;
-			Homepage = tvShowAppends.Homepage?.ToString();
-			ImdbId = tvShowAppends.ExternalIds?.ImdbId;
-			InProduction = tvShowAppends.InProduction;
-			LastEpisodeToAir = tvShowAppends.LastEpisodeToAir?.Id;
-			NextEpisodeToAir = tvShowAppends.NextEpisodeToAir?.Id;
-			NumberOfEpisodes = tvShowAppends.NumberOfEpisodes;
-			NumberOfSeasons = tvShowAppends.NumberOfSeasons;
-			OriginCountry = tvShowAppends.OriginCountry.Count > 0 ? tvShowAppends.OriginCountry[0] : null;
-			OriginalLanguage = tvShowAppends.OriginalLanguage;
-			Overview = tvShowAppends.Overview;
-			Popularity = tvShowAppends.Popularity;
-			Poster = tvShowAppends.PosterPath;
-			SpokenLanguages = tvShowAppends.SpokenLanguages.Count > 0 ? tvShowAppends.SpokenLanguages[0].Name : null;
-			Status = tvShowAppends.Status;
-			Tagline = tvShowAppends.Tagline;
-			Title = tvShowAppends.Name;
-			TitleSort = tvShowAppends.Name;
-			Trailer = tvShowAppends.Videos?.Results.Count > 0 ? tvShowAppends.Videos?.Results[0].Key : null;
-			TvdbId = tvShowAppends.ExternalIds?.TvdbId;
-			Type = tvShowAppends.Type;
-			VoteAverage = tvShowAppends.VoteAverage;
-			VoteCount = tvShowAppends.VoteCount;
-			
-			Folder = folder;
-			LibraryId = libraryId;
-			MediaType = mediaType;
-	    }
-		
-	    public Tv()
-	    { }
-
 	    [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int Id { get; set; }
 		public string Title { get; set; } = string.Empty;
@@ -78,26 +40,64 @@ namespace NoMercy.Database.Models
 		
 		public string LibraryId { get; set; } = string.Empty;
 		
-		public virtual Library Library { get; set; }
-		public virtual ICollection<AlternativeTitle> AlternativeTitles { get; set; }
-		public virtual ICollection<Cast> Cast { get; set; }
-		public virtual ICollection<Certification_Tv> Certification_Tvs { get; set; }
-		public virtual ICollection<Crew> Crew { get; set; }
-		public virtual ICollection<Genre_Tv> Genre_Tvs { get; set; }
-		public virtual ICollection<Keyword_Tv> Keyword_Tvs { get; set; }
-		public virtual ICollection<Media> Media { get; set; }
-		public virtual ICollection<Image> Images { get; set; }
-		public virtual ICollection<Recommendation> Recommendation_From { get; set; }
-		public virtual ICollection<Recommendation> Recommendation_To { get; set; }
-		public virtual ICollection<Season> Seasons { get; set; }
+		public virtual Library Library { get; } = null!;
 		
-		public virtual ICollection<Similar> Similar_From { get; set; }
-		public virtual ICollection<Similar> Similar_To { get; set; }
-		public virtual ICollection<Translation> Translations { get; set; }
-		public virtual ICollection<UserData> UserData { get; set; }
-		public virtual ICollection<Episode> Episodes { get; set; }
+		public virtual ICollection<AlternativeTitle>? AlternativeTitles { get; } = null!;
+		public virtual ICollection<Cast>? Cast { get; } = null!;
+		public virtual ICollection<Certification_Tv>? Certification_Tvs { get; } = null!;
+		public virtual ICollection<Crew>? Crew { get; } = null!;
+		public virtual ICollection<Genre_Tv>? Genre_Tvs { get; } = null!;
+		public virtual ICollection<Keyword_Tv>? Keyword_Tvs { get; } = null!;
+		public virtual ICollection<Media>? Media { get; } = null!;
+		public virtual ICollection<Image>? Images { get; } = null!;
+		public virtual ICollection<Recommendation>? Recommendation_From { get; } = null!;
+		public virtual ICollection<Recommendation>? Recommendation_To { get; } = null!;
+		public virtual ICollection<Season>? Seasons { get; } = null!;
+		
+		public virtual ICollection<Similar>? Similar_From { get; } = null!;
+		public virtual ICollection<Similar>? Similar_To { get; } = null!;
+		public virtual ICollection<Translation>? Translations { get; set; } = null!;
+		public virtual ICollection<UserData>? UserData { get; set; } = null!;
+		public virtual ICollection<Episode>? Episodes { get; set; } = null!;
 		
 		
+		public Tv()
+		{ }
+		
+		public Tv(TvShowAppends tvShowAppends, string libraryId, string folder, string mediaType)
+		{
+			Id = tvShowAppends.Id;
+			Backdrop = tvShowAppends.BackdropPath;
+			Duration = tvShowAppends.EpisodeRunTime.Length > 0 ? tvShowAppends.EpisodeRunTime[0] : 0;
+			FirstAirDate = tvShowAppends.FirstAirDate;
+			HaveEpisodes = 0;
+			Homepage = tvShowAppends.Homepage?.ToString();
+			ImdbId = tvShowAppends.ExternalIds?.ImdbId;
+			InProduction = tvShowAppends.InProduction;
+			LastEpisodeToAir = tvShowAppends.LastEpisodeToAir?.Id;
+			NextEpisodeToAir = tvShowAppends.NextEpisodeToAir?.Id;
+			NumberOfEpisodes = tvShowAppends.NumberOfEpisodes;
+			NumberOfSeasons = tvShowAppends.NumberOfSeasons;
+			OriginCountry = tvShowAppends.OriginCountry.Length > 0 ? tvShowAppends.OriginCountry[0] : null;
+			OriginalLanguage = tvShowAppends.OriginalLanguage;
+			Overview = tvShowAppends.Overview;
+			Popularity = tvShowAppends.Popularity;
+			Poster = tvShowAppends.PosterPath;
+			SpokenLanguages = tvShowAppends.SpokenLanguages.Length > 0 ? tvShowAppends.SpokenLanguages[0].Name : null;
+			Status = tvShowAppends.Status;
+			Tagline = tvShowAppends.Tagline;
+			Title = tvShowAppends.Name;
+			TitleSort = tvShowAppends.Name;
+			Trailer = tvShowAppends.Videos?.Results.Length > 0 ? tvShowAppends.Videos?.Results[0].Key : null;
+			TvdbId = tvShowAppends.ExternalIds?.TvdbId;
+			Type = tvShowAppends.Type;
+			VoteAverage = tvShowAppends.VoteAverage;
+			VoteCount = tvShowAppends.VoteCount;
+			
+			Folder = folder;
+			LibraryId = libraryId;
+			MediaType = mediaType;
+		}
 		
         
     }

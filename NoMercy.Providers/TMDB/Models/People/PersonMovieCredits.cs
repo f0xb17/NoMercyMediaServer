@@ -5,7 +5,7 @@ namespace NoMercy.Providers.TMDB.Models.People;
 
 public class PersonMovieCredits
 {
-    [JsonProperty("cast")] public List<Cast> Cast { get; set; } = new();
+    [JsonProperty("cast")] public Cast[] Cast { get; set; } = [];
 
-    [JsonProperty("crew")] public List<Cast> Crew { get; set; } = new();
+    [JsonProperty("crew")] public Cast[] Crew { get; set; } = [];
 }

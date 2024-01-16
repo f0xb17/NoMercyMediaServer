@@ -6,41 +6,60 @@ namespace NoMercy.Providers.TMDB.Models.TV;
 
 public class TvShowDetails : TvShow
 {
-    [JsonProperty("adult")] public bool Adult { get; set; }
+    [JsonProperty("adult")] 
+    public bool Adult { get; set; }
 
-    [JsonProperty("created_by")] public List<CreatedBy> CreatedBy { get; set; } = new();
+    [JsonProperty("created_by")] 
+    public CreatedBy[] CreatedBy { get; set; } = [];
 
-    [JsonProperty("episode_run_time")] public int[] EpisodeRunTime { get; set; } = [];
+    [JsonProperty("episode_run_time")] 
+    public int[] EpisodeRunTime { get; set; } = [];
 
-    [JsonProperty("genres")] public List<Genre> Genres { get; set; } = new();
+    [JsonProperty("genres")] 
+    public Genre[] Genres { get; set; } = [];
 
-    [JsonProperty("homepage")] public Uri? Homepage { get; set; }
+    [JsonProperty("homepage")] 
+    public Uri? Homepage { get; set; }
 
-    [JsonProperty("in_production")] public bool InProduction { get; set; }
+    [JsonProperty("in_production")] 
+    public bool InProduction { get; set; }
 
-    [JsonProperty("languages")] public string[] Languages { get; set; } = [];
+    [JsonProperty("languages")] 
+    public string[] Languages { get; set; } = [];
 
-    [JsonProperty("last_episode_to_air")] public Episode.Episode? LastEpisodeToAir { get; set; }
+    [JsonProperty("last_episode_to_air")] 
+    public Episode.Episode? LastEpisodeToAir { get; set; }
 
-    [JsonProperty("next_episode_to_air")] public Episode.Episode? NextEpisodeToAir { get; set; }
+    [JsonProperty("next_episode_to_air")] 
+    public Episode.Episode? NextEpisodeToAir { get; set; }
 
-    [JsonProperty("networks")] public List<Network> Networks { get; set; } = new();
+    [JsonProperty("networks")] 
+    public Network[] Networks { get; set; } = [];
 
-    [JsonProperty("number_of_episodes")] public int NumberOfEpisodes { get; set; }
+    [JsonProperty("number_of_episodes")] 
+    public int NumberOfEpisodes { get; set; }
 
-    [JsonProperty("number_of_seasons")] public int NumberOfSeasons { get; set; }
+    [JsonProperty("number_of_seasons")] 
+    public int NumberOfSeasons { get; set; }
 
-    [JsonProperty("production_companies")] public List<Network> ProductionCompanies { get; set; } = new();
+    [JsonProperty("production_companies")] 
+    public Network[] ProductionCompanies { get; set; } = [];
 
-    [JsonProperty("production_countries")] public List<ProductionCountry> ProductionCountries { get; set; } = new();
+    [JsonProperty("production_countries")] 
+    public ProductionCountry[] ProductionCountries { get; set; } = [];
 
-    [JsonProperty("seasons")] public List<Season.Season> Seasons { get; set; } = new();
+    [JsonProperty("seasons")] 
+    public List<Season.Season> Seasons { get; set; } = new();
 
-    [JsonProperty("spoken_languages")] public List<SpokenLanguage> SpokenLanguages { get; set; } = new();
+    [JsonProperty("spoken_languages")] 
+    public SpokenLanguage[] SpokenLanguages { get; set; } = [];
 
-    [JsonProperty("status")] public string? Status { get; set; }
+    [JsonProperty("status")] 
+    public string? Status { get; set; }
 
-    [JsonProperty("tagline")] public string? Tagline { get; set; }
+    [JsonProperty("tagline")] 
+    public string? Tagline { get; set; }
 
-    [JsonProperty("type")] public string? Type { get; set; }
+    [JsonProperty("type")] 
+    public string? Type { get; set; }
 }

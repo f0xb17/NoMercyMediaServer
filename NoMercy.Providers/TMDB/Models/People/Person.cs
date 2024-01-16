@@ -21,7 +21,7 @@ public class Person
 
     [JsonProperty("name")] public string Name { get; set; } = string.Empty;
 
-    [JsonProperty("also_known_as")] public List<string>? AlsoKnownAs { get; set; }
+    [JsonProperty("also_known_as")] public string[]? AlsoKnownAs { get; set; } = [];
     
     [JsonProperty("gender")]
     public Gender Gender { get; set; } = Gender.Unknown;

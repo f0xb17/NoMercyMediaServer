@@ -19,10 +19,12 @@ public class MovieClient : BaseClient
 
     public Task<MovieAppends> WithAppends(string[] appendices)
     {
-        return Get<MovieAppends>("movie/" + Id, new Dictionary<string, string>
+        var @params = new Dictionary<string, string>
         {
             ["append_to_response"] = string.Join(",", appendices)
-        });
+        };
+        
+        return Get<MovieAppends>("movie/" + Id, @params);
     }
 
     public Task<MovieAppends> WithAllAppends()

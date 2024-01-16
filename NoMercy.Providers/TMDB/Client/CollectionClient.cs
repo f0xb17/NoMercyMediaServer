@@ -15,10 +15,12 @@ public class CollectionClient : BaseClient
 
     public Task<CollectionAppends> WithAppends(string[] appendices)
     {
-        return Get<CollectionAppends>("collection/" + Id, new Dictionary<string, string>
+        var @prarams = new Dictionary<string, string>
         {
             ["append_to_response"] = string.Join(",", appendices)
-        });
+        };
+        
+        return Get<CollectionAppends>("collection/" + Id, @prarams);
     }
 
     public Task<CollectionAppends> WithAllAppends()

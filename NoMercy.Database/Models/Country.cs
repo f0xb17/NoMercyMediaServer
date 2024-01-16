@@ -11,8 +11,19 @@ namespace NoMercy.Database.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         [Key]
-        public string Iso31661 { get; set; }
+        public string Iso31661 { get; set; } = string.Empty;
         public string? EnglishName { get; set; }
         public string? NativeName { get; set; }
+
+        public Country()
+        {
+            
+        }
+        public Country(Providers.TMDB.Models.Configuration.Country country)
+        {
+            Iso31661 = country.Iso31661;
+            EnglishName = country.EnglishName;
+            NativeName = country.NativeName;
+        }
     }
 }

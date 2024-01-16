@@ -6,7 +6,7 @@ public class SharedKeywords
 {
     [JsonProperty("id")] public int Id { get; set; }
 
-    [JsonProperty("results")] public virtual List<Keyword>? Results { get; set; }
+    [JsonProperty("results")] public virtual Keyword[] Results { get; set; } = [];
 }
 
 public class Keyword

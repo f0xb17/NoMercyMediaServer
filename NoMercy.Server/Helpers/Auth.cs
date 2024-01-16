@@ -29,7 +29,7 @@ public static class Auth
 
     private static IWebHost? TempServer { get; set; }
 
-    public static void Init()
+    public static Task Init()
     {
         if(!File.Exists(AppFiles.TokenFile))
         { 
@@ -58,6 +58,7 @@ public static class Auth
         if (AccessToken == null || RefreshToken == null || ExpiresIn == null)
             throw new Exception("Failed to get tokens");
         
+        return Task.CompletedTask;
     }
     
     private static void GetTokenByBrowser()
@@ -102,7 +103,7 @@ public static class Auth
         tmp.Write(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(data, Formatting.Indented)));
         tmp.Close();
 
-        Console.WriteLine(@"Tokens refreshed");
+        Logger.Auth(@"Tokens refreshed");
         
         AccessToken = data.access_token;
         RefreshToken = data.refresh_token;
@@ -140,7 +141,7 @@ public static class Auth
 
     private static void GetAuthKeys()
     {
-        Console.WriteLine(@"Getting auth keys");
+        Logger.Auth(@"Getting auth keys");
         HttpClient client = new HttpClient();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         string response = client.GetStringAsync(AuthBaseUrl).Result;
@@ -182,11 +183,11 @@ public static class Auth
         int expiresInDays = _jwtSecurityToken.ValidTo.AddDays(-5).Subtract(DateTime.UtcNow).Days;
         if(expiresInDays >= 0)
         {
-            Console.WriteLine("Token is still valid for {0} day{1}", expiresInDays, expiresInDays == 1 ? "" : "s");
+            Logger.Auth($"Token is still valid for {expiresInDays} day{(expiresInDays == 1 ? "" : "s")}");
             return;
         };
         
-        Console.WriteLine(@"Refreshing token");
+        Logger.Auth(@"Refreshing token");
         
         HttpClient client = new HttpClient();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -207,7 +208,7 @@ public static class Auth
     }
     public static void GetTokenByAuthorizationCode(string code)
     {
-        Console.WriteLine(@"Getting token by authorization code");
+        Logger.Auth(@"Getting token by authorization code");
         if (TokenClientId == null || TokenClientSecret == null)
             throw new Exception("Auth keys not initialized");
         

@@ -1,8 +1,26 @@
+using Newtonsoft.Json;
+
 namespace NoMercy.Helpers;
 
 public partial class ApiInfo
 {
     public static readonly string ApplicationVersion = Environment.Version.ToString();
+    public static readonly string ApplicationName = "NoMercy MediaServer";
+    
+    public static string MakeMkvKey { get; set; } = string.Empty;
+    public static string TmdbKey { get; set; } = string.Empty;
+    public static string OmdbKey { get; set; } = string.Empty;
+    public static string FanArtKey { get; set; } = string.Empty;
+    public static string RottenTomatoes { get; set; } = string.Empty;
+    public static string AcousticId { get; set; } = string.Empty;
+    public static string TadbKey { get; set; } = string.Empty;
+    public static string TmdbToken { get; set; } = string.Empty;
+    public static string TvdbKey { get; set; } = string.Empty;
+    public static string MusixmatchKey { get; set; } = string.Empty;
+    public static string JwplayerKey { get; set; } = string.Empty;
+    public static Downloads BinaryList { get; set; } = new ();
+    public static string[] Colors { get; set; } = [];
+    public static string Quote { get; set; } = string.Empty;
 
     public static async Task RequestInfo()
     {
@@ -12,10 +30,34 @@ public partial class ApiInfo
         var content = await response.Content.ReadAsStringAsync();
         
         if (content == null) throw new Exception("Failed to get server info");
-        
-        var data = JsonConvert.DeserializeObject<ApiInfo>(content);
-        
-        Startup.ApiInfo = data;
+
+        try
+        {
+            var data = JsonConvert.DeserializeObject<ApiInfo>(content);
+            if (data == null) throw new Exception("Failed to deserialize server info");
+            
+            Quote = data.Data.Quote;
+            Colors = data.Data.Colors;
+            
+            BinaryList = data.Data.Downloads;
+            
+            MakeMkvKey = data.Data.Keys.MakeMkvKey;
+            TmdbKey = data.Data.Keys.TmdbKey;
+            OmdbKey = data.Data.Keys.OmdbKey;
+            FanArtKey = data.Data.Keys.FanArtKey;
+            RottenTomatoes = data.Data.Keys.RottenTomatoes;
+            AcousticId = data.Data.Keys.AcousticId;
+            TadbKey = data.Data.Keys.TadbKey;
+            TmdbToken = data.Data.Keys.TmdbToken;
+            TvdbKey = data.Data.Keys.TvdbKey;
+            MusixmatchKey = data.Data.Keys.MusixmatchKey;
+            JwplayerKey = data.Data.Keys.JwplayerKey;
+        }
+        catch (Exception e)
+        {
+            Logger.Setup(e, LogLevel.Error);
+            throw;
+        }
     }
 }
 
@@ -147,5 +189,20 @@ public class Keys
 
     [JsonProperty("acoustic_id")]
     public string AcousticId { get; set; } = string.Empty;
+    
+    [JsonProperty("tadb_key")]
+    public string TadbKey { get; set; } = string.Empty;
+    
+    [JsonProperty("tmdb_token")]
+    public string TmdbToken { get; set; } = string.Empty;
+    
+    [JsonProperty("tvdb_key")]
+    public string TvdbKey { get; set; } = string.Empty;
+    
+    [JsonProperty("musixmatch_key")]
+    public string MusixmatchKey { get; set; } = string.Empty;
+    
+    [JsonProperty("jwplayer_key")]
+    public string JwplayerKey { get; set; } = string.Empty;
 }
 #endregion

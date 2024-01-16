@@ -4,14 +4,14 @@ namespace NoMercy.Providers.TMDB.Models.Movies;
 
 public class MovieChanges
 {
-    [JsonProperty("changes")] public List<Changes> ChangesChanges { get; set; } = new();
+    [JsonProperty("changes")] public Changes[] ChangesChanges { get; set; } = [];
 }
 
 public class Changes
 {
     [JsonProperty("key")] public string Key { get; set; } = string.Empty;
 
-    [JsonProperty("items")] public List<Change> Items { get; set; } = new();
+    [JsonProperty("items")] public Change[] Items { get; set; } = [];
 }
 
 public class Change

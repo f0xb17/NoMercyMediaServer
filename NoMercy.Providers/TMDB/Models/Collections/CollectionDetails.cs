@@ -13,5 +13,5 @@ public class CollectionDetails(
 {
     [JsonProperty("overview")] public string Overview { get; set; } = overview;
 
-    [JsonProperty("parts")] public List<Movies.Movie> Parts { get; set; } = new();
+    [JsonProperty("parts")] public Movies.Movie[] Parts { get; set; } = [];
 }

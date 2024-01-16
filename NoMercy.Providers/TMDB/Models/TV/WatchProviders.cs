@@ -88,15 +88,15 @@ public class Type
 {
     [JsonProperty("link")] public Uri Link { get; set; }
 
-    [JsonProperty("buy")] public List<Data> Buy { get; set; }
+    [JsonProperty("buy")] public Data[] Buy { get; set; } = [];
 
-    [JsonProperty("flatrate")] public List<Data> Flatrate { get; set; }
+    [JsonProperty("flatrate")] public Data[] Flatrate { get; set; } = [];
 
-    [JsonProperty("ads")] public List<Data> Ads { get; set; }
+    [JsonProperty("ads")] public Data[] Ads { get; set; } = [];
 
-    [JsonProperty("rent")] public List<Data> Rent { get; set; }
+    [JsonProperty("rent")] public Data[] Rent { get; set; } = [];
 
-    [JsonProperty("free")] public List<Data> Free { get; set; }
+    [JsonProperty("free")] public Data[] Free { get; set; } = [];
 }
 
 public class Data

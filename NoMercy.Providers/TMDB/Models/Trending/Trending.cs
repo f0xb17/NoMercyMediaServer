@@ -6,7 +6,7 @@ public class Trending
 {
     [JsonProperty("page")] public int Page { get; set; }
 
-    [JsonProperty("results")] public List<Result> Results { get; set; } = new();
+    [JsonProperty("results")] public Result[] Results { get; set; } = [];
 
     [JsonProperty("total_pages")] public int TotalPages { get; set; }
 

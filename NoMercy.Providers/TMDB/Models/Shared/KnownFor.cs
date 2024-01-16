@@ -14,7 +14,7 @@ public class KnownFor
 
     [JsonProperty("original_title")] public string OriginalTitle { get; set; }
 
-    [JsonProperty("genre_ids")] public List<int> GenreIds { get; set; } = new();
+    [JsonProperty("genre_ids")] public int[] GenreIds { get; set; } = [];
 
     [JsonProperty("id")] public int Id { get; set; }
 

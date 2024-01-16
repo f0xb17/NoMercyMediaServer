@@ -6,7 +6,7 @@ public class SharedTranslations
 {
     [JsonProperty("id")] public int Id { get; set; }
 
-    [JsonProperty("translations")] public List<SharedTranslation> Translations { get; set; }
+    [JsonProperty("translations")] public SharedTranslation[] Translations { get; set; } = [];
 }
 
 public class SharedTranslation

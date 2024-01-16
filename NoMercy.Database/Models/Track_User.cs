@@ -9,7 +9,7 @@ namespace NoMercy.Database.Models
         public required string TrackId { get; set; }
         public required string UserId { get; set; }
 
-        public virtual Track Track { get; set; }
+        public virtual Track Track { get; } = null!;
         public virtual User User { get; set; }        
     }
 }

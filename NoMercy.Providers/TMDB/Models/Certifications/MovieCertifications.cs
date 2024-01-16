@@ -5,13 +5,13 @@ namespace NoMercy.Providers.TMDB.Models.Certifications;
 public class MovieCertifications
 {
     [JsonProperty("certifications")]
-    public Dictionary<string, List<CertificationMovie>> Certifications { get; set; }
+    public Dictionary<string, MovieCertification[]> Certifications { get; set; } = new();
 }
 
-public class CertificationMovie
+public class MovieCertification
 {
     [JsonProperty("certification")]
-    public string CertificationCertification { get; set; }
+    public string Rating { get; set; }
 
     [JsonProperty("meaning")]
     public string Meaning { get; set; }

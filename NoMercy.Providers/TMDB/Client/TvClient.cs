@@ -29,10 +29,12 @@ public class TvClient : BaseClient
 
     public Task<TvShowAppends> WithAppends(string[] appendices)
     {
-        return Get<TvShowAppends>("tv/" + Id, new Dictionary<string, string>
+        var @params = new Dictionary<string, string>
         {
             ["append_to_response"] = string.Join(",", appendices)
-        });
+        };
+        
+        return Get<TvShowAppends>("tv/" + Id, @params);
     }
 
     public Task<TvShowAppends> WithAllAppends()
@@ -66,11 +68,13 @@ public class TvClient : BaseClient
 
     public Task<TvChanges> Changes(string startDate, string endDate)
     {
-        return Get<TvChanges>("tv/" + Id + "/changes", new Dictionary<string, string>
+        var @params = new Dictionary<string, string>
         {
             ["start_date"] = startDate,
             ["end_date"] = endDate
-        });
+        };
+        
+        return Get<TvChanges>("tv/" + Id + "/changes", @params);
     }
 
     public Task<TvContentRatings> ContentRatings()

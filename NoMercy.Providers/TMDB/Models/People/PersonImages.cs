@@ -5,5 +5,5 @@ namespace NoMercy.Providers.TMDB.Models.People;
 
 public class PersonImages
 {
-    [JsonProperty("profiles")] public List<Profile> Profiles { get; set; } = new();
+    [JsonProperty("profiles")] public Profile[] Profiles { get; set; } = [];
 }

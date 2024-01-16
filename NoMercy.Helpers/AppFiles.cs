@@ -13,8 +13,8 @@ public static class AppFiles
     public static readonly string ConfigPath = Path.Combine(AppPath, "config");
     public static readonly string TokenFile = Path.Combine(ConfigPath, "token.json");
     public static readonly string ConfigFile = Path.Combine(ConfigPath, "config.json");
-    public static readonly string FolderRootsSeedFile = Path.Combine(ConfigPath, "folderRootsSeed.json");
-    public static readonly string LibrariesSeedFile = Path.Combine(ConfigPath, "librariesSeed.json");
+    public static readonly string FolderRootsSeedFile = Path.Combine(ConfigPath, "folderRootsSeed.jsonc");
+    public static readonly string LibrariesSeedFile = Path.Combine(ConfigPath, "librariesSeed.jsonc");
     
     public static readonly string DataPath = Path.Combine(AppPath, "data");
     
@@ -88,7 +88,7 @@ public static class AppFiles
         ];
     }
 
-    public static void CreateAppFolders()
+    public static Task CreateAppFolders()
     {
         if (!Directory.Exists(AppPath)) 
             Directory.CreateDirectory(AppPath);
@@ -98,6 +98,7 @@ public static class AppFiles
             Console.WriteLine($@"Creating directory: {path}");
             Directory.CreateDirectory(path);
         }
+        
+        return Task.CompletedTask;
     }
-    
 }

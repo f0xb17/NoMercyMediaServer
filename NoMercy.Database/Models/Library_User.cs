@@ -8,7 +8,7 @@ namespace NoMercy.Database.Models
         public required string LibraryId { get; set; }
         public required string UserId { get; set; }
 
-        public virtual Library Library { get; set; }
-        public virtual User User { get; set; }        
+        public virtual Library Library { get; } = null!;
+        public virtual User User { get; }        
     }
 }

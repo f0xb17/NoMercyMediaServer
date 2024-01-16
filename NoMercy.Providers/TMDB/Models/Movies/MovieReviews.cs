@@ -8,7 +8,7 @@ public class MovieReviews
 
     [JsonProperty("page")] public int Page { get; set; }
 
-    [JsonProperty("results")] public List<ReviewsResult> Results { get; set; } = new();
+    [JsonProperty("results")] public ReviewsResult[] Results { get; set; } = [];
 
     [JsonProperty("total_pages")] public int TotalPages { get; set; }
 

@@ -15,11 +15,11 @@ public static class Binaries
         Client.DefaultRequestHeaders.Add("User-Agent", "NoMercy/Server");
         
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            Downloads = Startup.ApiInfo?.Data.Downloads.Linux ?? [];
+            Downloads = ApiInfo.BinaryList.Linux ?? [];
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            Downloads = Startup.ApiInfo?.Data.Downloads.Mac ?? [];
+            Downloads = ApiInfo.BinaryList.Mac ?? [];
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            Downloads = Startup.ApiInfo?.Data.Downloads.Windows ?? [];
+            Downloads = ApiInfo.BinaryList.Windows ?? [];
         else
             Downloads = [];
     }

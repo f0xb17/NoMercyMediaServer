@@ -24,7 +24,7 @@ namespace NoMercy.Database.Models
         
         public required string LibraryId { get; set; }
         
-        public virtual Library Library { get; set; }
+        public virtual Library Library { get; } = null!;
 
     }
 }

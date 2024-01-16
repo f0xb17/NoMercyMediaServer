@@ -5,5 +5,5 @@ namespace NoMercy.Providers.TMDB.Models.Season;
 
 public class SeasonDetails : Season
 {
-    [JsonProperty("episodes")] public List<EpisodeDetails> Episodes { get; set; } = new();
+    [JsonProperty("episodes")] public EpisodeDetails[] Episodes { get; set; } = [];
 }

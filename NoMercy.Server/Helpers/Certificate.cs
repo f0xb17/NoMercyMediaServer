@@ -72,12 +72,12 @@ public static class Certificate
     {
         if (ValidateSslCertificate())
         {
-            Console.WriteLine(@"SSL Certificate is valid");
+            Logger.Certificate(@"SSL Certificate is valid");
             await Task.CompletedTask;
             return;
         };
 
-        Console.WriteLine(@"Renewing SSL Certificate...");
+        Logger.Certificate(@"Renewing SSL Certificate...");
 
         var client = new HttpClient();
         client.Timeout = new TimeSpan(0, 10, 0);
@@ -102,7 +102,7 @@ public static class Certificate
         await File.WriteAllTextAsync(AppFiles.CaFile, $"{data.certificate_authority}");
         await File.WriteAllTextAsync(AppFiles.CertFile, @$"{data.certificate}\n{data.issuer_certificate}");
         
-        Console.WriteLine(@"SSL Certificate renewed");
+        Logger.Certificate(@"SSL Certificate renewed");
 
         await Task.CompletedTask;
     }

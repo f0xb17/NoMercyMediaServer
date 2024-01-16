@@ -8,7 +8,7 @@ namespace NoMercy.Database.Models
         public required string ArtistId { get; set; }
         public required string UserId { get; set; }
 
-        public virtual Artist Artist { get; set; }
-        public virtual User User { get; set; }        
+        public virtual Artist Artist { get; } = null!;
+        public virtual User User { get; } = null!;        
     }
 }

@@ -1,10 +1,10 @@
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using H.NotifyIcon.Core;
 
 namespace NoMercy.Server;
 
-[SupportedOSPlatform("windows10.0.18362")]
 public class TrayIcon
 {
     private static readonly string IconStream = Path.Combine(Directory.GetCurrentDirectory(), "Assets/icon.ico");
@@ -15,8 +15,9 @@ public class TrayIcon
         Icon = Icon.Handle,
         ToolTip = "NoMercy MediaServer C#",
     };
-
-    public TrayIcon()
+    
+    [SupportedOSPlatform("windows10.0.18362")]
+    private TrayIcon()
     {
         _trayIcon.ContextMenu = new PopupMenu
         {
@@ -60,6 +61,17 @@ public class TrayIcon
     {
         _trayIcon.Dispose();
         Environment.Exit(0);
+    }
+
+    public static Task Make()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+            OperatingSystem.IsWindowsVersionAtLeast(10, 0, 18362))
+        {
+            TrayIcon _ = new();
+        }
+        
+        return Task.CompletedTask;
     }
 
 }

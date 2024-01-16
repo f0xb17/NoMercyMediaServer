@@ -5,5 +5,5 @@ namespace NoMercy.Providers.TMDB.Models.Movies;
 
 public class MovieKeywords : SharedKeywords
 {
-    [JsonProperty("keywords")] public override List<Keyword>? Results { get; set; } = new();
+    [JsonProperty("keywords")] public override Keyword[] Results { get; set; } = [];
 }

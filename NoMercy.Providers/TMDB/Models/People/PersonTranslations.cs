@@ -4,7 +4,7 @@ namespace NoMercy.Providers.TMDB.Models.People;
 
 public class PersonTranslations
 {
-    [JsonProperty("translations")] public List<Translation> Translations { get; set; } = new();
+    [JsonProperty("translations")] public Translation[] Translations { get; set; } = [];
 }
 
 public class Translation
