@@ -6,20 +6,18 @@ namespace NoMercy.Server.Jobs;
 
 public static class QueueRunner
 {
-    private static readonly Dictionary<string, (int count, List<Worker> workerInstances)> Workers = new()
+    private static readonly Dictionary<string, (int count, List<Worker> workerInstances, CancellationTokenSource _cancellationTokenSource)> Workers = new()
     {
-        ["cron"] = (2, []),
-        ["queue"] = (2, []),
-        ["data"] = (1, []),
-        ["encoder"] = (1, []),
-        // ["request"] = (15, [])
+        ["cron"] = (2, [], new CancellationTokenSource()),
+        ["queue"] = (2, [], new CancellationTokenSource()),
+        ["data"] = (15, [], new CancellationTokenSource()),
+        ["encoder"] = (1, [], new CancellationTokenSource()),
+        // ["request"] = (15, [], new CancellationTokenSource()),
     };
 
     private static bool _isInitialized;
     private static readonly JobQueue JobQueue = new(new MediaContext());
     private static bool _isUpdating;
-    
-    private static CancellationTokenSource _cancellationTokenSource = new();
     
     public static Task Initialize()
     {
@@ -163,7 +161,7 @@ public static class QueueRunner
                 
                 await Task.Delay(100);
             }
-        }, cancellationToken: _cancellationTokenSource.Token);
+        }, cancellationToken: Workers[name]._cancellationTokenSource.Token);
 
         return Task.CompletedTask;
     }
@@ -174,18 +172,17 @@ public static class QueueRunner
         {        
             Logger.Queue($"Setting queue {name} to {max} workers", LogLevel.Info);
             _isUpdating = true;
-            _cancellationTokenSource.Cancel();
+            Workers[name]._cancellationTokenSource.Cancel();
             
             var valueTuple = Workers[name];
             valueTuple.count = max;
+            valueTuple._cancellationTokenSource = new CancellationTokenSource();
             Workers[name] = valueTuple;
-            
-            _cancellationTokenSource = new CancellationTokenSource();
             
             Task.Run(() => {
                 _isUpdating = false;
                 UpdateRunningWorkerCounts(name);
-            }, _cancellationTokenSource.Token);
+            }, Workers[name]._cancellationTokenSource.Token);
         
             return true;
         }
