@@ -1,6 +1,4 @@
-using Newtonsoft.Json;
-
-namespace NoMercy.Server;
+namespace NoMercy.Helpers;
 
 public partial class ApiInfo
 {
@@ -13,10 +11,10 @@ public partial class ApiInfo
         var response = await client.GetAsync("https://api-dev.nomercy.tv/v1/info");
         var content = await response.Content.ReadAsStringAsync();
         
+        if (content == null) throw new Exception("Failed to get server info");
+        
         var data = JsonConvert.DeserializeObject<ApiInfo>(content);
         
-        if (data == null) throw new Exception("Failed to get server info");
-
         Startup.ApiInfo = data;
     }
 }

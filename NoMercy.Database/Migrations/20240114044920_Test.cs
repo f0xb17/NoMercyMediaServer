@@ -12,6 +12,125 @@ namespace NoMercy.Database.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "ActivityLogs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Type = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    DeviceId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    Time = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActivityLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Album_Artist",
+                columns: table => new
+                {
+                    AlbumId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    ArtistId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Album_Artist", x => new { x.AlbumId, x.ArtistId });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Album_MusicGenre",
+                columns: table => new
+                {
+                    AlbumId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    MusicGenreId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Album_MusicGenre", x => new { x.AlbumId, x.MusicGenreId });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Album_Track",
+                columns: table => new
+                {
+                    AlbumId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    TrackId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Album_Track", x => new { x.AlbumId, x.TrackId });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Albums",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    Description = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Folder = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    Cover = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Country = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    Year = table.Column<int>(type: "INTEGER", nullable: false),
+                    Tracks = table.Column<int>(type: "INTEGER", nullable: false),
+                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    ColorPalette = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Albums", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Artist_MusicGenre",
+                columns: table => new
+                {
+                    ArtistId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    MusicGenreId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Artist_MusicGenre", x => new { x.ArtistId, x.MusicGenreId });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Artist_User",
+                columns: table => new
+                {
+                    ArtistId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Artist_User", x => new { x.ArtistId, x.UserId });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Artists",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    Description = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Folder = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    Cover = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    ColorPalette = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Artists", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Certifications",
                 columns: table => new
                 {
@@ -25,6 +144,26 @@ namespace NoMercy.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Certifications", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Collections",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Title = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    TitleSort = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    Backdrop = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Poster = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Overview = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Parts = table.Column<int>(type: "INTEGER", nullable: false),
+                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    ColorPalette = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Collections", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -97,10 +236,23 @@ namespace NoMercy.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "File_Movie",
+                columns: table => new
+                {
+                    FileId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    MovieId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_File_Movie", x => new { x.FileId, x.MovieId });
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Folders",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                    Id = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    Path = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -228,6 +380,60 @@ namespace NoMercy.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Movies",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Title = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    TitleSort = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    Duration = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Show = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Folder = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Adult = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Backdrop = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Budget = table.Column<int>(type: "INTEGER", nullable: true),
+                    Homepage = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    ImdbId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    OriginalTitle = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    OriginalLanguage = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Overview = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Popularity = table.Column<double>(type: "REAL", nullable: true),
+                    Poster = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    ReleaseDate = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Revenue = table.Column<int>(type: "INTEGER", nullable: true),
+                    Runtime = table.Column<int>(type: "INTEGER", nullable: true),
+                    Status = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Tagline = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Trailer = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    MoviedbId = table.Column<int>(type: "INTEGER", nullable: true),
+                    Video = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    VoteAverage = table.Column<double>(type: "REAL", nullable: true),
+                    VoteCount = table.Column<int>(type: "INTEGER", nullable: true),
+                    BlurHash = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    ColorPalette = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Movies", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MusicGenre_Track",
+                columns: table => new
+                {
+                    GenreId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    TrackId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MusicGenre_Track", x => new { x.GenreId, x.TrackId });
+                });
+
+            migrationBuilder.CreateTable(
                 name: "MusicGenres",
                 columns: table => new
                 {
@@ -258,6 +464,19 @@ namespace NoMercy.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Playlists", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Priority_Provider",
+                columns: table => new
+                {
+                    Priority = table.Column<int>(type: "INTEGER", nullable: false),
+                    Country = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    ProviderId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Priority_Provider", x => new { x.Priority, x.Country, x.ProviderId });
                 });
 
             migrationBuilder.CreateTable(
@@ -316,214 +535,6 @@ namespace NoMercy.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Users",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Users", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Albums",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    Description = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    Folder = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    Cover = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    Country = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    Year = table.Column<int>(type: "INTEGER", nullable: false),
-                    Tracks = table.Column<int>(type: "INTEGER", nullable: false),
-                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Albums", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Albums_Libraries_LibraryId",
-                        column: x => x.LibraryId,
-                        principalTable: "Libraries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Artists",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    Description = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    Folder = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    Cover = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Artists", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Artists_Libraries_LibraryId",
-                        column: x => x.LibraryId,
-                        principalTable: "Libraries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Collections",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Title = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    TitleSort = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    Backdrop = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    Poster = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    Overview = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    Parts = table.Column<int>(type: "INTEGER", nullable: false),
-                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    ColorPalette = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Collections", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Collections_Libraries_LibraryId",
-                        column: x => x.LibraryId,
-                        principalTable: "Libraries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "EncoderProfile_Library",
-                columns: table => new
-                {
-                    EncoderProfileId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_EncoderProfile_Library", x => new { x.EncoderProfileId, x.LibraryId });
-                    table.ForeignKey(
-                        name: "FK_EncoderProfile_Library_EncoderProfiles_EncoderProfileId",
-                        column: x => x.EncoderProfileId,
-                        principalTable: "EncoderProfiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_EncoderProfile_Library_Libraries_LibraryId",
-                        column: x => x.LibraryId,
-                        principalTable: "Libraries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Folder_Library",
-                columns: table => new
-                {
-                    FolderId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Folder_Library", x => new { x.FolderId, x.LibraryId });
-                    table.ForeignKey(
-                        name: "FK_Folder_Library_Folders_FolderId",
-                        column: x => x.FolderId,
-                        principalTable: "Folders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Folder_Library_Libraries_LibraryId",
-                        column: x => x.LibraryId,
-                        principalTable: "Libraries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Language_Library",
-                columns: table => new
-                {
-                    LanguageId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    LanguageId1 = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Language_Library", x => new { x.LanguageId, x.LibraryId });
-                    table.ForeignKey(
-                        name: "FK_Language_Library_Languages_LanguageId1",
-                        column: x => x.LanguageId1,
-                        principalTable: "Languages",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Language_Library_Libraries_LibraryId",
-                        column: x => x.LibraryId,
-                        principalTable: "Libraries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Movies",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Title = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    TitleSort = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    Duration = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    Show = table.Column<bool>(type: "INTEGER", nullable: false),
-                    Folder = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    Adult = table.Column<bool>(type: "INTEGER", nullable: false),
-                    Backdrop = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    Budget = table.Column<int>(type: "INTEGER", nullable: true),
-                    Homepage = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    ImdbId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    OriginalTitle = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    OriginalLanguage = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    Overview = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    Popularity = table.Column<double>(type: "REAL", nullable: true),
-                    Poster = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    ReleaseDate = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    Revenue = table.Column<int>(type: "INTEGER", nullable: true),
-                    Runtime = table.Column<int>(type: "INTEGER", nullable: true),
-                    Status = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    Tagline = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    Trailer = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    MoviedbId = table.Column<int>(type: "INTEGER", nullable: true),
-                    Video = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    VoteAverage = table.Column<double>(type: "REAL", nullable: true),
-                    VoteCount = table.Column<int>(type: "INTEGER", nullable: true),
-                    BlurHash = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Movies", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Movies_Libraries_LibraryId",
-                        column: x => x.LibraryId,
-                        principalTable: "Libraries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Tvs",
                 columns: table => new
                 {
@@ -558,13 +569,37 @@ namespace NoMercy.Database.Migrations
                     VoteCount = table.Column<int>(type: "INTEGER", nullable: true),
                     LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP")
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    ColorPalette = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Tvs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Album_Library",
+                columns: table => new
+                {
+                    AlbumId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Album_Library", x => new { x.AlbumId, x.LibraryId });
                     table.ForeignKey(
-                        name: "FK_Tvs_Libraries_LibraryId",
+                        name: "FK_Album_Library_Libraries_LibraryId",
                         column: x => x.LibraryId,
                         principalTable: "Libraries",
                         principalColumn: "Id",
@@ -572,20 +607,266 @@ namespace NoMercy.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Priority_Provider",
+                name: "Artist_Library",
                 columns: table => new
                 {
-                    Priority = table.Column<int>(type: "INTEGER", nullable: false),
-                    Country = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    ProviderId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                    ArtistId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Priority_Provider", x => new { x.Priority, x.Country, x.ProviderId });
+                    table.PrimaryKey("PK_Artist_Library", x => new { x.ArtistId, x.LibraryId });
                     table.ForeignKey(
-                        name: "FK_Priority_Provider_Providers_ProviderId",
-                        column: x => x.ProviderId,
-                        principalTable: "Providers",
+                        name: "FK_Artist_Library_Libraries_LibraryId",
+                        column: x => x.LibraryId,
+                        principalTable: "Libraries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Collection_Library",
+                columns: table => new
+                {
+                    CollectionId = table.Column<int>(type: "INTEGER", nullable: false),
+                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Collection_Library", x => new { x.CollectionId, x.LibraryId });
+                    table.ForeignKey(
+                        name: "FK_Collection_Library_Libraries_LibraryId",
+                        column: x => x.LibraryId,
+                        principalTable: "Libraries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EncoderProfile_Library",
+                columns: table => new
+                {
+                    EncoderProfileId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EncoderProfile_Library", x => new { x.EncoderProfileId, x.LibraryId });
+                    table.ForeignKey(
+                        name: "FK_EncoderProfile_Library_EncoderProfiles_EncoderProfileId",
+                        column: x => x.EncoderProfileId,
+                        principalTable: "EncoderProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_EncoderProfile_Library_Libraries_LibraryId",
+                        column: x => x.LibraryId,
+                        principalTable: "Libraries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "File_Library",
+                columns: table => new
+                {
+                    FileId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_File_Library", x => new { x.FileId, x.LibraryId });
+                    table.ForeignKey(
+                        name: "FK_File_Library_Libraries_LibraryId",
+                        column: x => x.LibraryId,
+                        principalTable: "Libraries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Folder_Library",
+                columns: table => new
+                {
+                    FolderId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Folder_Library", x => new { x.FolderId, x.LibraryId });
+                    table.ForeignKey(
+                        name: "FK_Folder_Library_Libraries_LibraryId",
+                        column: x => x.LibraryId,
+                        principalTable: "Libraries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Language_Library",
+                columns: table => new
+                {
+                    LanguageId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    LanguageId1 = table.Column<int>(type: "INTEGER", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Language_Library", x => new { x.LanguageId, x.LibraryId });
+                    table.ForeignKey(
+                        name: "FK_Language_Library_Languages_LanguageId1",
+                        column: x => x.LanguageId1,
+                        principalTable: "Languages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Language_Library_Libraries_LibraryId",
+                        column: x => x.LibraryId,
+                        principalTable: "Libraries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Library_Movie",
+                columns: table => new
+                {
+                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    MovieId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Library_Movie", x => new { x.LibraryId, x.MovieId });
+                    table.ForeignKey(
+                        name: "FK_Library_Movie_Libraries_LibraryId",
+                        column: x => x.LibraryId,
+                        principalTable: "Libraries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Library_Tv",
+                columns: table => new
+                {
+                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    TvId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Library_Tv", x => new { x.LibraryId, x.TvId });
+                    table.ForeignKey(
+                        name: "FK_Library_Tv_Libraries_LibraryId",
+                        column: x => x.LibraryId,
+                        principalTable: "Libraries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Library_User",
+                columns: table => new
+                {
+                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Library_User", x => new { x.LibraryId, x.UserId });
+                    table.ForeignKey(
+                        name: "FK_Library_User_Libraries_LibraryId",
+                        column: x => x.LibraryId,
+                        principalTable: "Libraries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Certification_Movie",
+                columns: table => new
+                {
+                    CertificationId = table.Column<int>(type: "INTEGER", nullable: false),
+                    MovieId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Certification_Movie", x => new { x.CertificationId, x.MovieId });
+                    table.ForeignKey(
+                        name: "FK_Certification_Movie_Movies_MovieId",
+                        column: x => x.MovieId,
+                        principalTable: "Movies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Collection_Movie",
+                columns: table => new
+                {
+                    CollectionId = table.Column<int>(type: "INTEGER", nullable: false),
+                    MovieId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Collection_Movie", x => new { x.CollectionId, x.MovieId });
+                    table.ForeignKey(
+                        name: "FK_Collection_Movie_Movies_MovieId",
+                        column: x => x.MovieId,
+                        principalTable: "Movies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Genre_Movie",
+                columns: table => new
+                {
+                    GenreId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    MovieId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Genre_Movie", x => new { x.GenreId, x.MovieId });
+                    table.ForeignKey(
+                        name: "FK_Genre_Movie_Movies_MovieId",
+                        column: x => x.MovieId,
+                        principalTable: "Movies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Keyword_Movie",
+                columns: table => new
+                {
+                    KeywordId = table.Column<int>(type: "INTEGER", nullable: false),
+                    MovieId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Keyword_Movie", x => new { x.KeywordId, x.MovieId });
+                    table.ForeignKey(
+                        name: "FK_Keyword_Movie_Movies_MovieId",
+                        column: x => x.MovieId,
+                        principalTable: "Movies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Artist_Track",
+                columns: table => new
+                {
+                    ArtistId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    TrackId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Artist_Track", x => new { x.ArtistId, x.TrackId });
+                    table.ForeignKey(
+                        name: "FK_Artist_Track_Tracks_TrackId",
+                        column: x => x.TrackId,
+                        principalTable: "Tracks",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -615,24 +896,17 @@ namespace NoMercy.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MusicGenre_Track",
+                name: "Music_Plays",
                 columns: table => new
                 {
-                    GenreId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    TrackId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    GenreId1 = table.Column<int>(type: "INTEGER", nullable: false)
+                    UserId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    TrackId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MusicGenre_Track", x => new { x.GenreId, x.TrackId });
+                    table.PrimaryKey("PK_Music_Plays", x => new { x.UserId, x.TrackId });
                     table.ForeignKey(
-                        name: "FK_MusicGenre_Track_Genres_GenreId1",
-                        column: x => x.GenreId1,
-                        principalTable: "Genres",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_MusicGenre_Track_Tracks_TrackId",
+                        name: "FK_Music_Plays_Tracks_TrackId",
                         column: x => x.TrackId,
                         principalTable: "Tracks",
                         principalColumn: "Id",
@@ -650,506 +924,9 @@ namespace NoMercy.Database.Migrations
                 {
                     table.PrimaryKey("PK_Playlist_Track", x => new { x.PlaylistId, x.TrackId });
                     table.ForeignKey(
-                        name: "FK_Playlist_Track_Playlists_PlaylistId",
-                        column: x => x.PlaylistId,
-                        principalTable: "Playlists",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
                         name: "FK_Playlist_Track_Tracks_TrackId",
                         column: x => x.TrackId,
                         principalTable: "Tracks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ActivityLogs",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Type = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    DeviceId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    Time = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ActivityLogs", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ActivityLogs_Devices_DeviceId",
-                        column: x => x.DeviceId,
-                        principalTable: "Devices",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ActivityLogs_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Library_User",
-                columns: table => new
-                {
-                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Library_User", x => new { x.LibraryId, x.UserId });
-                    table.ForeignKey(
-                        name: "FK_Library_User_Libraries_LibraryId",
-                        column: x => x.LibraryId,
-                        principalTable: "Libraries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Library_User_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Music_Plays",
-                columns: table => new
-                {
-                    UserId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    TrackId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Music_Plays", x => new { x.UserId, x.TrackId });
-                    table.ForeignKey(
-                        name: "FK_Music_Plays_Tracks_TrackId",
-                        column: x => x.TrackId,
-                        principalTable: "Tracks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Music_Plays_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Notification_User",
-                columns: table => new
-                {
-                    NotificationId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Notification_User", x => new { x.NotificationId, x.UserId });
-                    table.ForeignKey(
-                        name: "FK_Notification_User_Notifications_NotificationId",
-                        column: x => x.NotificationId,
-                        principalTable: "Notifications",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Notification_User_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Track_User",
-                columns: table => new
-                {
-                    TrackId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Track_User", x => new { x.TrackId, x.UserId });
-                    table.ForeignKey(
-                        name: "FK_Track_User_Tracks_TrackId",
-                        column: x => x.TrackId,
-                        principalTable: "Tracks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Track_User_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Album_Library",
-                columns: table => new
-                {
-                    AlbumId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Album_Library", x => new { x.AlbumId, x.LibraryId });
-                    table.ForeignKey(
-                        name: "FK_Album_Library_Albums_AlbumId",
-                        column: x => x.AlbumId,
-                        principalTable: "Albums",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Album_Library_Libraries_LibraryId",
-                        column: x => x.LibraryId,
-                        principalTable: "Libraries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Album_MusicGenre",
-                columns: table => new
-                {
-                    AlbumId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    MusicGenreId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Album_MusicGenre", x => new { x.AlbumId, x.MusicGenreId });
-                    table.ForeignKey(
-                        name: "FK_Album_MusicGenre_Albums_AlbumId",
-                        column: x => x.AlbumId,
-                        principalTable: "Albums",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Album_MusicGenre_MusicGenres_MusicGenreId",
-                        column: x => x.MusicGenreId,
-                        principalTable: "MusicGenres",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Album_Track",
-                columns: table => new
-                {
-                    AlbumId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    TrackId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Album_Track", x => new { x.AlbumId, x.TrackId });
-                    table.ForeignKey(
-                        name: "FK_Album_Track_Albums_AlbumId",
-                        column: x => x.AlbumId,
-                        principalTable: "Albums",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Album_Track_Tracks_TrackId",
-                        column: x => x.TrackId,
-                        principalTable: "Tracks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Album_User",
-                columns: table => new
-                {
-                    AlbumId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Album_User", x => new { x.AlbumId, x.UserId });
-                    table.ForeignKey(
-                        name: "FK_Album_User_Albums_AlbumId",
-                        column: x => x.AlbumId,
-                        principalTable: "Albums",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Album_User_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Album_Artist",
-                columns: table => new
-                {
-                    AlbumId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    ArtistId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Album_Artist", x => new { x.AlbumId, x.ArtistId });
-                    table.ForeignKey(
-                        name: "FK_Album_Artist_Albums_AlbumId",
-                        column: x => x.AlbumId,
-                        principalTable: "Albums",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Album_Artist_Artists_ArtistId",
-                        column: x => x.ArtistId,
-                        principalTable: "Artists",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Artist_Library",
-                columns: table => new
-                {
-                    ArtistId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Artist_Library", x => new { x.ArtistId, x.LibraryId });
-                    table.ForeignKey(
-                        name: "FK_Artist_Library_Artists_ArtistId",
-                        column: x => x.ArtistId,
-                        principalTable: "Artists",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Artist_Library_Libraries_LibraryId",
-                        column: x => x.LibraryId,
-                        principalTable: "Libraries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Artist_MusicGenre",
-                columns: table => new
-                {
-                    ArtistId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    MusicGenreId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Artist_MusicGenre", x => new { x.ArtistId, x.MusicGenreId });
-                    table.ForeignKey(
-                        name: "FK_Artist_MusicGenre_Artists_ArtistId",
-                        column: x => x.ArtistId,
-                        principalTable: "Artists",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Artist_MusicGenre_MusicGenres_MusicGenreId",
-                        column: x => x.MusicGenreId,
-                        principalTable: "MusicGenres",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Artist_Track",
-                columns: table => new
-                {
-                    ArtistId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    TrackId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Artist_Track", x => new { x.ArtistId, x.TrackId });
-                    table.ForeignKey(
-                        name: "FK_Artist_Track_Artists_ArtistId",
-                        column: x => x.ArtistId,
-                        principalTable: "Artists",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Artist_Track_Tracks_TrackId",
-                        column: x => x.TrackId,
-                        principalTable: "Tracks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Artist_User",
-                columns: table => new
-                {
-                    ArtistId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Artist_User", x => new { x.ArtistId, x.UserId });
-                    table.ForeignKey(
-                        name: "FK_Artist_User_Artists_ArtistId",
-                        column: x => x.ArtistId,
-                        principalTable: "Artists",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Artist_User_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Collection_Library",
-                columns: table => new
-                {
-                    CollectionId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    CollectionId1 = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Collection_Library", x => new { x.CollectionId, x.LibraryId });
-                    table.ForeignKey(
-                        name: "FK_Collection_Library_Collections_CollectionId1",
-                        column: x => x.CollectionId1,
-                        principalTable: "Collections",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Collection_Library_Libraries_LibraryId",
-                        column: x => x.LibraryId,
-                        principalTable: "Libraries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Certification_Movie",
-                columns: table => new
-                {
-                    CertificationId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    MovieId = table.Column<int>(type: "INTEGER", nullable: false),
-                    CertificationId1 = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Certification_Movie", x => new { x.CertificationId, x.MovieId });
-                    table.ForeignKey(
-                        name: "FK_Certification_Movie_Certifications_CertificationId1",
-                        column: x => x.CertificationId1,
-                        principalTable: "Certifications",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Certification_Movie_Movies_MovieId",
-                        column: x => x.MovieId,
-                        principalTable: "Movies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Collection_Movie",
-                columns: table => new
-                {
-                    CollectionId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    MovieId = table.Column<int>(type: "INTEGER", nullable: false),
-                    CollectionId1 = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Collection_Movie", x => new { x.CollectionId, x.MovieId });
-                    table.ForeignKey(
-                        name: "FK_Collection_Movie_Collections_CollectionId1",
-                        column: x => x.CollectionId1,
-                        principalTable: "Collections",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Collection_Movie_Movies_MovieId",
-                        column: x => x.MovieId,
-                        principalTable: "Movies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Genre_Movie",
-                columns: table => new
-                {
-                    GenreId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    MovieId = table.Column<int>(type: "INTEGER", nullable: false),
-                    GenreId1 = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Genre_Movie", x => new { x.GenreId, x.MovieId });
-                    table.ForeignKey(
-                        name: "FK_Genre_Movie_Genres_GenreId1",
-                        column: x => x.GenreId1,
-                        principalTable: "Genres",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Genre_Movie_Movies_MovieId",
-                        column: x => x.MovieId,
-                        principalTable: "Movies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Keyword_Movie",
-                columns: table => new
-                {
-                    KeywordId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    MovieId = table.Column<int>(type: "INTEGER", nullable: false),
-                    KeywordId1 = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Keyword_Movie", x => new { x.KeywordId, x.MovieId });
-                    table.ForeignKey(
-                        name: "FK_Keyword_Movie_Keywords_KeywordId1",
-                        column: x => x.KeywordId1,
-                        principalTable: "Keywords",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Keyword_Movie_Movies_MovieId",
-                        column: x => x.MovieId,
-                        principalTable: "Movies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Library_Movie",
-                columns: table => new
-                {
-                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    MovieId = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Library_Movie", x => new { x.LibraryId, x.MovieId });
-                    table.ForeignKey(
-                        name: "FK_Library_Movie_Libraries_LibraryId",
-                        column: x => x.LibraryId,
-                        principalTable: "Libraries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Library_Movie_Movies_MovieId",
-                        column: x => x.MovieId,
-                        principalTable: "Movies",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -1186,21 +963,32 @@ namespace NoMercy.Database.Migrations
                 name: "Certification_Tv",
                 columns: table => new
                 {
-                    CertificationId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    TvId = table.Column<int>(type: "INTEGER", nullable: false),
-                    CertificationId1 = table.Column<int>(type: "INTEGER", nullable: false)
+                    CertificationId = table.Column<int>(type: "INTEGER", nullable: false),
+                    TvId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Certification_Tv", x => new { x.CertificationId, x.TvId });
                     table.ForeignKey(
-                        name: "FK_Certification_Tv_Certifications_CertificationId1",
-                        column: x => x.CertificationId1,
-                        principalTable: "Certifications",
+                        name: "FK_Certification_Tv_Tvs_TvId",
+                        column: x => x.TvId,
+                        principalTable: "Tvs",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Creators",
+                columns: table => new
+                {
+                    PersonId = table.Column<int>(type: "INTEGER", nullable: false),
+                    TvId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Creators", x => new { x.PersonId, x.TvId });
                     table.ForeignKey(
-                        name: "FK_Certification_Tv_Tvs_TvId",
+                        name: "FK_Creators_Tvs_TvId",
                         column: x => x.TvId,
                         principalTable: "Tvs",
                         principalColumn: "Id",
@@ -1212,18 +1000,11 @@ namespace NoMercy.Database.Migrations
                 columns: table => new
                 {
                     GenreId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    TvId = table.Column<int>(type: "INTEGER", nullable: false),
-                    GenreId1 = table.Column<int>(type: "INTEGER", nullable: false)
+                    TvId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Genre_Tv", x => new { x.GenreId, x.TvId });
-                    table.ForeignKey(
-                        name: "FK_Genre_Tv_Genres_GenreId1",
-                        column: x => x.GenreId1,
-                        principalTable: "Genres",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Genre_Tv_Tvs_TvId",
                         column: x => x.TvId,
@@ -1236,45 +1017,14 @@ namespace NoMercy.Database.Migrations
                 name: "Keyword_Tv",
                 columns: table => new
                 {
-                    KeywordId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    TvId = table.Column<int>(type: "INTEGER", nullable: false),
-                    KeywordId1 = table.Column<int>(type: "INTEGER", nullable: false)
+                    KeywordId = table.Column<int>(type: "INTEGER", nullable: false),
+                    TvId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Keyword_Tv", x => new { x.KeywordId, x.TvId });
                     table.ForeignKey(
-                        name: "FK_Keyword_Tv_Keywords_KeywordId1",
-                        column: x => x.KeywordId1,
-                        principalTable: "Keywords",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
                         name: "FK_Keyword_Tv_Tvs_TvId",
-                        column: x => x.TvId,
-                        principalTable: "Tvs",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Library_Tv",
-                columns: table => new
-                {
-                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    TvId = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Library_Tv", x => new { x.LibraryId, x.TvId });
-                    table.ForeignKey(
-                        name: "FK_Library_Tv_Libraries_LibraryId",
-                        column: x => x.LibraryId,
-                        principalTable: "Libraries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Library_Tv_Tvs_TvId",
                         column: x => x.TvId,
                         principalTable: "Tvs",
                         principalColumn: "Id",
@@ -1412,6 +1162,60 @@ namespace NoMercy.Database.Migrations
                         name: "FK_UserData_Tvs_TvId",
                         column: x => x.TvId,
                         principalTable: "Tvs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Album_User",
+                columns: table => new
+                {
+                    AlbumId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Album_User", x => new { x.AlbumId, x.UserId });
+                    table.ForeignKey(
+                        name: "FK_Album_User_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Notification_User",
+                columns: table => new
+                {
+                    NotificationId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notification_User", x => new { x.NotificationId, x.UserId });
+                    table.ForeignKey(
+                        name: "FK_Notification_User_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Track_User",
+                columns: table => new
+                {
+                    TrackId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Track_User", x => new { x.TrackId, x.UserId });
+                    table.ForeignKey(
+                        name: "FK_Track_User_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -1761,114 +1565,28 @@ namespace NoMercy.Database.Migrations
                     Popularity = table.Column<float>(type: "REAL", nullable: true),
                     Profile = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
                     TitleSort = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    CastsId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    CrewsId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    CastId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    CrewId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP")
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    ColorPalette = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_People", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_People_Casts_CastsId",
-                        column: x => x.CastsId,
+                        name: "FK_People_Casts_CastId",
+                        column: x => x.CastId,
                         principalTable: "Casts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_People_Crews_CrewsId",
-                        column: x => x.CrewsId,
+                        name: "FK_People_Crews_CrewId",
+                        column: x => x.CrewId,
                         principalTable: "Crews",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
-
-            migrationBuilder.CreateTable(
-                name: "File_Library",
-                columns: table => new
-                {
-                    FileId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    LibraryId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_File_Library", x => new { x.FileId, x.LibraryId });
-                    table.ForeignKey(
-                        name: "FK_File_Library_Files_FileId",
-                        column: x => x.FileId,
-                        principalTable: "Files",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_File_Library_Libraries_LibraryId",
-                        column: x => x.LibraryId,
-                        principalTable: "Libraries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "File_Movie",
-                columns: table => new
-                {
-                    FileId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    MovieId = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_File_Movie", x => new { x.FileId, x.MovieId });
-                    table.ForeignKey(
-                        name: "FK_File_Movie_Files_FileId",
-                        column: x => x.FileId,
-                        principalTable: "Files",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_File_Movie_Movies_MovieId",
-                        column: x => x.MovieId,
-                        principalTable: "Movies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Creators",
-                columns: table => new
-                {
-                    PersonId = table.Column<int>(type: "INTEGER", nullable: false),
-                    TvId = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Creators", x => new { x.PersonId, x.TvId });
-                    table.ForeignKey(
-                        name: "FK_Creators_People_PersonId",
-                        column: x => x.PersonId,
-                        principalTable: "People",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Creators_Tvs_TvId",
-                        column: x => x.TvId,
-                        principalTable: "Tvs",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ActivityLogs_DeviceId",
-                table: "ActivityLogs",
-                column: "DeviceId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ActivityLogs_UserId",
-                table: "ActivityLogs",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Album_Artist_ArtistId",
-                table: "Album_Artist",
-                column: "ArtistId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Album_Library_LibraryId",
@@ -1876,24 +1594,9 @@ namespace NoMercy.Database.Migrations
                 column: "LibraryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Album_MusicGenre_MusicGenreId",
-                table: "Album_MusicGenre",
-                column: "MusicGenreId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Album_Track_TrackId",
-                table: "Album_Track",
-                column: "TrackId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Album_User_UserId",
                 table: "Album_User",
                 column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Albums_LibraryId",
-                table: "Albums",
-                column: "LibraryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AlternativeTitles_MovieId",
@@ -1917,24 +1620,9 @@ namespace NoMercy.Database.Migrations
                 column: "LibraryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Artist_MusicGenre_MusicGenreId",
-                table: "Artist_MusicGenre",
-                column: "MusicGenreId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Artist_Track_TrackId",
                 table: "Artist_Track",
                 column: "TrackId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Artist_User_UserId",
-                table: "Artist_User",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Artists_LibraryId",
-                table: "Artists",
-                column: "LibraryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Casts_EpisodeId",
@@ -1981,19 +1669,9 @@ namespace NoMercy.Database.Migrations
                 column: "TvId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Certification_Movie_CertificationId1",
-                table: "Certification_Movie",
-                column: "CertificationId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Certification_Movie_MovieId",
                 table: "Certification_Movie",
                 column: "MovieId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Certification_Tv_CertificationId1",
-                table: "Certification_Tv",
-                column: "CertificationId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Certification_Tv_TvId",
@@ -2007,29 +1685,14 @@ namespace NoMercy.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Collection_Library_CollectionId1",
-                table: "Collection_Library",
-                column: "CollectionId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Collection_Library_LibraryId",
                 table: "Collection_Library",
                 column: "LibraryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Collection_Movie_CollectionId1",
-                table: "Collection_Movie",
-                column: "CollectionId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Collection_Movie_MovieId",
                 table: "Collection_Movie",
                 column: "MovieId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Collections_LibraryId",
-                table: "Collections",
-                column: "LibraryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Countries_Iso31661",
@@ -2107,11 +1770,6 @@ namespace NoMercy.Database.Migrations
                 column: "LibraryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_File_Movie_MovieId",
-                table: "File_Movie",
-                column: "MovieId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Files_EpisodeId",
                 table: "Files",
                 column: "EpisodeId");
@@ -2122,19 +1780,9 @@ namespace NoMercy.Database.Migrations
                 column: "LibraryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Genre_Movie_GenreId1",
-                table: "Genre_Movie",
-                column: "GenreId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Genre_Movie_MovieId",
                 table: "Genre_Movie",
                 column: "MovieId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Genre_Tv_GenreId1",
-                table: "Genre_Tv",
-                column: "GenreId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Genre_Tv_TvId",
@@ -2172,19 +1820,9 @@ namespace NoMercy.Database.Migrations
                 column: "TvId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Keyword_Movie_KeywordId1",
-                table: "Keyword_Movie",
-                column: "KeywordId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Keyword_Movie_MovieId",
                 table: "Keyword_Movie",
                 column: "MovieId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Keyword_Tv_KeywordId1",
-                table: "Keyword_Tv",
-                column: "KeywordId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Keyword_Tv_TvId",
@@ -2208,24 +1846,9 @@ namespace NoMercy.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Library_Movie_MovieId",
-                table: "Library_Movie",
-                column: "MovieId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Library_Track_TrackId",
                 table: "Library_Track",
                 column: "TrackId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Library_Tv_TvId",
-                table: "Library_Tv",
-                column: "TvId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Library_User_UserId",
-                table: "Library_User",
-                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Medias_EpisodeId",
@@ -2248,23 +1871,8 @@ namespace NoMercy.Database.Migrations
                 column: "TvId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Movies_LibraryId",
-                table: "Movies",
-                column: "LibraryId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Music_Plays_TrackId",
                 table: "Music_Plays",
-                column: "TrackId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MusicGenre_Track_GenreId1",
-                table: "MusicGenre_Track",
-                column: "GenreId1");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MusicGenre_Track_TrackId",
-                table: "MusicGenre_Track",
                 column: "TrackId");
 
             migrationBuilder.CreateIndex(
@@ -2273,24 +1881,19 @@ namespace NoMercy.Database.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_People_CastsId",
+                name: "IX_People_CastId",
                 table: "People",
-                column: "CastsId");
+                column: "CastId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_People_CrewsId",
+                name: "IX_People_CrewId",
                 table: "People",
-                column: "CrewsId");
+                column: "CrewId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Playlist_Track_TrackId",
                 table: "Playlist_Track",
                 column: "TrackId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Priority_Provider_ProviderId",
-                table: "Priority_Provider",
-                column: "ProviderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Recommendations_MovieId",
@@ -2389,11 +1992,6 @@ namespace NoMercy.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Tvs_LibraryId",
-                table: "Tvs",
-                column: "LibraryId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_UserData_MovieId",
                 table: "UserData",
                 column: "MovieId");
@@ -2431,6 +2029,9 @@ namespace NoMercy.Database.Migrations
                 name: "Album_User");
 
             migrationBuilder.DropTable(
+                name: "Albums");
+
+            migrationBuilder.DropTable(
                 name: "AlternativeTitles");
 
             migrationBuilder.DropTable(
@@ -2446,16 +2047,25 @@ namespace NoMercy.Database.Migrations
                 name: "Artist_User");
 
             migrationBuilder.DropTable(
+                name: "Artists");
+
+            migrationBuilder.DropTable(
                 name: "Certification_Movie");
 
             migrationBuilder.DropTable(
                 name: "Certification_Tv");
 
             migrationBuilder.DropTable(
+                name: "Certifications");
+
+            migrationBuilder.DropTable(
                 name: "Collection_Library");
 
             migrationBuilder.DropTable(
                 name: "Collection_Movie");
+
+            migrationBuilder.DropTable(
+                name: "Collections");
 
             migrationBuilder.DropTable(
                 name: "Configuration");
@@ -2467,6 +2077,9 @@ namespace NoMercy.Database.Migrations
                 name: "Creators");
 
             migrationBuilder.DropTable(
+                name: "Devices");
+
+            migrationBuilder.DropTable(
                 name: "EncoderProfile_Library");
 
             migrationBuilder.DropTable(
@@ -2476,13 +2089,22 @@ namespace NoMercy.Database.Migrations
                 name: "File_Movie");
 
             migrationBuilder.DropTable(
+                name: "Files");
+
+            migrationBuilder.DropTable(
                 name: "Folder_Library");
+
+            migrationBuilder.DropTable(
+                name: "Folders");
 
             migrationBuilder.DropTable(
                 name: "Genre_Movie");
 
             migrationBuilder.DropTable(
                 name: "Genre_Tv");
+
+            migrationBuilder.DropTable(
+                name: "Genres");
 
             migrationBuilder.DropTable(
                 name: "GuestStars");
@@ -2498,6 +2120,9 @@ namespace NoMercy.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "Keyword_Tv");
+
+            migrationBuilder.DropTable(
+                name: "Keywords");
 
             migrationBuilder.DropTable(
                 name: "Language_Library");
@@ -2536,13 +2161,28 @@ namespace NoMercy.Database.Migrations
                 name: "MusicGenre_Track");
 
             migrationBuilder.DropTable(
+                name: "MusicGenres");
+
+            migrationBuilder.DropTable(
                 name: "Notification_User");
+
+            migrationBuilder.DropTable(
+                name: "Notifications");
+
+            migrationBuilder.DropTable(
+                name: "People");
 
             migrationBuilder.DropTable(
                 name: "Playlist_Track");
 
             migrationBuilder.DropTable(
+                name: "Playlists");
+
+            migrationBuilder.DropTable(
                 name: "Priority_Provider");
+
+            migrationBuilder.DropTable(
+                name: "Providers");
 
             migrationBuilder.DropTable(
                 name: "Recommendations");
@@ -2575,64 +2215,25 @@ namespace NoMercy.Database.Migrations
                 name: "VideoFiles");
 
             migrationBuilder.DropTable(
-                name: "Devices");
-
-            migrationBuilder.DropTable(
-                name: "Albums");
-
-            migrationBuilder.DropTable(
-                name: "MusicGenres");
-
-            migrationBuilder.DropTable(
-                name: "Artists");
-
-            migrationBuilder.DropTable(
-                name: "Certifications");
-
-            migrationBuilder.DropTable(
-                name: "Collections");
-
-            migrationBuilder.DropTable(
-                name: "People");
-
-            migrationBuilder.DropTable(
                 name: "EncoderProfiles");
-
-            migrationBuilder.DropTable(
-                name: "Files");
-
-            migrationBuilder.DropTable(
-                name: "Folders");
-
-            migrationBuilder.DropTable(
-                name: "Keywords");
 
             migrationBuilder.DropTable(
                 name: "Languages");
 
             migrationBuilder.DropTable(
-                name: "Genres");
-
-            migrationBuilder.DropTable(
-                name: "Notifications");
-
-            migrationBuilder.DropTable(
-                name: "Playlists");
-
-            migrationBuilder.DropTable(
-                name: "Providers");
-
-            migrationBuilder.DropTable(
-                name: "Tracks");
-
-            migrationBuilder.DropTable(
-                name: "Users");
+                name: "Libraries");
 
             migrationBuilder.DropTable(
                 name: "Casts");
 
             migrationBuilder.DropTable(
                 name: "Crews");
+
+            migrationBuilder.DropTable(
+                name: "Tracks");
+
+            migrationBuilder.DropTable(
+                name: "Users");
 
             migrationBuilder.DropTable(
                 name: "Episodes");
@@ -2645,9 +2246,6 @@ namespace NoMercy.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "Tvs");
-
-            migrationBuilder.DropTable(
-                name: "Libraries");
         }
     }
 }
