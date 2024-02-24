@@ -1,4 +1,5 @@
 ﻿using NoMercy.Providers.TMDB.Models.Collections;
+// ReSharper disable All
 
 namespace NoMercy.Providers.TMDB.Client;
 
@@ -8,12 +9,12 @@ public class CollectionClient : BaseClient
     {
     }
 
-    public Task<CollectionDetails> Details()
+    public Task<CollectionDetails?> Details()
     {
         return Get<CollectionDetails>("collection/" + Id);
     }
 
-    public Task<CollectionAppends> WithAppends(string[] appendices)
+    private Task<CollectionAppends?> WithAppends(string[] appendices)
     {
         var @prarams = new Dictionary<string, string>
         {
@@ -23,7 +24,7 @@ public class CollectionClient : BaseClient
         return Get<CollectionAppends>("collection/" + Id, @prarams);
     }
 
-    public Task<CollectionAppends> WithAllAppends()
+    public Task<CollectionAppends?> WithAllAppends()
     {
         return WithAppends([
             "images",
@@ -31,12 +32,12 @@ public class CollectionClient : BaseClient
         ]);
     }
 
-    public Task<CollectionImages> Images()
+    public Task<CollectionImages?> Images()
     {
         return Get<CollectionImages>("collection/" + Id + "/images");
     }
 
-    public Task<CollectionsTranslations> Translations()
+    public Task<CollectionsTranslations?> Translations()
     {
         return Get<CollectionsTranslations>("collection/" + Id + "/translations");
     }

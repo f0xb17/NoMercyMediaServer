@@ -18,9 +18,9 @@ public partial class ApiInfo
     public static string TvdbKey { get; set; } = string.Empty;
     public static string MusixmatchKey { get; set; } = string.Empty;
     public static string JwplayerKey { get; set; } = string.Empty;
-    public static Downloads BinaryList { get; set; } = new ();
-    public static string[] Colors { get; set; } = [];
-    public static string Quote { get; set; } = string.Empty;
+    public static Downloads BinaryList { get; private set; } = new ();
+    public static string[] Colors { get; private set; } = [];
+    public static string Quote { get; private set; } = string.Empty;
 
     public static async Task RequestInfo()
     {

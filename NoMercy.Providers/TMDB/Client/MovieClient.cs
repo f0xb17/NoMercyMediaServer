@@ -3,6 +3,8 @@ using NoMercy.Providers.TMDB.Models.Certifications;
 using NoMercy.Providers.TMDB.Models.Genres;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.Shared;
+using MovieCertifications = NoMercy.Providers.TMDB.Models.Certifications.MovieCertifications;
+// ReSharper disable All
 
 namespace NoMercy.Providers.TMDB.Client;
 
@@ -12,22 +14,22 @@ public class MovieClient : BaseClient
     {
     }
 
-    public Task<MovieDetails> Details()
+    public Task<MovieDetails?> Details()
     {
         return Get<MovieDetails>("movie/" + Id);
     }
 
-    public Task<MovieAppends> WithAppends(string[] appendices)
+    private Task<MovieAppends?> WithAppends(string[] appendices)
     {
-        var @params = new Dictionary<string, string>
+        var queryParams = new Dictionary<string, string>
         {
             ["append_to_response"] = string.Join(",", appendices)
         };
         
-        return Get<MovieAppends>("movie/" + Id, @params);
+        return Get<MovieAppends>("movie/" + Id, queryParams);
     }
 
-    public Task<MovieAppends> WithAllAppends()
+    public Task<MovieAppends?> WithAllAppends()
     {
         return WithAppends([
             "alternative_titles",
@@ -45,93 +47,93 @@ public class MovieClient : BaseClient
         ]);
     }
 
-    public Task<MovieAggregatedCredits> AggregatedCredits()
+    public Task<MovieAggregatedCredits?> AggregatedCredits()
     {
         return Get<MovieAggregatedCredits>("movie/" + Id + "/aggregate_credits");
     }
 
-    public Task<MovieAlternativeTitles> AlternativeTitles()
+    public Task<MovieAlternativeTitles?> AlternativeTitles()
     {
         return Get<MovieAlternativeTitles>("movie/" + Id + "/alternative_titles");
     }
 
-    public Task<MovieChanges> Changes(string startDate, string endDate)
+    public Task<MovieChanges?> Changes(string startDate, string endDate)
     {
-        var @params = new Dictionary<string, string>
+        var queryParams = new Dictionary<string, string>
         {
             ["start_date"] = startDate,
             ["end_date"] = endDate
         };
 
-        return Get<MovieChanges>("movie/" + Id + "/changes", @params);
+        return Get<MovieChanges>("movie/" + Id + "/changes", queryParams);
     }
 
-    public Task<MovieCredits> Credits()
+    public Task<MovieCredits?> Credits()
     {
         return Get<MovieCredits>("movie/" + Id + "/credits");
     }
 
-    public Task<MovieExternalIds> ExternalIds()
+    public Task<MovieExternalIds?> ExternalIds()
     {
         return Get<MovieExternalIds>("movie/" + Id + "/external_ids");
     }
 
-    public Task<MovieImages> Images()
+    public Task<MovieImages?> Images()
     {
         return Get<MovieImages>("movie/" + Id + "/images");
     }
 
-    public Task<MovieKeywords> Keywords()
+    public Task<MovieKeywords?> Keywords()
     {
         return Get<MovieKeywords>("movie/" + Id + "/keywords");
     }
 
-    public Task<MovieLists> Lists()
+    public Task<MovieLists?> Lists()
     {
         return Get<MovieLists>("movie/" + Id + "/lists");
     }
 
-    public Task<MovieRecommendations> Recommendations()
+    public Task<MovieRecommendations?> Recommendations()
     {
         return Get<MovieRecommendations>("movie/" + Id + "/recommendations");
     }
 
-    public Task<MovieReleaseDates> ReleaseDates()
+    public Task<MovieReleaseDates?> ReleaseDates()
     {
         return Get<MovieReleaseDates>("movie/" + Id + "/release_dates");
     }
 
-    public Task<MovieReviews> Reviews()
+    public Task<MovieReviews?> Reviews()
     {
         return Get<MovieReviews>("movie/" + Id + "/reviews");
     }
 
-    public Task<MovieSimilar> Similar()
+    public Task<MovieSimilar?> Similar()
     {
         return Get<MovieSimilar>("movie/" + Id + "/similar");
     }
 
-    public Task<SharedTranslations> Translations()
+    public Task<SharedTranslations?> Translations()
     {
         return Get<SharedTranslations>("movie/" + Id + "/translations");
     }
 
-    public Task<MovieVideos> Videos()
+    public Task<MovieVideos?> Videos()
     {
         return Get<MovieVideos>("movie/" + Id + "/videos");
     }
 
-    public Task<MovieWatchProviders> WatchProviders()
+    public Task<MovieWatchProviders?> WatchProviders()
     {
         return Get<MovieWatchProviders>("movie/" + Id + "/watch/providers");
     }
 
-    public Task<MovieLatest> Latest()
+    public Task<MovieLatest?> Latest()
     {
         return Get<MovieLatest>("movie/" + Id + "/latest");
     }
 
-    public Task<MovieNowPlaying> NowPlaying()
+    public Task<MovieNowPlaying?> NowPlaying()
     {
         return Get<MovieNowPlaying>("movie/" + Id + "/now_playing");
     }
@@ -141,22 +143,22 @@ public class MovieClient : BaseClient
         return Paginated<Movie>("movie/popular", limit);
     }
 
-    public Task<MovieTopRated> TopRated()
+    public Task<MovieTopRated?> TopRated()
     {
         return Get<MovieTopRated>("movie/" + Id + "/top_rated");
     }
 
-    public Task<MovieUpcoming> Upcoming()
+    public Task<MovieUpcoming?> Upcoming()
     {
         return Get<MovieUpcoming>("movie/" + Id + "/upcoming");
     }
 
-    public Task<MovieCertifications> Certifications()
+    public Task<MovieCertifications?> Certifications()
     {
         return Get<MovieCertifications>("certification/movie/list");
     }
     
-    public Task<GenreMovies> Genres()
+    public Task<GenreMovies?> Genres()
     {
         return Get<GenreMovies>("genre/movie/list");
     }

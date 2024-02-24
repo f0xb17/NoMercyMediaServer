@@ -7,5 +7,5 @@ public class Images
 {
     [JsonProperty("id")] public int Id { get; set; }
 
-    [JsonProperty("stills")] public Still[] Stills { get; set; } = [];
+    [JsonProperty("stills")] public Image[] Stills { get; set; } = [];
 }

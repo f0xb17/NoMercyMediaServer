@@ -18,45 +18,47 @@ public static class CacheController
         return Convert.ToHexString(hashBytes);
     }
 
-    public static bool Read<T>(string url, out T value) where T : class
+    public static bool Read<T>(string url, out T? value) where T : class?
     {
         // Console.WriteLine(@"Reading from cache for {0} path {1}", url, GenerateFileName(url));
-        T? data = null;
-        
-        string fullname = Path.Combine(AppFiles.ApiCachePath, GenerateFileName(url));
-        
-        if(File.Exists(fullname) == false)
-        {
-            value = default;
-            return false;
-        }
 
-        try
+        string fullname = Path.Combine(AppFiles.ApiCachePath, GenerateFileName(url));
+        lock (fullname)
         {
-            string d = File.ReadAllTextAsync(fullname).Result;
-            data = JsonHelper.FromJson<T>(d);
+            if(File.Exists(fullname) == false)
+            {
+                value = default;
+                return false;
+            }
+
+            T? data = null;
+            try
+            {
+                string d = File.ReadAllTextAsync(fullname).Result;
+                data = JsonHelper.FromJson<T>(d);
+                
+            }
+            catch (Exception e)
+            {
+                value = default;
+                return false;
+            }
             
-        }
-        catch (Exception e)
-        {
+            if (data == null)
+            {
+                value = default;
+                return true;
+            }
+            
+            if (data is { } item)
+            {
+                value = item;
+                return true;
+            }
+            
             value = default;
             return false;
         }
-        
-        if (data == null)
-        {
-            value = default;
-            return true;
-        }
-        
-        if (data is T item)
-        {
-            value = item;
-            return true;
-        }
-        
-        value = default;
-        return false;
     }
     
     public static async Task Write(string url, string data)

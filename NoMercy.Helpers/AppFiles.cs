@@ -9,12 +9,13 @@ public static class AppFiles
 
     public static readonly string AppPath = Path.Combine(AppDataPath, "NoMercy_C#");
 
-    public static readonly string CachePath = Path.Combine(AppPath, "Cache");
+    public static readonly string CachePath = Path.Combine(AppPath, "cache");
     public static readonly string ConfigPath = Path.Combine(AppPath, "config");
     public static readonly string TokenFile = Path.Combine(ConfigPath, "token.json");
     public static readonly string ConfigFile = Path.Combine(ConfigPath, "config.json");
     public static readonly string FolderRootsSeedFile = Path.Combine(ConfigPath, "folderRootsSeed.jsonc");
     public static readonly string LibrariesSeedFile = Path.Combine(ConfigPath, "librariesSeed.jsonc");
+    public static readonly string EncoderProfilesSeedFile = Path.Combine(ConfigPath, "encoderProfilesSeed.jsonc");
     
     public static readonly string DataPath = Path.Combine(AppPath, "data");
     
@@ -31,7 +32,7 @@ public static class AppFiles
 
     public static readonly string CollectionsPath = Path.Combine(DataPath, "collections");
     public static readonly string PlaylistsPath = Path.Combine(DataPath, "playlists");
-    public static readonly string ScheduledTasksPath = Path.Combine(DataPath, "ScheduledTasks");
+    public static readonly string ScheduledTasksPath = Path.Combine(DataPath, "scheduledTasks");
     public static readonly string SubtitlesPath = Path.Combine(DataPath, "subtitles");
     public static readonly string PluginConfigPath = Path.Combine(PluginsPath, "configurations");
     public static readonly string UserDataPath = Path.Combine(DataPath, "userData");
@@ -95,7 +96,7 @@ public static class AppFiles
 
         foreach (var path in AllPaths().Where(path => !Directory.Exists(path)))
         {
-            Console.WriteLine($@"Creating directory: {path}");
+            Console.WriteLine($"Creating directory: {path}");
             Directory.CreateDirectory(path);
         }
         

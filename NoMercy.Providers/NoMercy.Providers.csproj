@@ -5,11 +5,10 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <Authors>NoMercy Entertainment</Authors>
-        <Description>The Effortless Encoder</Description>
         <Copyright>(c) 2023 NoMercy Entertainment</Copyright>
         <PackageProjectUrl>https://nomercy.tv</PackageProjectUrl>
         <Company>NoMercy Entertainment</Company>
-        <Product>NoMercy TMDB API Client</Product>
+        <Product>NoMercy API Providers</Product>
         <LangVersion>12</LangVersion>
         <BuildFrameworkVersion>6.0.2</BuildFrameworkVersion>
     </PropertyGroup>
@@ -48,6 +47,12 @@
 
     <ItemGroup>
       <ProjectReference Include="..\NoMercy.Helpers\NoMercy.Helpers.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Fanart\" />
+      <Folder Include="MusicBrainz\" />
+      <Folder Include="TVDB\" />
     </ItemGroup>
 
 </Project>

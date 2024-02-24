@@ -1,5 +1,5 @@
-
 using System.Collections.Concurrent;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Providers.Helpers;
 
@@ -31,8 +31,8 @@ public class Queue(QueueOptions options)
     private int _currentlyHandled;
     
     private State _state = State.Idle;
-    private QueueOptions Options { get; set; } = options;
-    private SemaphoreSlim Semaphore { get; set; } = new(options.Concurrent, options.Concurrent);
+    private QueueOptions Options { get; } = options;
+    private SemaphoreSlim Semaphore { get; } = new(options.Concurrent, options.Concurrent);
 
     public event EventHandler<QueueEventArgs> Resolve = null!;
     public event EventHandler<QueueEventArgs> Reject = null!;
@@ -70,13 +70,20 @@ public class Queue(QueueOptions options)
     {
         while (ShouldRun)
         {
-            await Dequeue();
+            try
+            {
+                await Dequeue();
+            }
+            catch (Exception e)
+            {
+                //
+            }
         }
     }
 
     private Task Execute()
     {
-        List<KeyValuePair<string, Func<Task>>> tasks = new List<KeyValuePair<string, Func<Task>>>(_tasks)
+        var tasks = new ConcurrentDictionary<string, Func<Task>>(_tasks)
             .Where(_ => _currentlyHandled < Options.Concurrent).ToList();
         
         foreach (KeyValuePair<string, Func<Task>> task in tasks)

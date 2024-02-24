@@ -1,15 +1,24 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace NoMercy.Database.Models
 {
     [PrimaryKey(nameof(AlbumId), nameof(ArtistId))]
-    public class Album_Artist
+    public class AlbumArtist
     {
-        public required string AlbumId { get; set; }
-        public required string ArtistId { get; set; }
-
-        public virtual Album Album { get; } = null!;
-        public virtual Artist Artist { get; } = null!;
-
+        [JsonProperty("album_id")] public Guid AlbumId { get; set; }
+        public virtual Album Album { get; set; }
+        
+        [JsonProperty("artist_id")] public Guid ArtistId { get; set; }
+        public virtual Artist Artist { get; set; }
+        
+        public AlbumArtist()
+        {
+        }
+        public AlbumArtist(Guid albumId, Guid artistId)
+        {
+            AlbumId = albumId;
+            ArtistId = artistId;
+        }
     }
 }

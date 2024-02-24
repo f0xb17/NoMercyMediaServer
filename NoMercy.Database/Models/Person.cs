@@ -8,9 +8,47 @@ using PersonGender = NoMercy.Providers.TMDB.Models.People.Gender;
 namespace NoMercy.Database.Models
 {
     [PrimaryKey(nameof(Id))]
-    public class Person: ColorPaletteTimeStamps
+    public class Person : ColorPaletteTimeStamps
     {
-        public Person(PersonAppends person)
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [JsonProperty("id")]
+        public int Id { get; set; }
+
+        [JsonProperty("adult")] public bool Adult { get; set; } = false;
+        [JsonProperty("also_known_as")] public string? AlsoKnownAs { get; set; }
+        [JsonProperty("biography")] public string? Biography { get; set; }
+        [JsonProperty("birthday")] public DateTime? BirthDay { get; set; }
+        [JsonProperty("deathday")] public DateTime? DeathDay { get; set; } = null;
+
+        [Column("Gender")]
+        [JsonProperty("gender")]
+        [System.Text.Json.Serialization.JsonIgnore]
+        public PersonGender _gender { get; set; }
+
+        [JsonProperty("homepage")] public string? Homepage { get; set; }
+        [JsonProperty("imdb_id")] public string? ImdbId { get; set; }
+        [JsonProperty("known_for_department")] public string? KnownForDepartment { get; set; }
+        [JsonProperty("name")] public string Name { get; set; } = String.Empty;
+        [JsonProperty("place_of_birth")] public string? PlaceOfBirth { get; set; }
+        [JsonProperty("popularity")] public float? Popularity { get; set; }
+        [JsonProperty("profile_path")] public string? Profile { get; set; }
+        [JsonProperty("title_sort")] public string TitleSort { get; set; } = String.Empty;
+
+        [JsonProperty("casts")] public virtual ICollection<Cast>? Casts { get; set; }
+        [JsonProperty("crews")] public virtual ICollection<Crew>? Crews { get; set; }
+
+        [NotMapped]
+        public string Gender
+        {
+            get => _gender.ToString();
+            set => _gender = Enum.Parse<PersonGender>(value);
+        }
+
+        public Person()
+        {
+        }
+
+        public Person(PersonAppends? person)
         {
             Id = person.Id;
             Adult = person.Adult;
@@ -28,47 +66,5 @@ namespace NoMercy.Database.Models
             Profile = person.ProfilePath;
             TitleSort = person.Name;
         }
-        public Person()
-        { }
-        
-        [DatabaseGenerated(DatabaseGeneratedOption.None)]
-        public int Id { get; set; }
-
-        public bool Adult { get; set; } = false;
-        [StringLength(255)]
-        public string? AlsoKnownAs { get; set; }
-        [StringLength(255)]
-        public string? Biography { get; set; }
-        public DateTime? BirthDay { get; set; }
-        public DateTime? DeathDay { get; set; } = null;
-        
-        [Column("Gender")]
-        public PersonGender _gender { get; set; }
-        [StringLength(255)]
-        public string? Homepage { get; set; }
-        [StringLength(7)]
-        public string? ImdbId { get; set; }
-        [StringLength(255)]
-        public string? KnownForDepartment { get; set; }
-        [StringLength(255)]
-        public string Name { get; set; } = String.Empty;
-        [StringLength(255)]
-        public string? PlaceOfBirth { get; set; }
-        public float? Popularity { get; set; }
-        [StringLength(255)]
-        public string? Profile { get; set; }
-        [StringLength(255)]
-        public string TitleSort { get; set; } = String.Empty;
-        
-        public virtual Cast? Casts { get; } = new();
-        public virtual Crew? Crews { get; } = new();
-
-        [NotMapped]
-        public string Gender
-        {
-            get => _gender.ToString();
-            set => _gender = Enum.Parse<PersonGender>(value);
-        }
     }
-    
 }

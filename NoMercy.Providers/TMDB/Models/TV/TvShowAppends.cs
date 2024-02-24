@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Certifications;
 using NoMercy.Providers.TMDB.Models.Combined;
 
 namespace NoMercy.Providers.TMDB.Models.TV;

@@ -49,7 +49,7 @@ public class TvShowDetails : TvShow
     public ProductionCountry[] ProductionCountries { get; set; } = [];
 
     [JsonProperty("seasons")] 
-    public List<Season.Season> Seasons { get; set; } = new();
+    public List<Season.Season> Seasons { get; set; } = [];
 
     [JsonProperty("spoken_languages")] 
     public SpokenLanguage[] SpokenLanguages { get; set; } = [];

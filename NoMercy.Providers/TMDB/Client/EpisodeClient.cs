@@ -1,9 +1,10 @@
 ﻿using NoMercy.Providers.TMDB.Models.Episode;
 using NoMercy.Providers.TMDB.Models.Shared;
+// ReSharper disable All
 
 namespace NoMercy.Providers.TMDB.Client;
 
-public class EpisodeClient : BaseClient, IDisposable
+public class EpisodeClient : BaseClient
 {
     private readonly int _episodeNumber;
     private readonly int _seasonNumber;
@@ -14,22 +15,22 @@ public class EpisodeClient : BaseClient, IDisposable
         _episodeNumber = episodeNumber;
     }
 
-    public Task<EpisodeDetails> Details()
+    public Task<EpisodeDetails?> Details()
     {
         return Get<EpisodeDetails>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber);
     }
 
-    public Task<EpisodeAppends> WithAppends(string[] appendices)
+    private Task<EpisodeAppends?> WithAppends(string[] appendices)
     {
-        var @params = new Dictionary<string, string>
+        var queryParams = new Dictionary<string, string>
         {
             ["append_to_response"] = string.Join(",", appendices)
         };
 
-        return Get<EpisodeAppends>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber, @params);
+        return Get<EpisodeAppends>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber, queryParams);
     }
 
-    public Task<EpisodeAppends> WithAllAppends()
+    public Task<EpisodeAppends?> WithAllAppends()
     {
         return WithAppends([
             "changes",
@@ -41,38 +42,38 @@ public class EpisodeClient : BaseClient, IDisposable
         ]);
     }
 
-    public Task<EpisodeChanges> Changes(string startDate, string endDate)
+    public Task<EpisodeChanges?> Changes(string startDate, string endDate)
     {
-        var @params = new Dictionary<string, string>
+        var queryParams = new Dictionary<string, string>
         {
             ["start_date"] = startDate,
             ["end_date"] = endDate
         };
         
-        return Get<EpisodeChanges>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/changes", @params);
+        return Get<EpisodeChanges>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/changes", queryParams);
     }
 
-    public Task<Credits> Credits()
+    public Task<Credits?> Credits()
     {
         return Get<Credits>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/credits");
     }
 
-    public Task<ExternalIds> ExternalIds()
+    public Task<ExternalIds?> ExternalIds()
     {
         return Get<ExternalIds>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/external_ids");
     }
 
-    public Task<Images> Images()
+    public Task<Images?> Images()
     {
         return Get<Images>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/images");
     }
 
-    public Task<SharedTranslations> Translations()
+    public Task<SharedTranslations?> Translations()
     {
         return Get<SharedTranslations>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/translations");
     }
 
-    public Task<Videos> Videos()
+    public Task<Videos?> Videos()
     {
         return Get<Videos>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/videos");
     }

@@ -11,7 +11,7 @@ public class Season
     public int Id { get; set; }
 
     [JsonProperty("name")] 
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; } = string.Empty;
 
     [JsonProperty("overview")] 
     public string? Overview { get; set; }

@@ -1,20 +1,12 @@
 ﻿using Newtonsoft.Json;
 using NoMercy.Providers.TMDB.Models.Combined;
-using NoMercy.Providers.TMDB.Models.Shared;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Providers.TMDB.Models.Collections;
 
-public class CollectionAppends(Ci images, CombinedTranslations translations)
-    : CollectionDetails(0, "", "", "", "", Array.Empty<Movies.Movie>())
+public class CollectionAppends: CollectionDetails
 {
-    [JsonProperty("images")] public Ci Images { get; set; } = images;
+    [JsonProperty("images")] public CollectionImages Images { get; set; }
 
-    [JsonProperty("translations")] public CombinedTranslations Translations { get; set; } = translations;
-}
-
-public class Ci(Backdrop[] backdrops, Poster[] posters)
-{
-    [JsonProperty("backdrops")] public Backdrop[] Backdrops { get; set; } = [];
-
-    [JsonProperty("posters")] public Poster[] Posters { get; set; } = [];
+    [JsonProperty("translations")] public CombinedTranslations Translations { get; set; }
 }

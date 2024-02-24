@@ -11,8 +11,8 @@ namespace NoMercy.Providers.TMDB.Client
         private readonly Uri _baseUrl = new("https://api.themoviedb.org/3/");
 
         private readonly HttpClient _client = new();
-        
-        public BaseClient()
+
+        protected BaseClient()
         {
             _client.BaseAddress = _baseUrl;
             _client.DefaultRequestHeaders.Accept.Clear();
@@ -30,14 +30,6 @@ namespace NoMercy.Providers.TMDB.Client
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiInfo.TmdbToken}");
             Id = id;
-        }
-        protected BaseClient(string url)
-        {
-            _client = new HttpClient();
-            _client.DefaultRequestHeaders.Accept.Clear();
-            _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiInfo.TmdbToken}");
-            _client.BaseAddress = new Uri(url);
         }
         
         private static Queue? _queue;
@@ -57,14 +49,13 @@ namespace NoMercy.Providers.TMDB.Client
 
         public int Id { get; private set; }
 
-        protected async Task<T> Get<T>(string url, Dictionary<string, string?>? query = null) where T : class
+        protected async Task<T?> Get<T>(string url, Dictionary<string, string> query = null) where T : class
         {
-            if (query == null)
-                query = new Dictionary<string, string?>();
+            query ??= new Dictionary<string, string?>();
             
             var newUrl = QueryHelpers.AddQueryString(url, query);
             
-            if (CacheController.Read(newUrl, out T result))
+            if (CacheController.Read(newUrl, out T? result))
             {
                 return result;
             }
@@ -85,11 +76,11 @@ namespace NoMercy.Providers.TMDB.Client
             List<T> list = new List<T>();
         
             var firstPage = await Get<PaginatedResponse<T>>(url);
-            list.AddRange(firstPage.Results);
+            list.AddRange(firstPage?.Results ?? []);
 
             if (limit > 1)
             {
-                await Parallel.ForAsync(2, Max(firstPage.TotalPages, limit, 500), async (i, _) =>
+                await Parallel.ForAsync(2, Max(firstPage?.TotalPages ?? 0, limit, 500), async (i, _) =>
                 {
                     var page = await Get<PaginatedResponse<T>>(url, new Dictionary<string, string?>
                     {
@@ -98,7 +89,7 @@ namespace NoMercy.Providers.TMDB.Client
 
                     lock (list)
                     {
-                        list.AddRange(page.Results);
+                        list.AddRange(page?.Results ?? []);
                     }
                 });
             }

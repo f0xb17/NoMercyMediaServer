@@ -12,9 +12,9 @@ public class AggregatedCredit
 
     [JsonProperty("known_for_department")] public string? KnownForDepartment { get; set; }
 
-    [JsonProperty("name")] public string Name { get; set; } = string.Empty;
+    [JsonProperty("name")] public string Name { get; set; }
 
-    [JsonProperty("original_name")] public string OriginalName { get; set; } = string.Empty;
+    [JsonProperty("original_name")] public string OriginalName { get; set; }
 
     [JsonProperty("popularity")] public float Popularity { get; set; }
 
@@ -25,28 +25,28 @@ public class AggregatedCredit
 
 public class AggregatedCrew : AggregatedCredit
 {
-    [JsonProperty("jobs")] public Jobs[] Jobs { get; set; } = [];
+    [JsonProperty("jobs")] public AggregatedCrewJob[] Jobs { get; set; } = [];
 }
 
-public class Roles
+public class AggregatedCrewJob
 {
-    [JsonProperty("credit_id")] public string CreditId { get; set; } = string.Empty;
+    [JsonProperty("credit_id")] public string? CreditId { get; set; }
 
-    [JsonProperty("character")] public string Character { get; set; } = string.Empty;
+    [JsonProperty("job")] public string? Job { get; set; }
 
     [JsonProperty("episode_count")] public int EpisodeCount { get; set; }
 }
 
 public class AggregatedCast : AggregatedCredit
 {
-    [JsonProperty("roles")] public Roles[] Roles { get; set; } = [];
+    [JsonProperty("roles")] public AggregatedCreditRole[] Roles { get; set; } = [];
 }
 
-public class Jobs
+public class AggregatedCreditRole
 {
-    [JsonProperty("credit_id")] public string CreditId { get; set; } = string.Empty;
+    [JsonProperty("credit_id")] public string? CreditId { get; set; }
 
-    [JsonProperty("job")] public string Job { get; set; } = string.Empty;
+    [JsonProperty("character")] public string? Character { get; set; }
 
     [JsonProperty("episode_count")] public int EpisodeCount { get; set; }
 }

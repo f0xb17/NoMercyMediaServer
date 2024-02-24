@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using NoMercy.Providers.TMDB.Models.Certifications;
+using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Database.Models
 {
@@ -9,17 +11,19 @@ namespace NoMercy.Database.Models
     [Index(nameof(Iso31661), nameof(Rating), IsUnique = true)]
     public class Certification
     {
-
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
-        public string Iso31661 { get; set; } = string.Empty;
-        public string Rating { get; set; } = string.Empty;
-        public string Meaning { get; set; } = string.Empty;
-        public int Order { get; set; }
-        
+        [JsonProperty("id")] public int Id { get; set; }
+
+        [JsonProperty("iso_3166_1")] public string Iso31661 { get; set; } = string.Empty;
+
+        [JsonProperty("rating")] public string Rating { get; set; } = string.Empty;
+
+        [JsonProperty("meaning")] public string Meaning { get; set; } = string.Empty;
+
+        [JsonProperty("order")] public int Order { get; set; }
+
         public Certification()
         {
-            
         }
 
         public Certification(string country, TvShowCertification certification)
@@ -29,7 +33,7 @@ namespace NoMercy.Database.Models
             Meaning = certification.Meaning;
             Order = certification.Order;
         }
-        
+
         public Certification(string country, MovieCertification certification)
         {
             Iso31661 = country;
@@ -37,6 +41,5 @@ namespace NoMercy.Database.Models
             Meaning = certification.Meaning;
             Order = certification.Order;
         }
-
     }
 }

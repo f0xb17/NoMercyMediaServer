@@ -6,10 +6,10 @@ public class TvVideos
 {
     [JsonProperty("id")] public int Id { get; set; }
 
-    [JsonProperty("results")] public Result[] Results { get; set; } = [];
+    [JsonProperty("results")] public TvVideo[] Results { get; set; } = [];
 }
 
-public class Result
+public class TvVideo
 {
     [JsonProperty("id")] public string Id { get; set; } = string.Empty;
     
@@ -24,9 +24,7 @@ public class Result
     [JsonProperty("site")] public string Site { get; set; } = string.Empty;
 
     [JsonProperty("size")] public int Size { get; set; }
-
-    [JsonProperty("type")] public string Type { get; set; } = string.Empty;
-
+    
     [JsonProperty("official")] public bool Official { get; set; }
 
     [JsonProperty("published_at")] public DateTime? PublishedAt { get; set; }

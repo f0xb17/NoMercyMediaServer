@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace NoMercy.Database.Models
 {
@@ -7,7 +8,8 @@ namespace NoMercy.Database.Models
     public class MediaAttachment
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public required string Id { get; set; }
+        [JsonProperty("id")]
+        public required Ulid Id { get; set; } = Ulid.NewUlid();
         
     }
 }

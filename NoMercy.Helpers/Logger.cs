@@ -1,12 +1,13 @@
 using System.Drawing;
 using System.Text;
-using NoMercy.Database;
-using NoMercy.Database.Models;
+// ReSharper disable All
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Helpers;
 using Pastel;
 
 using System;
+using Microsoft.Extensions.Logging;
 
 public enum LogLevel
 {
@@ -18,8 +19,8 @@ public enum LogLevel
 }
 public static class Logger
 {
-    private static LogLevel _maxLogLevel = LogLevel.Info;
-
+    private static LogLevel _maxLogLevel = LogLevel.Verbose;
+    
     static Logger()
     {
         // MediaContext mediaContext = new MediaContext();
@@ -39,8 +40,8 @@ public static class Logger
     {
         return level >= _maxLogLevel;
     }
-    
-    public static readonly Dictionary<string, Color> LogColors = new()
+
+    private static readonly Dictionary<string, Color>? LogColors = new()
     {
         { "debug", Color.DarkGray },
         { "info", Color.White },
@@ -109,7 +110,7 @@ public static class Logger
         // { "xteve", Color.White },
     };
 
-    public static readonly Dictionary<string, string> Capitalize = new()
+    private static readonly Dictionary<string, string> Capitalize = new()
     {
         { "debug", "DEBUG" },
         { "info", "INFO" },
@@ -176,7 +177,7 @@ public static class Logger
         return Log<T>(self, LogLevel.Debug, type);
     }
 
-    public static T Log<T>(this T self, LogLevel level = LogLevel.Debug, string type = "server") where T: class
+    private static T Log<T>(this T self, LogLevel level = LogLevel.Debug, string type = "server") where T: class
     {
         Log(level, self, type);
         return self;
@@ -190,7 +191,7 @@ public static class Logger
     
     private static void Log<T>(LogLevel level, T message, string type = "server") where T: class
     {
-        Log(level, JsonHelper.ToJson(message), type);
+        Log(level, message.ToJson(), type);
     }
     
     private static void Log(LogLevel level, string message, string type = "server")
@@ -222,10 +223,11 @@ public static class Logger
     public static void Error(string message) => Log(LogLevel.Error, message, "error");
     public static void Error<T>(T message, LogLevel level = LogLevel.Debug) where T: class => Log(level, message);
     
-    public static void System(string message, LogLevel level = LogLevel.Debug) => Log(level, message, "system");
-    public static void System<T>(T message, LogLevel level = LogLevel.Debug) where T: class => Log(level, message, "system");
-    public static void App(string message, LogLevel level = LogLevel.Debug) => Log(level, message, "app");
-    public static void App<T>(T message, LogLevel level = LogLevel.Debug) where T: class => Log(level, message, "app");
+    public static void System(string message, LogLevel level = LogLevel.Info) => Log(level, message, "system");
+    public static void System<T>(T message, LogLevel level = LogLevel.Info) where T: class => Log(level, message, "system");
+    public static void App(string message, LogLevel level = LogLevel.Info) => Log(level, message, "app");
+    public static void App<T>(T message, LogLevel level = LogLevel.Info) where T: class => Log(level, message, "app");
+    
     public static void Access(string message, LogLevel level = LogLevel.Debug) => Log(level, message, "access");
     public static void Access<T>(T message, LogLevel level = LogLevel.Debug) where T: class => Log(level, message, "access");
     public static void Configuration(string message, LogLevel level = LogLevel.Debug) => Log(level, message, "configuration");
@@ -238,8 +240,8 @@ public static class Logger
     public static void Certificate<T>(T message, LogLevel level = LogLevel.Debug) where T: class => Log(level, message, "certificate");
     public static void Setup(string message, LogLevel level = LogLevel.Debug) => Log(level, message, "setup");
     public static void Setup<T>(T message, LogLevel level = LogLevel.Debug) where T: class => Log(level, message, "setup");
-    public static void Queue(string message, LogLevel level = LogLevel.Debug) => Log(level, message, "queue");
-    public static void Queue<T>(T message, LogLevel level = LogLevel.Debug) where T: class => Log(level, message, "queue");
+    public static void Queue(string message, LogLevel level = LogLevel.Verbose) => Log(level, message, "queue");
+    public static void Queue<T>(T message, LogLevel level = LogLevel.Verbose) where T: class => Log(level, message, "queue");
     public static void Encoder(string message, LogLevel level = LogLevel.Debug) => Log(level, message, "encoder");
     public static void Encoder<T>(T message, LogLevel level = LogLevel.Debug) where T: class => Log(level, message, "encoder");
     public static void Ripper(string message, LogLevel level = LogLevel.Debug) => Log(level, message, "ripper");

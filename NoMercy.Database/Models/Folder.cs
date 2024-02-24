@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace NoMercy.Database.Models
 {
@@ -8,7 +9,13 @@ namespace NoMercy.Database.Models
     public class Folder
     {
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
-        public string Id { get; set; }
-        public string Path { get; set; } = null!;
+        [JsonProperty("id")]
+        public Ulid Id { get; set; }
+
+        [JsonProperty("path")] public string Path { get; set; }
+
+        
+        [JsonProperty("encoder_profile_folder")]
+        public virtual ICollection<EncoderProfileFolder> EncoderProfileFolder { get; set; }
     }
 }

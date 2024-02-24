@@ -9,7 +9,7 @@ public class Episode
 
     [JsonProperty("episode_number")] public int EpisodeNumber { get; set; }
 
-    [JsonProperty("name")] public string Name { get; set; } = string.Empty;
+    [JsonProperty("name")] public string? Name { get; set; } = string.Empty;
 
     [JsonProperty("overview")] public string? Overview { get; set; }
 

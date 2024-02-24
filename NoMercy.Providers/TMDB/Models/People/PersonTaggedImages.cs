@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using NoMercy.Providers.TMDB.Models.Shared;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Providers.TMDB.Models.People;
 
@@ -14,12 +15,12 @@ public class TaggedImage : Profile
 
     [JsonProperty("image_type")] public string ImageType { get; set; } = string.Empty;
 
-    [JsonProperty("media")] public Media<Person> Media { get; set; } = new();
+    [JsonProperty("media")] public Media Media { get; set; } = new();
 
     [JsonProperty("media_type")] public string MediaType { get; set; } = string.Empty;
 }
 
-public class Media<T> where T : class
+public class Media
 {
     [JsonProperty("_id")] public string Id { get; set; } = string.Empty;
 

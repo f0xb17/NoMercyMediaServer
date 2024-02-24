@@ -1,13 +1,39 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using NoMercy.Providers.TMDB.Models.Season;
 
 namespace NoMercy.Database.Models
 {
     [PrimaryKey(nameof(Id))]
-    public class Season: ColorPalettes
+    public class Season : ColorPalettes
     {
-        public Season(SeasonAppends s, int tvId)
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [JsonProperty("id")]
+        public int Id { get; set; }
+
+        [JsonProperty("name")] public string? Title { get; set; }
+        [JsonProperty("air_date")] public DateTime? AirDate { get; set; }
+        [JsonProperty("episode_count")] public int EpisodeCount { get; set; }
+        [JsonProperty("overview")] public string? Overview { get; set; }
+        [JsonProperty("poster_path")] public string? Poster { get; set; }
+        [JsonProperty("season_number")] public int SeasonNumber { get; set; }
+
+        [JsonProperty("tv_id")] public int TvId { get; set; }
+        public virtual Tv Tv { get; set; }
+
+        [JsonProperty("episodes")] public virtual ICollection<Episode>? Episodes { get; set; }
+        [JsonProperty("casts")] public virtual ICollection<Cast>? Casts { get; set; }
+        [JsonProperty("crews")] public virtual ICollection<Crew>? Crews { get; set; }
+        [JsonProperty("medias")] public virtual ICollection<Media>? Medias { get; set; }
+        [JsonProperty("images")] public virtual ICollection<Image>? Images { get; set; }
+        [JsonProperty("translations")] public virtual ICollection<Translation>? Translations { get; set; }
+
+        public Season()
+        {
+        }
+
+        public Season(SeasonAppends? s, int tvId)
         {
             Id = s.Id;
             Title = s.Name;
@@ -18,28 +44,5 @@ namespace NoMercy.Database.Models
             SeasonNumber = s.SeasonNumber;
             TvId = tvId;
         }
-        
-        public Season()
-        { }
-        
-	    [DatabaseGenerated(DatabaseGeneratedOption.None)]
-        public int Id { get; set; }
-        public string? Title { get; set; }
-        public DateTime? AirDate { get; set; }
-        public int EpisodeCount { get; set; }
-        public string? Overview { get; set; }
-        public string? Poster { get; set; }
-        public int SeasonNumber { get; set; }
-        
-        public int TvId { get; set; }
-        public virtual Tv Tv { get; } = null!;
-            
-        public virtual ICollection<Episode>? Episodes { get; } = new HashSet<Episode>();
-        public virtual ICollection<Cast>? Casts { get; } = new HashSet<Cast>();
-        public virtual ICollection<Crew>? Crews { get; } = new HashSet<Crew>();
-        public virtual ICollection<Media>? Medias { get; } = new HashSet<Media>();
-        public virtual ICollection<Image>? Images { get; } = new HashSet<Image>();
-        public virtual ICollection<GuestStar>? GuestStars { get; } = new HashSet<GuestStar>();
-        public virtual ICollection<Translation>? Translations { get; } = new HashSet<Translation>();
     }
 }

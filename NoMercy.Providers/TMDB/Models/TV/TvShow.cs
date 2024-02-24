@@ -12,7 +12,7 @@ public class TvShow
 
     [JsonProperty("id")] public int Id { get; set; }
 
-    [JsonProperty("name")] public string Name { get; set; } = string.Empty;
+    [JsonProperty("name")] public string? Name { get; set; } = string.Empty;
 
     [JsonProperty("origin_country")] public string[] OriginCountry { get; set; } = [];
 
@@ -28,7 +28,7 @@ public class TvShow
 
     [JsonProperty("type")] public string MediaType { get; set; } = string.Empty;
 
-    [JsonProperty("vote_average")] public float VoteAverage { get; set; } = 0;
+    [JsonProperty("vote_average")] public float VoteAverage { get; set; }
 
-    [JsonProperty("vote_count")] public int VoteCount { get; set; } = 0;
+    [JsonProperty("vote_count")] public int VoteCount { get; set; }
 }

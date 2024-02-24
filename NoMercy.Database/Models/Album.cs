@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace NoMercy.Database.Models
 {
@@ -8,23 +9,30 @@ namespace NoMercy.Database.Models
     public class Album: ColorPaletteTimeStamps
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public required string Id { get; set; }
+        [JsonProperty("id")] public Guid Id { get; set; }
+        
         [StringLength(255)]
-        public required string Name { get; set; }
+        [JsonProperty("name")] public required string Name { get; set; }
+        
         [StringLength(255)]
-        public string? Description { get; set; }
+        [JsonProperty("description")] public string? Description { get; set; }
+        
         [StringLength(255)]
-        public required string Folder { get; set; }
+        [JsonProperty("folder")] public required string Folder { get; set; }
+        
         [StringLength(255)] 
-        public string? Cover { get; set; }
+        [JsonProperty("cover")] public string? Cover { get; set; }
+        
         [StringLength(2)]
-        public required string Country { get; set; }
-        public required int Year { get; set; }
-        public required int Tracks { get; set; }
+        [JsonProperty("country")] public required string Country { get; set; }
         
-        public required string LibraryId { get; set; }
+        [StringLength(4)]
+        [JsonProperty("year")] public required int Year { get; set; }
         
-        public virtual Library Library { get; } = null!;
+        [JsonProperty("genre")] public required int Tracks { get; set; }
+        
+        public required Ulid LibraryId { get; set; }
+        public virtual Library Library { get; set; }
 
     }
 }

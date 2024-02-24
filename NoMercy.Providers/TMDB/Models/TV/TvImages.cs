@@ -5,9 +5,9 @@ namespace NoMercy.Providers.TMDB.Models.TV;
 
 public class TvImages
 {
-    [JsonProperty("backdrops")] public Backdrop[] Backdrops { get; set; } = [];
-
-    [JsonProperty("id")] public int Id { get; set; }
-
-    [JsonProperty("posters")] public Poster[] Posters { get; set; } = [];
+    [JsonProperty("backdrops")] public Image[] Backdrops { get; set; } = [];
+    
+    [JsonProperty("posters")] public Image[] Posters { get; set; } = [];
+    
+    [JsonProperty("logos")] public Image[] Logos { get; set; } = [];
 }

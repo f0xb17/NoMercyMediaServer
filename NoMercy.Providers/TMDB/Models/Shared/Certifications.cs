@@ -53,7 +53,7 @@ public class Certification
         }
 
         index = 0;
-        while (index < Certifications.Caqc?.Length)
+        while (index < Certifications.Caqc.Length)
         {
             var y = Certifications.Caqc[index];
             certifications.Add(new CertificationItem

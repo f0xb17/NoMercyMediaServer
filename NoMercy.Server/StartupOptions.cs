@@ -7,7 +7,7 @@ namespace NoMercy.Server
         [Option('d', "datadir", Required = false, HelpText = "Path to use for the data folder (database files, etc.).")]
         public string? DataDir { get; set; }
 
-        [Option("nowebclient", Required = false, HelpText = "Indicates that the web server should not host the web client.")]
+        [Option("nowebclient", Required = false, HelpText = "Indicates that the web Server should not host the web client.")]
         public bool NoWebClient { get; set; }
 
         [Option('w', "webdir", Required = false, HelpText = "Path to the Jellyfin web UI resources.")]
@@ -16,7 +16,7 @@ namespace NoMercy.Server
         [Option('C', "cachedir", Required = false, HelpText = "Path to use for caching.")]
         public string? CacheDir { get; set; }
 
-        [Option('c', "configdir", Required = false, HelpText = "Path to use for configuration data (user settings and pictures).")]
+        [Option('c', "configdir", Required = false, HelpText = "Path to use for configuration data (User settings and pictures).")]
         public string? ConfigDir { get; set; }
 
         [Option('l', "logdir", Required = false, HelpText = "Path to use for writing log files.")]
@@ -37,7 +37,7 @@ namespace NoMercy.Server
         [Option("restartargs", Required = false, HelpText = "Arguments for restart script.")]
         public string? RestartArgs { get; set; }
 
-        [Option("published-server-url", Required = false, HelpText = "Jellyfin Server URL to publish via auto discover process")]
+        [Option("published-Server-url", Required = false, HelpText = "Jellyfin Server URL to publish via auto discover process")]
         public string? PublishedServerUrl { get; set; }
 
         public Dictionary<string, string> ConvertToConfig()

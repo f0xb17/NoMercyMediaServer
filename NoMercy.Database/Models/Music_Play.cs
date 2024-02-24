@@ -1,15 +1,26 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 // ReSharper disable once InconsistentNaming
 namespace NoMercy.Database.Models
 {
     [PrimaryKey(nameof(UserId), nameof(TrackId))]
-    public class Music_Play
+    public class MusicPlay
     {
-        public required string UserId { get; set; }
-        public required string TrackId { get; set; }
+        [JsonProperty("user_id")] public Guid UserId { get; set; }
+        public virtual User User { get; set; }
 
-        public virtual User User { get; } = null!;
-        public virtual Track Track { get; set; }        
+        [JsonProperty("track_id")] public Guid TrackId { get; set; }
+        public virtual Track Track { get; set; }
+
+        public MusicPlay()
+        {
+        }
+
+        public MusicPlay(Guid userId, Guid trackId)
+        {
+            UserId = userId;
+            TrackId = trackId;
+        }
     }
 }

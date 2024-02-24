@@ -1,19 +1,25 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace NoMercy.Database.Models
 {
     [PrimaryKey(nameof(Id))]
-    public class EncoderProfile: Timestamps
+    public class EncoderProfile : Timestamps
     {
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public required string Id { get; set; }
-        [Key]
-        public required string Name { get; set; }
-        public string? Container { get; set; }
-        public string? Param { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [JsonProperty("id")]
+        public Ulid Id { get; set; }
+
+        [Key] 
+        [JsonProperty("name")] public required string Name { get; set; }
+
+        [JsonProperty("container")] public string? Container { get; set; }
+
+        [JsonProperty("param")] public string? Param { get; set; }
         
-        public virtual ICollection<EncoderProfile_Library> EncoderProfile_Library { get; } = new HashSet<EncoderProfile_Library>();
+        [JsonProperty("encoder_profile_folder")]
+        public virtual ICollection<EncoderProfileFolder> EncoderProfileFolder { get; set; }
     }
 }

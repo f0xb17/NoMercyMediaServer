@@ -1,7 +1,12 @@
 using System.Drawing;
 using ColorThiefDotNet;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using NoMercy.Database;
+using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Client;
+using NoMercy.Providers.TMDB.Models.Movies;
+using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Server.Logic;
 
@@ -51,8 +56,8 @@ public static class ImageLogic
         [JsonProperty("darkMuted")]
         public required string DarkMuted { get; set; }
     }
-    
-    public static async Task<PaletteColors> ColorPaletteFromTmdbImage(string filePath)
+
+    private static async Task<PaletteColors> ColorPaletteFromTmdbImage(string filePath)
     {
         PaletteColors palette = await CreateColorPalette(filePath, "w300");
         return palette;
@@ -63,6 +68,7 @@ public static class ImageLogic
         string? backdropPath = null, 
         string? logoPath = null, 
         string? profilePath = null, 
+        string? filePath = null,
         string? stillPath = null)
     {
         Dictionary<string, PaletteColors?> palette = new()
@@ -87,10 +93,34 @@ public static class ImageLogic
                 ? await ColorPaletteFromTmdbImage(stillPath)
                 : null 
             },
+            { "image", filePath != null
+                ? await ColorPaletteFromTmdbImage(filePath)
+                : null 
+            },
         };
         
         return JsonConvert.SerializeObject(palette.Where(x => x.Value != null)
             .ToDictionary(x => x.Key, x => x.Value));
     }
 
+    public static async Task GetPalette(string filePath)
+    {
+        await using MediaContext mediaContext = new MediaContext();
+        var image = await mediaContext.Images
+            .FirstOrDefaultAsync(e => e.FilePath == filePath);
+        
+        if(image is null) return;
+        
+        lock (image)
+        {
+            if (image is { _colorPalette: "" })
+            {
+                var palette = GenerateColorPalette(filePath: filePath).Result;
+                image._colorPalette = palette;
+                mediaContext.SaveChanges();
+            }
+        }
+        
+    }
+    
 }

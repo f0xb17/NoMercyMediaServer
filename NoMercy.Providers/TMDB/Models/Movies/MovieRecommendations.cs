@@ -1,7 +1,12 @@
-﻿using NoMercy.Providers.TMDB.Models.Shared;
+﻿using Newtonsoft.Json;
+using NoMercy.Providers.TMDB.Models.Shared;
 
 namespace NoMercy.Providers.TMDB.Models.Movies;
 
-public abstract class MovieRecommendations : PaginatedResponse<Movie>
+public class MovieRecommendations : PaginatedResponse<RecommendationsMovie>
+{
+}
+
+public class RecommendationsMovie : Movie
 {
 }

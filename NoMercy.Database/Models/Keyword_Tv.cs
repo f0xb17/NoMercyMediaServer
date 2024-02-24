@@ -1,14 +1,27 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Database.Models
 {
     [PrimaryKey(nameof(KeywordId), nameof(TvId))]
-    public class Keyword_Tv
+    public class KeywordTv
     {
-        public required int KeywordId { get; set; }
-        public required int TvId { get; set; }
+        [JsonProperty("keyword_id")] public int KeywordId { get; set; }
+        public virtual Keyword Keyword { get; set; }
 
-        public virtual Keyword Keyword { get; } = null!;
-        public virtual Tv Tv { get; set; }        
+        [JsonProperty("tv_id")] public int TvId { get; set; }
+        public virtual Tv Tv { get; set; }
+
+        public KeywordTv()
+        {
+        }
+
+        public KeywordTv(Providers.TMDB.Models.Shared.Keyword input, TvShowAppends show)
+        {
+            KeywordId = input.Id;
+            TvId = show.Id;
+        }
     }
 }

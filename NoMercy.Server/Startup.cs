@@ -1,12 +1,21 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Net;
+using System.Security.Claims;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json;
 using NoMercy.Database;
+using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.Server.Jobs;
-using NoMercy.Server.Logic;
+using NoMercy.Queue;
+using NoMercy.Queue.system;
+using NoMercy.Server.app.Http.Middleware;
 
 namespace NoMercy.Server
 {
@@ -15,34 +24,63 @@ namespace NoMercy.Server
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMemoryCache();
-            services.AddSingleton<UserLogic>();
+            services.AddLogging();
             services.AddSingleton<JobQueue>();
-            services.AddDbContext<MediaContext>(options =>
+            services.AddControllers().AddJsonOptions(jsonOptions =>
             {
-                options.UseSqlite($"Data Source={AppFiles.MediaDatabase}");
+                jsonOptions.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+                jsonOptions.JsonSerializerOptions.IgnoreNullValues = true;
             });
+            
+            services.AddControllers().AddNewtonsoftJson(options =>
+                options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            );
 
+            services.AddDbContext<QueueContext>(optionsAction =>
+            {
+                optionsAction.UseSqlite($"Data Source={AppFiles.QueueDatabase}");
+            });
+            services.AddDbContext<MediaContext>(optionsAction =>
+            {
+                optionsAction.UseSqlite($"Data Source={AppFiles.MediaDatabase}");
+            });
+            
             services.ConfigureHttpJsonOptions(config =>
             {
                 config.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
-            services.AddCors();
-            services.AddAuthorizationBuilder().AddPolicy("api", policy =>
-            {
-                policy.RequireAuthenticatedUser();
-                policy.AddAuthenticationSchemes(IdentityConstants.BearerScheme);
-                policy.RequireClaim("scope", "api");
-            });
+            
+            services.AddAuthorizationBuilder()
+                .AddPolicy("api", policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.AddAuthenticationSchemes(IdentityConstants.BearerScheme);
+                    policy.RequireClaim("scope", "openid","profile");
+                    policy.AddRequirements([
+                        new AssertionRequirement(context =>
+                        {
+                            using MediaContext mediaContext = new();
+                            User? user = mediaContext.Users
+                                .FirstOrDefault(user => user.Id == Guid.Parse(context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty));
+                            return user is not null;
+                        })
+                    ]);
+                });
+            
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
-                    options.Authority = "https://auth-dev.nomercy.tv/realms/NoMercyTV"; // your keycloak address
+                    options.Authority = "https://auth-dev.nomercy.tv/realms/NoMercyTV";
+                    options.RequireHttpsMetadata = true;
+                    options.Audience = "nomercy-ui";
                     options.Audience = "nomercy-server";
-                    options.RequireHttpsMetadata =
-                        true; // For testing, you might want to set this to true in production
                 });
-
             services.AddAuthorization();
+            
+            services.AddCors();
+            services.AddApiVersioning();
+            services.AddDirectoryBrowser();
+            
             services.AddMvc(option => option.EnableEndpointRouting = false);
 
             services.AddControllers().AddJsonOptions(options =>
@@ -53,6 +91,7 @@ namespace NoMercy.Server
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen(options =>
             {
+                options.CustomSchemaIds(type => type.ToString());
                 options.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Title = "NoMercy API",
@@ -114,13 +153,10 @@ namespace NoMercy.Server
                     }
                 });
             });
-            
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public static void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
-            
             app.UseCors(options =>
             {
                 options.AllowAnyOrigin()
@@ -131,17 +167,59 @@ namespace NoMercy.Server
             app.UseHttpsRedirection();
         
             app.UseAuthentication();
+
             app.UseAuthorization();
-        
-            app.UseMvcWithDefaultRoute();
             
             if (env.IsDevelopment())
             {
+                app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(options =>
                 {
                     options.SwaggerEndpoint("/swagger/v1/swagger.json", "NoMercy API");
                     options.RoutePrefix = string.Empty;
+                    options.OAuthClientId("nomercy-server");
+                    options.OAuthScopes("openid");
+                    options.EnablePersistAuthorization();
+                    options.EnableTryItOutByDefault();
+                });
+            }
+            
+            app.UseMiddleware<HasAccessMiddleware>();
+        
+            app.UseMvcWithDefaultRoute();
+            
+            app.UseWebSockets();
+            
+            MediaContext mediaContext = new();
+            List<Folder> folderLibraries = mediaContext.Folders
+                .ToList();
+            
+            foreach (var folder in folderLibraries)
+            {
+                if(!Directory.Exists(folder.Path)) continue;
+
+                var path = app.UseStaticFiles(new StaticFileOptions
+                {
+                    FileProvider = new PhysicalFileProvider(folder.Path),
+                    RequestPath = new PathString($"/{folder.Id}"),
+                    ServeUnknownFileTypes = true,
+                    HttpsCompression = HttpsCompressionMode.Compress,
+                    OnPrepareResponse = ctx =>
+                    {
+                        if (ctx.Context.User.Identity?.IsAuthenticated is false)
+                        {
+                            ctx.Context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                        }
+                    }
+                });
+                
+                if (!env.IsDevelopment()) continue;
+                
+                path.UseDirectoryBrowser(new DirectoryBrowserOptions
+                {
+                    FileProvider = new PhysicalFileProvider(folder.Path),
+                    RequestPath = new PathString($"/{folder.Id}"),
                 });
             }
         }

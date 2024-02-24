@@ -6,9 +6,9 @@ public class Crew
 {
     [JsonProperty("department")] public string? Department { get; set; }
 
-    [JsonProperty("job")] public string Job { get; set; } = null!;
+    [JsonProperty("job")] public string? Job { get; set; }
 
-    [JsonProperty("credit_id")] public string CreditId { get; set; } = string.Empty;
+    [JsonProperty("credit_id")] public string? CreditId { get; set; }
 
     [JsonProperty("adult")] public bool Adult { get; set; }
 
@@ -22,7 +22,7 @@ public class Crew
 
     [JsonProperty("original_name")] public string OriginalName { get; set; } = string.Empty;
 
-    [JsonProperty("popularity")] public float Popularity { get; set; } = 0;
+    [JsonProperty("popularity")] public float Popularity { get; set; }
 
     [JsonProperty("profile_path")] public string? ProfilePath { get; set; }
 

@@ -8,14 +8,15 @@ namespace NoMercy.Server;
 public class TrayIcon
 {
     private static readonly string IconStream = Path.Combine(Directory.GetCurrentDirectory(), "Assets/icon.ico");
-    
+
     private static readonly Icon Icon = new(IconStream);
-    
-    private readonly TrayIconWithContextMenu _trayIcon = new(){
+
+    private readonly TrayIconWithContextMenu _trayIcon = new()
+    {
         Icon = Icon.Handle,
         ToolTip = "NoMercy MediaServer C#",
     };
-    
+
     [SupportedOSPlatform("windows10.0.18362")]
     private TrayIcon()
     {
@@ -39,22 +40,20 @@ public class TrayIcon
                 new PopupMenuItem("Shutdown", (_, _) => Shutdown()),
             },
         };
-        
+
         _trayIcon.Create();
     }
 
-    private void Pause()
+    private static void Pause()
     {
-        
     }
-    private void Show()
+
+    private static void Show()
     {
-        
     }
-    
-    private void Restart()
+
+    private static void Restart()
     {
-        
     }
 
     private void Shutdown()
@@ -70,8 +69,7 @@ public class TrayIcon
         {
             TrayIcon _ = new();
         }
-        
+
         return Task.CompletedTask;
     }
-
 }
