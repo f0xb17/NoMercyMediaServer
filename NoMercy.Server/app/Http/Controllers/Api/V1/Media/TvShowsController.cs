@@ -12,7 +12,7 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 [ApiController]
 [Tags("Media TV Shows")]
 [ApiVersion("1")]
-[Authorize, Route("api/v{Version:apiVersion}/tv/{id:int}")]
+[Authorize, Route("api/v{Version:apiVersion}/tv/{id:int}")] // match themoviedb.org API
 public class TvShowsController : Controller
 {
     [HttpGet]

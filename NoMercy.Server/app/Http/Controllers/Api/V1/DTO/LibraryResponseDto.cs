@@ -34,7 +34,7 @@ public class LibraryResponseItemDto
 
     [JsonProperty("overview")] public string? Overview { get; set; }
 
-    [JsonProperty("colorPalette", NullValueHandling = NullValueHandling.Ignore)] 
+    [JsonProperty("color_palette")] 
     public IColorPalettes? ColorPalette { get; set; }
 
     [JsonProperty("poster")] public string? Poster { get; set; }

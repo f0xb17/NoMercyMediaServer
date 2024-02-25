@@ -46,7 +46,7 @@ public class GenreRowItemDto
 
     [JsonProperty("mediaType")] public string? MediaType { get; set; }
 
-    [JsonProperty("colorPalette", NullValueHandling = NullValueHandling.Ignore)] 
+    [JsonProperty("color_palette")] 
     public IColorPalettes? ColorPalette { get; set; }
 
     [JsonProperty("genres")] public GenreDto[]? Genres { get; set; }

@@ -13,7 +13,7 @@ public class ScreensaverResponseDto
     [JsonProperty("src")]
     public string Src { get; set; }
 
-    [JsonProperty("colorPalette", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("color_palette")]
     public IColorPalettes ColorPaletteDto { get; set; }
 
     [JsonProperty("meta")]

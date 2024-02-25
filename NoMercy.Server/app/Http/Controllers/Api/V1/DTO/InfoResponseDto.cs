@@ -26,7 +26,7 @@ public class InfoResponseItemDto
 
     [JsonProperty("logo")] public string? Logo { get; set; }
 
-    [JsonProperty("colorPalette", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("color_palette")]
     public IColorPalettes? ColorPalette { get; set; }
 
     [JsonProperty("videos")] public VideoDto[] Videos { get; set; }
@@ -340,8 +340,7 @@ public class ImageDto
 
     [JsonProperty("voteCount")] public long VoteCount { get; set; }
 
-    [JsonProperty("colorPalette", NullValueHandling = NullValueHandling.Ignore)]
-    public IColorPalettes? ColorPalette { get; set; }
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
 
     public ImageDto(Image media)
     {
@@ -375,7 +374,7 @@ public class PeopleDto
 
     [JsonProperty("popularity")] public double Popularity { get; set; }
 
-    [JsonProperty("colorPalette", NullValueHandling = NullValueHandling.Include)]
+    [JsonProperty("color_palette", NullValueHandling = NullValueHandling.Include)]
     public IColorPalettes? ColorPalette { get; set; }
 
     [JsonProperty("deathDay")] public DateTime? DeathDay { get; set; }
@@ -418,8 +417,7 @@ public class DirectorDto
 
     [JsonProperty("name")] public string Name { get; set; }
 
-    [JsonProperty("colorPalette", NullValueHandling = NullValueHandling.Ignore)]
-    public IColorPalettes? ColorPalette { get; set; }
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     
     public DirectorDto(Crew crew)
     {
@@ -456,7 +454,7 @@ public class RelatedDto
 
     [JsonProperty("haveEpisodes")] public int? HaveEpisodes { get; set; }
 
-    [JsonProperty("colorPalette", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("color_palette")]
     public IColorPalettes? ColorPalette { get; set; }
     
     public RelatedDto(Similar similar, string type)
@@ -505,7 +503,7 @@ public class SeasonDto
 
     [JsonProperty("title")] public string? Title { get; set; }
 
-    [JsonProperty("colorPalette", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("color_palette")]
     public IColorPalettes? ColorPalette { get; set; }
 
     [JsonProperty("episodes")] public EpisodeDto[] Episodes { get; set; }
@@ -541,7 +539,7 @@ public class EpisodeDto
 
     [JsonProperty("still")] public string? Still { get; set; }
 
-    [JsonProperty("colorPalette", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("color_palette")]
     public IColorPalettes? ColorPalette { get; set; }
 
     [JsonProperty("progress")] public object? Progress { get; set; }

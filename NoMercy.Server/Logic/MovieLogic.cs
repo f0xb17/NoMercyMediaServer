@@ -19,7 +19,7 @@ public class MovieLogic(int id, Library library)
     private string MediaType { get; set; } = "";
     private string Folder { get; set; } = "";
 
-    public MovieAppends? Movie { get; set; }
+    public MovieAppends? Movie { get; private set; }
     
     private readonly MediaContext _mediaContext = new();
 
@@ -240,13 +240,13 @@ public class MovieLogic(int id, Library library)
         if (movie is null) return;
         
         List<Image> posters = movie.Images.Posters.ToList()
-            .ConvertAll<Image>(image => new Image(image:image, movie:movie, type:"poster")) ?? [];
+            .ConvertAll<Image>(image => new Image(image:image, movie:movie, type:"poster"));
         
         List<Image> backdrops = movie.Images.Backdrops.ToList()
-            .ConvertAll<Image>(image => new Image(image:image, movie:movie, type:"backdrop")) ?? [];
+            .ConvertAll<Image>(image => new Image(image:image, movie:movie, type:"backdrop"));
         
         List<Image> logos = movie.Images.Logos.ToList()
-            .ConvertAll<Image>(image => new Image(image:image, movie:movie, type:"logo")) ?? [];
+            .ConvertAll<Image>(image => new Image(image:image, movie:movie, type:"logo"));
         
         List<Image> images = posters
             .Concat(backdrops)

@@ -32,7 +32,7 @@ public class LibrariesResponseItemDto
 
     [JsonProperty("order")] public int? Order { get; set; }
 
-    [JsonProperty("colorPalette", NullValueHandling = NullValueHandling.Ignore)] 
+    [JsonProperty("color_palette")] 
     public object? ColorPalette { get; set; }
 
     [JsonProperty("created_at")] public DateTime? CreatedAt { get; set; }

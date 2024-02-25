@@ -29,7 +29,7 @@ public class PeopleController : Controller
     }
     
     [HttpGet]
-    [Route("{id:int}")]
+    [Route("api/v{Version:apiVersion}/person/{id:int}")] // match themoviedb.org API
     public Task<object> Show(int id)
     {
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);

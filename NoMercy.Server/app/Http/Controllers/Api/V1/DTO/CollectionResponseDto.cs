@@ -30,7 +30,7 @@ public class CollectionResponseItemDto
 
     [JsonProperty("mediaType")] public string MediaType { get; set; }
 
-    [JsonProperty("colorPalette")] public IColorPalettes? ColorPalette { get; set; }
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
 
     [JsonProperty("collection")] public CollectionMovieDto[] Collection { get; set; }
 
@@ -74,7 +74,7 @@ public class CollectionMovieDto
 
     [JsonProperty("overview")] public string? Overview { get; set; }
 
-    [JsonProperty("colorPalette")] public IColorPalettes? ColorPalette { get; set; }
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
 
     [JsonProperty("poster")] public string? Poster { get; set; }
 

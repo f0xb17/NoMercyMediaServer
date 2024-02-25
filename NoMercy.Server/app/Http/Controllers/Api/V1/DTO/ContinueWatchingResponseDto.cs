@@ -32,7 +32,7 @@ public class ContinueWatchingItemDto
 
     [JsonProperty("created_at")] public DateTime? CreatedAt { get; set; }
 
-    [JsonProperty("colorPalette", NullValueHandling = NullValueHandling.Ignore)] 
+    [JsonProperty("color_palette")] 
     public IColorPalettes? ColorPalette { get; set; }
 
     [JsonProperty("year")] public long? Year { get; set; }

@@ -188,11 +188,11 @@ public class ColorPaletteTimeStamps: Timestamps
 {
     [Column("ColorPalette")]
     [StringLength(1024)]
-    [JsonProperty("color_palette")]
     [System.Text.Json.Serialization.JsonIgnore]
     public string _colorPalette { get; set; } = string.Empty;
     
     [NotMapped]
+    [JsonProperty("color_palette")]
     public IColorPalettes? ColorPalette
     {
         get => (_colorPalette != string.Empty 
@@ -204,30 +204,25 @@ public class ColorPaletteTimeStamps: Timestamps
 
 public class IColorPalettes
 {
-    [JsonProperty("poster", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("poster")]
     public IPalette? Poster { get; set; }
-    [JsonProperty("backdrop", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("backdrop")]
     public IPalette? Backdrop { get; set; }
-    [JsonProperty("still", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("still")]
     public IPalette? Still { get; set; }
-    [JsonProperty("profile", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("profile")]
     public IPalette? Profile { get; set; }
-    [JsonProperty("image", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("image")]
     public IPalette? Image { get; set; }
 }
 
 public class IPalette
 {
-    [JsonProperty("primary", NullValueHandling = NullValueHandling.Ignore)]
-    public string? Primary { get; set; }
-    [JsonProperty("light_vibrant", NullValueHandling = NullValueHandling.Ignore)]
-    public string? LightVibrant { get; set; }
-    [JsonProperty("dark_vibrant", NullValueHandling = NullValueHandling.Ignore)]
-    public string? DarkVibrant { get; set; }
-    [JsonProperty("light_muted", NullValueHandling = NullValueHandling.Ignore)]
-    public string? LightMuted { get; set; }
-    [JsonProperty("dark_muted", NullValueHandling = NullValueHandling.Ignore)]
-    public string? DarkMuted { get; set; }
+    public string Primary { get; set; }
+    public string LightVibrant { get; set; }
+    public string DarkVibrant { get; set; }
+    public string LightMuted { get; set; }
+    public string DarkMuted { get; set; }
 }
 
 public class UlidToStringConverter : ValueConverter<Ulid, string>
