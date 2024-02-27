@@ -23,7 +23,7 @@ public static class FileNameParsers
     }
     public static string CreateBaseFolder(MovieDetails movie)
     {
-        return string.Concat(movie.Title.CleanFileName(), "(",  movie.ReleaseDate.ParseYear(), ")");
+        return string.Concat(movie.Title.CleanFileName(), ".(",  movie.ReleaseDate.ParseYear(), ")");
     }
     
     public static string CreateEpisodeFolder(Episode data, TvShow show)

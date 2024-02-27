@@ -51,7 +51,7 @@ public class InfoResponseItemDto
 
     [JsonProperty("titleSort")] public string? TitleSort { get; set; }
 
-    [JsonProperty("duration")] public int? Duration { get; set; }
+    [JsonProperty("duration")] public double Duration { get; set; }
 
     [JsonProperty("numberOfEpisodes")] public int NumberOfEpisodes { get; set; }
 
@@ -88,10 +88,11 @@ public class InfoResponseItemDto
         Overview = movie.Overview;
         Type = "movie";
         MediaType = "movie";
-        // Watched = tv.Watched;
-        // Favorite = tv.Favorite;
+        Watched = movie.VideoFiles.Any(videoFile => videoFile.UserData.FirstOrDefault()?.Played == true);
+        Favorite = movie.VideoFiles.Any(videoFile => videoFile.UserData.FirstOrDefault()?.IsFavorite == true);
         TitleSort = movie.Title.TitleSort(movie.ReleaseDate);
-        Duration = movie.Duration;
+        Duration = (int)movie.VideoFiles
+            .Select(videoFile => videoFile.Duration.ToSeconds() / 60).Average();
         Year = movie.ReleaseDate.ParseYear();
         VoteAverage = movie.VoteAverage ?? 0;
 
@@ -174,10 +175,14 @@ public class InfoResponseItemDto
         Overview = tv.Overview;
         Type = tv.Type ?? "tv";
         MediaType = "tv";
-        // Watched = tv.Watched;
-        // Favorite = tv.Favorite;
+        Watched = tv.Episodes.Any(episode => episode.VideoFiles.Any(videoFile => videoFile.UserData.FirstOrDefault()?.Played == true));
+        Favorite = tv.Episodes.Any(episode => episode.VideoFiles.Any(videoFile => videoFile.UserData.FirstOrDefault()?.IsFavorite == true));
         TitleSort = tv.Title.TitleSort(tv.FirstAirDate);
-        Duration = tv.Duration;
+        
+        Duration = (int)tv.Episodes
+            .SelectMany(episode => episode.VideoFiles)
+            .Select(videoFile => videoFile.Duration.ToSeconds() / 60).Average();
+        
         NumberOfEpisodes = tv.NumberOfEpisodes;
         HaveEpisodes = tv.HaveEpisodes;
         Year = tv.FirstAirDate.ParseYear();
@@ -364,7 +369,7 @@ public class PeopleDto
 
     [JsonProperty("profilePath")] public string? ProfilePath { get; set; }
 
-    [JsonProperty("gender")] public string Gender { get; set; }
+    [JsonProperty("_gender")] public string Gender { get; set; }
 
     [JsonProperty("id")] public long Id { get; set; }
 

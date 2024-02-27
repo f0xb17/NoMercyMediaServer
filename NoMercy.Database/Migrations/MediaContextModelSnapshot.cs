@@ -1522,7 +1522,7 @@ namespace NoMercy.Database.Migrations
                     b.HasIndex("VideoFileId", "Src")
                         .IsUnique();
 
-                    b.ToTable("Medias");
+                    b.ToTable("Media");
                 });
 
             modelBuilder.Entity("NoMercy.Database.Models.MediaAttachment", b =>
@@ -3524,7 +3524,7 @@ namespace NoMercy.Database.Migrations
             modelBuilder.Entity("NoMercy.Database.Models.Media", b =>
                 {
                     b.HasOne("NoMercy.Database.Models.Episode", "Episode")
-                        .WithMany("Medias")
+                        .WithMany("Media")
                         .HasForeignKey("EpisodeId")
                         .OnDelete(DeleteBehavior.Cascade);
 
@@ -3539,7 +3539,7 @@ namespace NoMercy.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("NoMercy.Database.Models.Season", "Season")
-                        .WithMany("Medias")
+                        .WithMany("Media")
                         .HasForeignKey("SeasonId")
                         .OnDelete(DeleteBehavior.Cascade);
 
@@ -3908,7 +3908,7 @@ namespace NoMercy.Database.Migrations
 
                     b.Navigation("Images");
 
-                    b.Navigation("Medias");
+                    b.Navigation("Media");
 
                     b.Navigation("SpecialItems");
 
@@ -4013,7 +4013,7 @@ namespace NoMercy.Database.Migrations
 
                     b.Navigation("Images");
 
-                    b.Navigation("Medias");
+                    b.Navigation("Media");
                 });
 
             modelBuilder.Entity("NoMercy.Database.Models.Translation", b =>

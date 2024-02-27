@@ -26,6 +26,9 @@ public class CollectionsController : Controller
             .Where(collection => collection.Library.LibraryUsers
                 .FirstOrDefault(u => u.UserId == userId) != null)
             
+            .Where(collection => collection.CollectionMovies
+                .Any(movie => movie.Movie.VideoFiles.Any()))
+            
             .Include(collection => collection.Library)
                 .ThenInclude(library => library.FolderLibraries)
                     .ThenInclude(folderLibrary => folderLibrary.Folder)
@@ -67,7 +70,11 @@ public class CollectionsController : Controller
             
             .Include(collection => collection.CollectionMovies)
                 .ThenInclude(movie => movie.Movie)
-                .ThenInclude(movie => movie.Translations)
+                    .ThenInclude(movie => movie.Translations)
+            
+            .Include(collection => collection.CollectionMovies)
+                .ThenInclude(movie => movie.Movie)
+                    .ThenInclude(movie => movie.VideoFiles)
             
             // .Include(collection => collection.Translations
             //     .Where(translation => translation.Iso6391 == "en" || translation.Iso6391 == "nl"))

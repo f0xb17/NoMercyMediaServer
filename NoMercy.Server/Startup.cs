@@ -13,9 +13,8 @@ using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.Queue;
-using NoMercy.Queue.system;
 using NoMercy.Server.app.Http.Middleware;
+using NoMercy.Server.system;
 
 namespace NoMercy.Server
 {
@@ -161,13 +160,16 @@ namespace NoMercy.Server
             {
                 options.AllowAnyOrigin()
                     .AllowAnyMethod()
+                    .WithHeaders("Access-Control-Allow-Private-Network", "true")
                     .AllowAnyHeader();
             });
         
             app.UseHttpsRedirection();
         
+            app.UseMiddleware<TokenParamAuthMiddleware>();
+            
             app.UseAuthentication();
-
+            
             app.UseAuthorization();
             
             if (env.IsDevelopment())
@@ -184,8 +186,6 @@ namespace NoMercy.Server
                     options.EnableTryItOutByDefault();
                 });
             }
-            
-            app.UseMiddleware<HasAccessMiddleware>();
         
             app.UseMvcWithDefaultRoute();
             
@@ -198,7 +198,7 @@ namespace NoMercy.Server
             foreach (var folder in folderLibraries)
             {
                 if(!Directory.Exists(folder.Path)) continue;
-
+                
                 var path = app.UseStaticFiles(new StaticFileOptions
                 {
                     FileProvider = new PhysicalFileProvider(folder.Path),

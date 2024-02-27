@@ -3,8 +3,8 @@ using NoMercy.Providers.TMDB.Models.Episode;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.Season;
 using NoMercy.Providers.TMDB.Models.TV;
-using NoMercy.Queue.system;
 using NoMercy.Server.Logic;
+using NoMercy.Server.system;
 
 namespace NoMercy.Server.app.Jobs;
 

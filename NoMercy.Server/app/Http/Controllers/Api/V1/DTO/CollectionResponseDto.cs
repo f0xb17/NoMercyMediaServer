@@ -91,6 +91,10 @@ public class CollectionMovieDto
 
     [JsonProperty("videoId", NullValueHandling = NullValueHandling.Ignore)]
     public string? VideoId { get; set; }
+    
+    [JsonProperty("numberOfEpisodes")] public int? NumberOfEpisodes { get; set; }
+
+    [JsonProperty("haveEpisodes")] public int? HaveEpisodes { get; set; }
 
     public CollectionMovieDto(Movie movie)
     {
@@ -116,6 +120,9 @@ public class CollectionMovieDto
         Rating = movie.CertificationMovies?
             .Select(certificationMovie => certificationMovie.Certification)
             .FirstOrDefault();
+        
+        NumberOfEpisodes = 1;
+        HaveEpisodes = movie.VideoFiles.Count > 0 ? 1 : 0;
 
         VideoId = movie.Video;
     }

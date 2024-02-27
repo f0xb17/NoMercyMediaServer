@@ -27,7 +27,7 @@ public class SearchClient : BaseClient
         var queryParams = new Dictionary<string, string>
         {
             ["query"] = query,
-            ["primary_release_year"] = year,
+            ["first_air_date_year"] = year,
             ["include_adult"] = "false"
         };
         

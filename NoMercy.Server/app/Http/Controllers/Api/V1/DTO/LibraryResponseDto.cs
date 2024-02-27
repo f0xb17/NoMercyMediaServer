@@ -68,6 +68,7 @@ public class LibraryResponseItemDto
         Title = movie.Movie.Title;
         TitleSort = movie.Movie.Title.TitleSort(movie.Movie.ReleaseDate);
         Type = "movie";
+        
         Genres = movie.Movie.GenreMovies?
             .Select(genreMovie => new GenreDto(genreMovie))
             .ToArray() ?? [];
@@ -94,7 +95,11 @@ public class LibraryResponseItemDto
         TitleSort = tv.Tv.Title.TitleSort(tv.Tv.FirstAirDate);
         Type = "tv";
         NumberOfEpisodes = tv.Tv.NumberOfEpisodes;
-        HaveEpisodes = tv.Tv.HaveEpisodes;
+        
+        HaveEpisodes = tv.Tv.Episodes?
+                .Where(episode => episode.SeasonNumber > 0)
+            .Count(videoFiles => videoFiles.VideoFiles.DistinctBy(videoFile => videoFile.Folder).Any()) ?? 0;
+        
         Genres = tv.Tv.GenreTvs?
             .Select(genreTv => new GenreDto(genreTv))
             .ToArray() ?? [];

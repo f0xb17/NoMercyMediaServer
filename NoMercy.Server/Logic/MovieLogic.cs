@@ -4,9 +4,9 @@ using NoMercy.Database.Models;
 using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Movies;
-using NoMercy.Queue.system;
 using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Jobs;
+using NoMercy.Server.system;
 using LogLevel = NoMercy.Helpers.LogLevel;
 using Movie = NoMercy.Database.Models.Movie;
 using Translation = NoMercy.Database.Models.Translation;
@@ -58,6 +58,9 @@ public class MovieLogic(int id, Library library)
             StoreSimilar().Wait();
             StoreContentRatings().Wait();
             StoreWatchProviders().Wait();
+            
+            // FindMediaFilesJob job = new(Movie.Id, library.Id.ToString());
+            // job.Handle().Wait();
         }
         
         await DispatchJobs();
@@ -431,8 +434,11 @@ public class MovieLogic(int id, Library library)
     {
         if (Movie is null) return Task.CompletedTask;
         
+        FindMediaFilesJob findMediaFilesJob = new FindMediaFilesJob(id: Movie.Id, libraryId:library.Id.ToString());
+        JobDispatcher.Dispatch(findMediaFilesJob, "queue", 3);
+        
         PersonJob personJob = new PersonJob(id:Movie.Id, type:"movie");
-        JobDispatcher.Dispatch(personJob, "queue", 4);
+        JobDispatcher.Dispatch(personJob, "queue", 3);
         
         ColorPaletteJob colorPaletteMovieJob = new ColorPaletteJob(id:Movie.Id, model:"movie");
         JobDispatcher.Dispatch(colorPaletteMovieJob, "data");
@@ -444,11 +450,11 @@ public class MovieLogic(int id, Library library)
         JobDispatcher.Dispatch(colorPaletteRecommendationJob, "data");
         
         ImagesJob imagesJob = new ImagesJob(id:Movie.Id, type:"movie");
-        JobDispatcher.Dispatch(imagesJob, "queue");
+        JobDispatcher.Dispatch(imagesJob, "queue", 2);
         
         if(Movie.BelongsToCollection is null) return Task.CompletedTask;
         CollectionJob collectionJob = new CollectionJob(id:Movie.BelongsToCollection.Id, libraryId:library.Id.ToString());
-        JobDispatcher.Dispatch(collectionJob, "queue", 4);
+        JobDispatcher.Dispatch(collectionJob, "queue", 3);
         
         return Task.CompletedTask;
     }

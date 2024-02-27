@@ -10,7 +10,7 @@ namespace NoMercy.Helpers;
 public static class SystemInfo
 {
     public static readonly string DeviceName = "VLIEGTUIG!";
-    public static readonly string DeviceId = GetDeviceId();
+    public static readonly Guid DeviceId = GetDeviceId();
     public static readonly string Os = RuntimeInformation.OSDescription;
     public static readonly string Platform = GetPlatform();
     public static readonly string Architecture = RuntimeInformation.ProcessArchitecture.ToString();
@@ -21,7 +21,7 @@ public static class SystemInfo
     public static readonly string ExecSuffix = Platform == "windows" ? ".exe" : "";
     public static int ServerPort { get; set; } = 7626;
     
-    private static string GetDeviceId()
+    private static Guid GetDeviceId()
     {
         string generatedId = new DeviceIdBuilder()
             .AddMachineName()
@@ -40,7 +40,7 @@ public static class SystemInfo
 
         byte[] hash = MD5.HashData(Encoding.UTF8.GetBytes(generatedId));
 
-        return new Guid(hash).ToString();
+        return new Guid(hash);
     }
     private static string GetPlatform()
     {

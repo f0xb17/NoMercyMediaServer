@@ -54,7 +54,7 @@ namespace NoMercy.Database.Models
         public virtual ICollection<VideoFile> VideoFiles { get; set; }
 
         [JsonProperty("medias")] 
-        public virtual ICollection<Media>? Medias { get; set; }
+        public virtual ICollection<Media>? Media { get; set; }
 
         [JsonProperty("images")] 
         public virtual ICollection<Image>? Images { get; set; }

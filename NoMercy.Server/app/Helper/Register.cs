@@ -10,7 +10,7 @@ public static class Register
     {
         var serverData = new Dictionary<string, string>
         {
-            {"server_id", SystemInfo.DeviceId},
+            {"server_id", SystemInfo.DeviceId.ToString()},
             {"server_name", SystemInfo.DeviceName},
             {"internal_ip", Networking.InternalIp},
             {"internal_port", Networking.InternalServerPort.ToString()},
@@ -42,7 +42,7 @@ public static class Register
     {
         var serverData = new Dictionary<string, string>
         {
-            {"server_id", SystemInfo.DeviceId}
+            {"server_id", SystemInfo.DeviceId.ToString()}
         };
         
         var client = new HttpClient();

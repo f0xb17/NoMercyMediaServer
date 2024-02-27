@@ -20,4 +20,9 @@ public static class DateTimeParser
             : _parseYear(self);
     }
     
+    public static string ToHms(this int seconds)
+    {
+        return TimeSpan.FromSeconds(seconds).ToString(@"hh\:mm\:ss");
+    }
+    
 }

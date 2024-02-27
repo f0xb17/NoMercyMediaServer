@@ -27,7 +27,7 @@ namespace NoMercy.Database.Models
 
         [JsonProperty("size")] public int Size { get; set; }
 
-        [JsonProperty("src")] public string? Src { get; set; }
+        [JsonProperty("src")] public string Src { get; set; }
 
         [JsonProperty("type")] public string? Type { get; set; }
         

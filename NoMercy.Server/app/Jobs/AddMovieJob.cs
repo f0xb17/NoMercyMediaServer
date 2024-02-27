@@ -2,8 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.Queue.system;
 using NoMercy.Server.Logic;
+using NoMercy.Server.system;
 
 namespace NoMercy.Server.app.Jobs;
 
@@ -20,6 +20,7 @@ public class AddMovieJob : IShouldQueue
 
     public async Task Handle()
     {
+        Logger.App($"AddMovieJob Handle {_id} {_libraryId}");
         await using MediaContext context = new MediaContext();
         Library? library = await context.Libraries
             .Where(f => f.Id == Ulid.Parse(_libraryId))

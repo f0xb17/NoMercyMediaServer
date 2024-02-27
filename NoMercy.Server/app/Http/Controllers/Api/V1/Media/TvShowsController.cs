@@ -71,6 +71,10 @@ public class TvShowsController : Controller
                 .ThenInclude(season => season.Episodes)
                     .ThenInclude(episode => episode.Translations)
             
+            .Include(tv => tv.Episodes)
+                .ThenInclude(episode => episode.VideoFiles)
+                    .ThenInclude(file => file.UserData)
+            
             .Include(tv => tv.RecommendationFrom)
             
             .Include(tv => tv.SimilarFrom)
@@ -101,6 +105,7 @@ public class TvShowsController : Controller
             .Where(tv => tv.Id == id)
             .Include(tv => tv.Episodes)
                 .ThenInclude(tv => tv.VideoFiles)
+            
             .FirstOrDefaultAsync();
         
         return new AvailableResponseDto
@@ -108,21 +113,43 @@ public class TvShowsController : Controller
             Available = tv?.Episodes.Select(episode => episode.VideoFiles).Any() ?? false
         };
     }
-    
+
     [HttpGet]
     [Route("watch")]
-    public Task<object> Watch(int id)
+    public async Task<PlaylistResponseDto[]> Watch(int id)
     {
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
 
-        using HttpClient client = new();
-        
-        client.DefaultRequestHeaders.Accept.Clear();
-        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        client.DefaultRequestHeaders.Add("Authorization", (string)HttpContext.Request.Headers["Authorization"]!);
-        
-        return Task.FromResult<object>(client.GetAsync(
-                $"https://192-168-2-201.1968dcdc-bde6-4a0f-a7b8-5af17afd8fb6.nomercy.tv:7635/api/tv/{id}/watch")
-            .Result.Content.ReadAsStringAsync().Result);
+        await using MediaContext mediaContext = new();
+        var tv = await mediaContext.Tvs
+            .AsNoTracking()
+
+            .Where(tv => tv.Id == id)
+
+            .Where(tv => tv.Library.LibraryUsers
+                .FirstOrDefault(u => u.UserId == userId) != null)
+
+            .Include(tv => tv.Media
+                .Where(media => media.Type == "video"))
+            
+            .Include(tv => tv.Images
+                .Where(image => image.Type == "logo"))
+            
+            .Include(tv => tv.Translations
+                .Where(translation => translation.Iso6391 == "en" || translation.Iso6391 == "nl"))
+            
+            .Include(tv => tv.Seasons)
+                .ThenInclude(season => season.Translations)
+            
+            .Include(tv => tv.Episodes)
+                .ThenInclude(episode => episode.Season) 
+                
+            .Include(tv => tv.Episodes)
+                .ThenInclude(tv => tv.VideoFiles)
+                    .ThenInclude(file => file.UserData)
+            
+            .FirstOrDefaultAsync();
+
+        return tv?.Episodes.Select(episode => new PlaylistResponseDto(episode)).ToArray() ?? [];
     }
 }

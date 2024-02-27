@@ -20,9 +20,10 @@
         <PackageReference Include="AnitomySharp.Fork" Version="2023.1.2.1" />
         <PackageReference Include="Asp.Versioning.Http" Version="8.0.0" />
         <PackageReference Include="CommandLineParser" Version="2.9.1"/>
+        <PackageReference Include="FFMpegCore" Version="5.1.0" />
         <PackageReference Include="H.NotifyIcon" Version="2.0.124"/>
         <PackageReference Include="ksemenenko.ColorThief" Version="1.1.1.4"/>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.1"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.2" />
         <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="7.2.0"/>
         <PackageReference Include="Mono.Nat" Version="3.0.4"/>
@@ -55,7 +56,6 @@
         <ProjectReference Include="..\NoMercy.Database\NoMercy.Database.csproj"/>
         <ProjectReference Include="..\NoMercy.Helpers\NoMercy.Helpers.csproj"/>
         <ProjectReference Include="..\NoMercy.Providers\NoMercy.Providers.csproj"/>
-        <ProjectReference Include="..\NoMercy.Queue\NoMercy.Queue.csproj" />
     </ItemGroup>
     <ItemGroup>
       <Folder Include="app\Http\Listeners\" />

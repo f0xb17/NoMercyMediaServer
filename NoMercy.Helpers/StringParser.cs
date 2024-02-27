@@ -108,5 +108,22 @@ public static class StringParser
 
         return char.ToUpper(str[0]) + str[1..].ToLower();
     }
+
+    public static int ToSeconds(this string hms)
+    {
+        
+        if (string.IsNullOrEmpty(hms))
+        {
+            return 0;
+        }
+
+        var parts = hms.Split(':').Select(int.Parse).ToArray();
+        if (parts.Length < 3)
+        {
+            parts = new[] { 0 }.Concat(parts).ToArray();
+        }
+
+        return parts[0] * 60 * 60 + parts[1] * 60 + parts[2];
+    }
     
 }

@@ -1,7 +1,10 @@
 using System.Text.RegularExpressions;
+using FFMpegCore;
+using FFMpegCore.Builders.MetaData;
 using MovieFileLibrary;
 using Newtonsoft.Json;
 using NoMercy.Database;
+using NoMercy.Helpers;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -47,6 +50,9 @@ public class MediaFile
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public MovieFile? Parsed { get; set; }
     
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public IMediaAnalysis? FFprobe { get; set; }
+    
 }
 
 public class MediaScan
@@ -58,6 +64,11 @@ public class MediaScan
     private bool _regexFilterEnabled = true;
     private readonly Regex _folderNameRegex = new(@"video_.*|audio_.*|subtitles|scans|cds.*|ost|album|music|original|fonts|thumbs|metadata|NCED|NCOP|\s\(\d\)\.|~", RegexOptions.IgnoreCase);
 
+    public MediaScan()
+    {
+        GlobalFFOptions.Configure(options => options.BinaryFolder = Path.Combine(AppFiles.BinariesPath, "ffmpeg"));
+    }
+    
     public MediaScan EnableFileListing()
     {
         _fileListingEnabled = true;
@@ -134,10 +145,7 @@ public class MediaScan
             List<MediaFile> files2 = depth - 1 > 0 ? GetFiles(folderPath) : [];
 
             MovieFile movieFile = _movieDetector.GetInfo(directory);
-            if (movieFile.Year is null)
-            {
-                movieFile.Year = new Regex(@"(1(8|9)|20)\d{2}(?!p|i|(1(8|9)|20)\d{2}|\]|\W(1(8|9)|20)\d{2})").Match(directory).Value;
-            }
+            movieFile.Year ??= new Regex(@"(1(8|9)|20)\d{2}(?!p|i|(1(8|9)|20)\d{2}|\]|\W(1(8|9)|20)\d{2})").Match(directory).Value;
             
             folders.Add(new MediaFolder
             {
@@ -251,6 +259,18 @@ public class MediaScan
                 movieFile.Episode ??= animeInfo?.Episode;
             }
 
+            IMediaAnalysis? ffprobe = null;
+            try
+            {
+                ffprobe = isVideoFile
+                    ? FFProbe.Analyse(file)
+                    : null;
+            }
+            catch (Exception e)
+            {
+               //
+            }
+
             files.Add(new MediaFile
             {
                 Name = Path.GetFileName(file),
@@ -260,8 +280,10 @@ public class MediaScan
                 Created = File.GetCreationTime(file),
                 Modified = File.GetLastWriteTime(file),
                 Accessed = File.GetLastAccessTime(file),
+                Type = "file",
+                
                 Parsed = movieFile,
-                Type = "file"
+                FFprobe = ffprobe
             });
         }
         
@@ -269,7 +291,7 @@ public class MediaScan
             .Where(f => f.Name is not "")
             .ToList();
     }
-    
+
      public void Dispose()
      {
          GC.Collect();

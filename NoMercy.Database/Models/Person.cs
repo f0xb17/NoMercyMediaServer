@@ -18,7 +18,7 @@ namespace NoMercy.Database.Models
         [JsonProperty("also_known_as")] public string? AlsoKnownAs { get; set; }
         [JsonProperty("biography")] public string? Biography { get; set; }
         [JsonProperty("birthday")] public DateTime? BirthDay { get; set; }
-        [JsonProperty("deathday")] public DateTime? DeathDay { get; set; } = null;
+        [JsonProperty("deathday")] public DateTime? DeathDay { get; set; }
 
         [Column("Gender")]
         [JsonProperty("gender")]

@@ -3,10 +3,7 @@ using ColorThiefDotNet;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
-using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Client;
-using NoMercy.Providers.TMDB.Models.Movies;
-using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Server.Logic;
 

@@ -1880,7 +1880,7 @@ namespace NoMercy.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Medias",
+                name: "Media",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
@@ -2652,37 +2652,37 @@ namespace NoMercy.Database.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "IX_Medias_EpisodeId_Src",
-                table: "Medias",
+                table: "Media",
                 columns: new[] { "EpisodeId", "Src" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Medias_MovieId_Src",
-                table: "Medias",
+                table: "Media",
                 columns: new[] { "MovieId", "Src" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Medias_PersonId_Src",
-                table: "Medias",
+                table: "Media",
                 columns: new[] { "PersonId", "Src" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Medias_SeasonId_Src",
-                table: "Medias",
+                table: "Media",
                 columns: new[] { "SeasonId", "Src" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Medias_TvId_Src",
-                table: "Medias",
+                table: "Media",
                 columns: new[] { "TvId", "Src" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Medias_VideoFileId_Src",
-                table: "Medias",
+                table: "Media",
                 columns: new[] { "VideoFileId", "Src" },
                 unique: true);
 
@@ -3025,7 +3025,7 @@ namespace NoMercy.Database.Migrations
                 name: "MediaAttachments");
 
             migrationBuilder.DropTable(
-                name: "Medias");
+                name: "Media");
 
             migrationBuilder.DropTable(
                 name: "MediaStreams");

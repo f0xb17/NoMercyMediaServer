@@ -4,9 +4,9 @@ using NoMercy.Database.Models;
 using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.TV;
-using NoMercy.Queue.system;
 using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Jobs;
+using NoMercy.Server.system;
 using LogLevel = NoMercy.Helpers.LogLevel;
 using Translation = NoMercy.Database.Models.Translation;
 
@@ -61,6 +61,9 @@ public class TvShowLogic(int id, Library library)
             SeasonLogic seasonLogic = new SeasonLogic(Show, _mediaContext);
             seasonLogic.FetchSeasons().Wait();
             seasonLogic.Dispose();
+            
+            // FindMediaFilesJob job = new(Show.Id, library.Id.ToString());
+            // job.Handle().Wait();
             
         }
         
@@ -448,8 +451,11 @@ public class TvShowLogic(int id, Library library)
     {
         if (Show == null) return Task.CompletedTask;
         
+        FindMediaFilesJob findMediaFilesJob = new FindMediaFilesJob(id: Show.Id, libraryId:library.Id.ToString());
+        JobDispatcher.Dispatch(findMediaFilesJob, "queue", 3);
+
         PersonJob personJob = new PersonJob(id:Show.Id, type:"tv");
-        JobDispatcher.Dispatch(personJob, "queue", 4);
+        JobDispatcher.Dispatch(personJob, "queue", 3);
         
         ColorPaletteJob colorPaletteTvJob = new ColorPaletteJob(id:Show.Id, model:"tv");
         JobDispatcher.Dispatch(colorPaletteTvJob, "data");
@@ -458,7 +464,7 @@ public class TvShowLogic(int id, Library library)
         JobDispatcher.Dispatch(colorPaletteSimilarJob, "data");
         
         ImagesJob imagesJob = new ImagesJob(id:Show.Id, type:"tv");
-        JobDispatcher.Dispatch(imagesJob, "queue");
+        JobDispatcher.Dispatch(imagesJob, "queue", 2);
         
         ColorPaletteJob colorPaletteRecommendationJob = new ColorPaletteJob(id:Show.Id, model:"recommendation", type:"tv");
         JobDispatcher.Dispatch(colorPaletteRecommendationJob, "data");

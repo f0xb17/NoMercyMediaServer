@@ -9,10 +9,11 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 [ApiController]
 [Tags("Media People")]
 [ApiVersion("1")]
-[Authorize, Route("api/v{Version:apiVersion}/people")]
+[Authorize]
 public class PeopleController : Controller
 {
     [HttpGet]
+    [Route("api/v{Version:apiVersion}/people")]
     public Task<object> Index()
     {
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
@@ -29,7 +30,7 @@ public class PeopleController : Controller
     }
     
     [HttpGet]
-    [Route("api/v{Version:apiVersion}/person/{id:int}")] // match themoviedb.org API
+    [Route("/api/v{Version:apiVersion}/person/{id:int}")] // match themoviedb.org API
     public Task<object> Show(int id)
     {
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);

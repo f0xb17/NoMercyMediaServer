@@ -2,8 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.Queue.system;
 using NoMercy.Server.Logic;
+using NoMercy.Server.system;
 
 namespace NoMercy.Server.app.Jobs;
 

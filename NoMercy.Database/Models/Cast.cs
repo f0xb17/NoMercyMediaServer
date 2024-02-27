@@ -27,7 +27,7 @@ namespace NoMercy.Database.Models
         [JsonProperty("person_id")] public int PersonId { get; set; }
         public virtual Person Person { get; set; }
 
-        [JsonProperty("role_id")] public int? MovieId { get; set; }
+        [JsonProperty("movie_id")] public int? MovieId { get; set; }
         public virtual Movie Movie { get; set; }
 
         [JsonProperty("tv_id")] public int? TvId { get; set; }

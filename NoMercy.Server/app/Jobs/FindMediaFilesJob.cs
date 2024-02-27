@@ -7,12 +7,12 @@ using NoMercy.Server.system;
 
 namespace NoMercy.Server.app.Jobs;
 
-public class CollectionJob : IShouldQueue
+public class FindMediaFilesJob : IShouldQueue
 {
     private readonly int _id;
     private readonly string _libraryId;
     
-    public CollectionJob(long id, string libraryId)
+    public FindMediaFilesJob(long id, string libraryId)
     {
         _id = (int)id;
         _libraryId = libraryId;
@@ -27,17 +27,17 @@ public class CollectionJob : IShouldQueue
             .ThenInclude(fl => fl.Folder)
             .FirstOrDefaultAsync();
         
-        if (library is null) return;
+        if (library == null) return;
         
-        CollectionLogic collection = new(_id, library);
-        await collection.Process();
+        FileLogic file = new(_id, library);
+        await file.Process();
         
-        if (collection.Collection != null)
+        if (file.Files.Count > 0)
         {
-            Logger.MovieDb($@"Movie {collection.Collection.Name}: Processed");
+            Logger.MovieDb($@"Found {file.Files.Count} files in {file.Files.FirstOrDefault()?.Path}");
             Console.WriteLine("");
         }
 
-        collection.Dispose();
+        file.Dispose();
     }
 }

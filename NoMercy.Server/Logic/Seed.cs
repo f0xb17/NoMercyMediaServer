@@ -8,6 +8,7 @@ using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Server.app.Helper;
 using Genre = NoMercy.Database.Models.Genre;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Server.Logic;
 
@@ -95,7 +96,7 @@ public static class Seed
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Auth.AccessToken);
 
         IDictionary<string, string?> query = new Dictionary<string, string?>();
-        query.Add("server_id", SystemInfo.DeviceId);
+        query.Add("server_id", SystemInfo.DeviceId.ToString());
 
         var newUrl = QueryHelpers.AddQueryString("https://api-dev.nomercy.tv/v1/server/users", query);
 

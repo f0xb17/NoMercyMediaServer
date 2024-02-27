@@ -192,7 +192,6 @@ public class ColorPaletteTimeStamps: Timestamps
     public string _colorPalette { get; set; } = string.Empty;
     
     [NotMapped]
-    [JsonProperty("color_palette")]
     public IColorPalettes? ColorPalette
     {
         get => (_colorPalette != string.Empty 

@@ -1,6 +1,6 @@
 using NoMercy.Helpers;
-using NoMercy.Queue.system;
 using NoMercy.Server.Logic;
+using NoMercy.Server.system;
 using LogLevel = NoMercy.Helpers.LogLevel;
 
 namespace NoMercy.Server.app.Jobs;
@@ -14,7 +14,6 @@ public class ColorPaletteJob : IShouldQueue
 
     public ColorPaletteJob(long id, string model, string type)
     {
-        Logger.Queue($"Creating color palette job for {model} {id}");
         _id = (int)id;
         _model = model;
         _type = type;
@@ -22,7 +21,6 @@ public class ColorPaletteJob : IShouldQueue
     
     public ColorPaletteJob(long id, string model)
     {
-        Logger.Queue($"Creating color palette job for {model} {id}");
         _id = (int)id;
         _model = model;
     }

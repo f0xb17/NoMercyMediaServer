@@ -5,8 +5,8 @@ using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Collections;
 using NoMercy.Providers.TMDB.Models.Movies;
-using NoMercy.Queue.system;
 using NoMercy.Server.app.Jobs;
+using NoMercy.Server.system;
 using Collection = NoMercy.Database.Models.Collection;
 using LogLevel = NoMercy.Helpers.LogLevel;
 using Movie = NoMercy.Database.Models.Movie;
@@ -138,6 +138,8 @@ public class CollectionLogic(int id, Library library)
                 {
                     MovieClient movieClient = new(movie.Id);
                     MovieAppends? movieAppends = movieClient.WithAllAppends().Result;
+                    if (movieAppends is null) continue;
+                    
                     Logger.MovieDb($@"Collection {Collection.Name}: Dispatching movie {movieAppends.Title}");
                     
                     PersonJob personJob = new PersonJob(id:movieAppends.Id, type:"movie");
@@ -157,7 +159,7 @@ public class CollectionLogic(int id, Library library)
             JobDispatcher.Dispatch(colorPaletteCollectionJob, "data");
         
             ImagesJob imagesJob = new ImagesJob(id:Collection.Id, type:"collection");
-            JobDispatcher.Dispatch(imagesJob, "queue");
+            JobDispatcher.Dispatch(imagesJob, "queue", 2);
         }
         catch (Exception e)
         {

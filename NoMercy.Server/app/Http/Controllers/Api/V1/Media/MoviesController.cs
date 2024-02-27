@@ -68,6 +68,9 @@ public class MoviesController : Controller
             
             .Include(movie => movie.SimilarFrom)
             
+            .Include(movie => movie.VideoFiles)
+                .ThenInclude(file => file.UserData)
+            
             .FirstOrDefaultAsync();
 
         return new InfoResponseDto
@@ -103,18 +106,37 @@ public class MoviesController : Controller
     
     [HttpGet]
     [Route("watch")]
-    public Task<object> Watch(int id)
+    public async Task<PlaylistResponseDto[]> Watch(int id)
     {        
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        
+        await using MediaContext mediaContext = new();
+        var movie = await mediaContext.Movies
+            .AsNoTracking()
+            .Where(movie => movie.Id == id)
+            
+            .Where(movie => movie.Library.LibraryUsers
+                .FirstOrDefault(libraryUser => libraryUser.UserId == userId) != null)
+            
+            .Include(movie => movie.Media
+                .Where(media => media.Type == "video"))
+            
+            .Include(movie => movie.Images
+                .Where(image => image.Type == "logo"))
+            
+            .Include(movie => movie.Translations
+                .Where(translation => translation.Iso6391 == "en" || translation.Iso6391 == "nl"))
+            
+            .Include(movie => movie.VideoFiles)
+                .ThenInclude(file => file.UserData)
+            
+            .FirstOrDefaultAsync();
 
-        using HttpClient client = new();
-        
-        client.DefaultRequestHeaders.Accept.Clear();
-        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        client.DefaultRequestHeaders.Add("Authorization", (string)HttpContext.Request.Headers["Authorization"]!);
-        
-        return Task.FromResult<object>(client.GetAsync(
-                $"https://192-168-2-201.1968dcdc-bde6-4a0f-a7b8-5af17afd8fb6.nomercy.tv:7635/api/movie/{id}/watch")
-            .Result.Content.ReadAsStringAsync().Result);
+        return movie is not null
+            ?
+            [
+                new PlaylistResponseDto(movie)
+            ]
+            : [];
     }
 }

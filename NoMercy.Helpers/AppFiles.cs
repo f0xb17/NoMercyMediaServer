@@ -99,7 +99,7 @@ public static class AppFiles
             Console.WriteLine($"Creating directory: {path}");
             Directory.CreateDirectory(path);
         }
-        
+                
         return Task.CompletedTask;
     }
 }
