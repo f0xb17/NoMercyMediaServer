@@ -40,7 +40,7 @@ public class EpisodeLogic(TvShowAppends show, SeasonAppends season, MediaContext
         
         await Store();
 
-        await StoreTranslations();
+        // await StoreTranslations();
 
         await DispatchJobs();
     }

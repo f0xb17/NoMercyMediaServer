@@ -75,6 +75,16 @@ public class CollectionsController : Controller
             .Include(collection => collection.CollectionMovies)
                 .ThenInclude(movie => movie.Movie)
                     .ThenInclude(movie => movie.VideoFiles)
+            .Include(collection => collection.CollectionMovies)
+            
+                .ThenInclude(movie => movie.Movie)
+                    .ThenInclude(movie => movie.CertificationMovies)
+                        .ThenInclude(certificationMovie => certificationMovie.Certification)
+            
+            .Include(collection => collection.CollectionMovies)
+                .ThenInclude(movie => movie.Movie)
+                    .ThenInclude(movie => movie.GenreMovies)
+                        .ThenInclude(genreMovie => genreMovie.Genre)
             
             // .Include(collection => collection.Translations
             //     .Where(translation => translation.Iso6391 == "en" || translation.Iso6391 == "nl"))

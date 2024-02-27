@@ -1,14 +1,8 @@
 using System.Diagnostics;
 using CommandLine;
 using Microsoft.AspNetCore;
-using Microsoft.EntityFrameworkCore;
-using NoMercy.Database;
-using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.Providers.TMDB.Client;
-using NoMercy.Providers.TMDB.Models.TV;
 using NoMercy.Server.app.Helper;
-using NoMercy.Server.app.Jobs;
 using NoMercy.Server.Logic;
 using NoMercy.Server.system;
 using Networking = NoMercy.Server.app.Helper.Networking;
@@ -173,6 +167,7 @@ public static class Program
             .UseUrls("https://0.0.0.0:" + SystemInfo.ServerPort)
             .UseKestrel(options => options.AddServerHeader = false)
             .UseQuic()
+            .UseSockets()
             .UseStartup<Startup>();
     }
 

@@ -88,11 +88,18 @@ public class InfoResponseItemDto
         Overview = movie.Overview;
         Type = "movie";
         MediaType = "movie";
-        Watched = movie.VideoFiles.Any(videoFile => videoFile.UserData.FirstOrDefault()?.Played == true);
-        Favorite = movie.VideoFiles.Any(videoFile => videoFile.UserData.FirstOrDefault()?.IsFavorite == true);
+        
+        Watched = movie.VideoFiles
+            .Any(videoFile => videoFile.UserData.FirstOrDefault()?.Played == true);
+        
+        Favorite = movie.VideoFiles
+            .Any(videoFile => videoFile.UserData.FirstOrDefault()?.IsFavorite == true);
+        
         TitleSort = movie.Title.TitleSort(movie.ReleaseDate);
+        
         Duration = (int)movie.VideoFiles
             .Select(videoFile => videoFile.Duration.ToSeconds() / 60).Average();
+        
         Year = movie.ReleaseDate.ParseYear();
         VoteAverage = movie.VoteAverage ?? 0;
 
@@ -108,15 +115,18 @@ public class InfoResponseItemDto
             })
             .ToArray() ?? [];
         
-        Creators = movie.Crew.Where(crew => crew.Job?.Task == "Creator")
+        Creators = movie.Crew
+            .Where(crew => crew.Job?.Task == "Creator")
             .Select(crew => new DirectorDto(crew))
             .ToArray() ?? [];
         
-        Directors = movie.Crew?.Where(crew => crew.Job?.Task == "Director") 
+        Directors = movie.Crew
+            .Where(crew => crew.Job?.Task == "Director") 
             .Select(crew => new DirectorDto(crew))
             .ToArray() ?? [];
         
-        Writers = movie.Crew?.Where(crew => crew.Job?.Task == "Writer") 
+        Writers = movie.Crew
+            .Where(crew => crew.Job?.Task == "Writer") 
             .Select(crew => new DirectorDto(crew))
             .ToArray() ?? [];
         
@@ -175,8 +185,15 @@ public class InfoResponseItemDto
         Overview = tv.Overview;
         Type = tv.Type ?? "tv";
         MediaType = "tv";
-        Watched = tv.Episodes.Any(episode => episode.VideoFiles.Any(videoFile => videoFile.UserData.FirstOrDefault()?.Played == true));
-        Favorite = tv.Episodes.Any(episode => episode.VideoFiles.Any(videoFile => videoFile.UserData.FirstOrDefault()?.IsFavorite == true));
+        
+        Watched = tv.Episodes
+            .Any(episode => episode.VideoFiles
+                .Any(videoFile => videoFile.UserData.FirstOrDefault()?.Played == true));
+        
+        Favorite = tv.Episodes
+            .Any(episode => episode.VideoFiles
+                .Any(videoFile => videoFile.UserData.FirstOrDefault()?.IsFavorite == true));
+        
         TitleSort = tv.Title.TitleSort(tv.FirstAirDate);
         
         Duration = (int)tv.Episodes
@@ -200,15 +217,18 @@ public class InfoResponseItemDto
             })
             .ToArray() ?? [];
 
-        Creators = tv.Crew?.Where(crew => crew.Job?.Task == "Creator")
+        Creators = tv.Crew
+            .Where(crew => crew.Job?.Task == "Creator")
             .Select(crew => new DirectorDto(crew))
             .ToArray() ?? [];
         
-        Directors = tv.Crew?.Where(crew => crew.Job?.Task == "Director") 
+        Directors = tv.Crew
+            .Where(crew => crew.Job?.Task == "Director") 
             .Select(crew => new DirectorDto(crew))
             .ToArray() ?? [];
         
-        Writers = tv.Crew?.Where(crew => crew.Job?.Task == "Writer") 
+        Writers = tv.Crew
+            .Where(crew => crew.Job?.Task == "Writer") 
             .Select(crew => new DirectorDto(crew))
             .ToArray() ?? [];
         
@@ -279,19 +299,19 @@ public class InfoResponseItemDto
                 ?.Movie.ReleaseDate
                 .ParseYear());
         
-        Year = collection.CollectionMovies?
+        Year = collection.CollectionMovies
             .MinBy(collectionMovie => collectionMovie.Movie.ReleaseDate)
             ?.Movie.ReleaseDate
             .ParseYear() ?? 0;
         
-        VoteAverage = collection.CollectionMovies?
+        VoteAverage = collection.CollectionMovies
             .Average(collectionMovie => collectionMovie.Movie.VoteAverage) ?? 0;
 
         ColorPalette = collection.ColorPalette;
         Backdrop = collection.Backdrop;
         Poster = collection.Poster;
 
-        ContentRatings = collection.CollectionMovies?
+        ContentRatings = collection.CollectionMovies
             .Select(certificationMovie => new ContentRating
             {
                 Rating = certificationMovie.Movie.CertificationMovies.First().Certification.Rating,
@@ -299,17 +319,17 @@ public class InfoResponseItemDto
             })
             .ToArray() ?? [];
 
-        Creators = collection.CollectionMovies?
+        Creators = collection.CollectionMovies
             .Select(collectionMovie => new DirectorDto(collectionMovie.Movie.Crew
                .FirstOrDefault(crew => crew.Job?.Task == "Creator") ?? new Crew()))
             .ToArray() ?? [];
         
-        Directors = collection.CollectionMovies?
+        Directors = collection.CollectionMovies
             .Select(collectionMovie => new DirectorDto(collectionMovie.Movie.Crew
                .FirstOrDefault(crew => crew.Job?.Task == "Director") ?? new Crew()))
             .ToArray() ?? [];
         
-        Writers = collection.CollectionMovies?
+        Writers = collection.CollectionMovies
             .Select(collectionMovie => new DirectorDto(collectionMovie.Movie.Crew?
                .FirstOrDefault(crew => crew.Job?.Task == "Writer") ?? new Crew()))
             .ToArray() ?? [];
@@ -319,12 +339,12 @@ public class InfoResponseItemDto
         //         .FirstOrDefault(crew => crew.Job?.Task == "Director") ?? new Crew()))
         //     .FirstOrDefault() ?? new DirectorDto(new Crew());
         
-        Keywords = collection.CollectionMovies?
+        Keywords = collection.CollectionMovies
             .SelectMany(collectionMovie => collectionMovie.Movie.KeywordMovies)
             .Select(keywordMovie => keywordMovie.Keyword.Name)
             .ToArray() ?? [];
 
-        Logo = collection.CollectionMovies?
+        Logo = collection.CollectionMovies
             .Select(collectionMovie => collectionMovie.Movie.Media?
                .FirstOrDefault(media => media.Type == "logo")?.Src)
             .FirstOrDefault();
@@ -521,7 +541,7 @@ public class SeasonDto
         SeasonNumber = season.SeasonNumber;
         Title = season.Title;
         ColorPalette = season.ColorPalette;
-        Episodes = season.Episodes?
+        Episodes = season.Episodes
             .OrderBy(episode => episode.EpisodeNumber)
             .Select(episode => new EpisodeDto(episode))
             .ToArray() ?? [];

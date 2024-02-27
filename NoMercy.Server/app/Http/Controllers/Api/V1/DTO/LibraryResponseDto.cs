@@ -69,11 +69,11 @@ public class LibraryResponseItemDto
         TitleSort = movie.Movie.Title.TitleSort(movie.Movie.ReleaseDate);
         Type = "movie";
         
-        Genres = movie.Movie.GenreMovies?
+        Genres = movie.Movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie))
             .ToArray() ?? [];
         VideoId = movie.Movie.Video;
-        Videos = movie.Movie.Media?
+        Videos = movie.Movie.Media
             .Where(media => media.Site == "YouTube")
             .Select(media => new VideoDto(media))
             .ToArray() ?? [];
@@ -98,13 +98,14 @@ public class LibraryResponseItemDto
         
         HaveEpisodes = tv.Tv.Episodes?
                 .Where(episode => episode.SeasonNumber > 0)
-            .Count(videoFiles => videoFiles.VideoFiles.DistinctBy(videoFile => videoFile.Folder).Any()) ?? 0;
-        
-        Genres = tv.Tv.GenreTvs?
+                .Count(videoFiles => videoFiles.VideoFiles
+                        .DistinctBy(videoFile => videoFile.Folder).Any()) ?? 0;
+            
+        Genres = tv.Tv.GenreTvs
             .Select(genreTv => new GenreDto(genreTv))
             .ToArray() ?? [];
         VideoId = tv.Tv.Trailer;
-        Videos = tv.Tv.Media?
+        Videos = tv.Tv.Media
             .Where(media => media.Site == "YouTube")
             .Select(media => new VideoDto(media))
             .ToArray() ?? [];

@@ -50,7 +50,8 @@ public class UserDataController : Controller
 
         return new ContinueWatchingDto
         {
-            Data = filteredContinueWatching.Select(item => new ContinueWatchingItemDto(item))
+            Data = filteredContinueWatching
+                .Select(item => new ContinueWatchingItemDto(item))
         };
     }
     

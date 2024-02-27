@@ -113,11 +113,11 @@ public class CollectionMovieDto
         Title = movie.Title;
         Type = "movie";
         Year = movie.ReleaseDate.ParseYear();
-        Genres = movie.GenreMovies?
+        Genres = movie.GenreMovies
             .Select(genreMovie => genreMovie.Genre)
             .ToArray() ?? Array.Empty<Genre>();
 
-        Rating = movie.CertificationMovies?
+        Rating = movie.CertificationMovies
             .Select(certificationMovie => certificationMovie.Certification)
             .FirstOrDefault();
         

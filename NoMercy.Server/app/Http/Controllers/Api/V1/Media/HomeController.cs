@@ -63,7 +63,8 @@ public class HomeController: Controller
                     .Select(movie => new GenreRowItemDto(movie))
                     .Concat(genre.GenreTvShows
                         .Select(tv => new GenreRowItemDto(tv)))
-                    .Randomize().Take(36)
+                    .Randomize()
+                    .Take(36)
             })
         };
         
@@ -105,7 +106,8 @@ public class HomeController: Controller
         
         return new ScreensaverDto
         {
-            Data = tvCollection.Select(image => new ScreensaverDataDto(image, logos, "tv"))
+            Data = tvCollection
+                .Select(image => new ScreensaverDataDto(image, logos, "tv"))
                 .Concat(movieCollection.Select(image => new ScreensaverDataDto(image, logos, "movie")))
                 .Where(image => image.Meta?.Logo != null)
                 .Randomize()

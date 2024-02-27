@@ -25,7 +25,7 @@ public class PeopleController : Controller
         client.DefaultRequestHeaders.Add("Authorization", (string)HttpContext.Request.Headers["Authorization"]!);
         
         return Task.FromResult<object>(client.GetAsync(
-                "https://192-168-2-201.1968dcdc-bde6-4a0f-a7b8-5af17afd8fb6.nomercy.tv:7635/api/people")
+                "https://192-168-2-201.1968dcdc-bde6-4a0f-a7b8-5af17afd8fb6.nomercy.tv:7635/api/v1/people")
             .Result.Content.ReadAsStringAsync().Result);
     }
     
@@ -42,7 +42,7 @@ public class PeopleController : Controller
         client.DefaultRequestHeaders.Add("Authorization", (string)HttpContext.Request.Headers["Authorization"]!);
         
         return Task.FromResult<object>(client.GetAsync(
-                $"https://192-168-2-201.1968dcdc-bde6-4a0f-a7b8-5af17afd8fb6.nomercy.tv:7635/api/people/{id}")
+                $"https://192-168-2-201.1968dcdc-bde6-4a0f-a7b8-5af17afd8fb6.nomercy.tv:7635/api/v1/people/{id}")
             .Result.Content.ReadAsStringAsync().Result);
     }
     

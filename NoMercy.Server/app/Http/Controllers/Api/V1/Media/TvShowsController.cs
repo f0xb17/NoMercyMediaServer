@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using Asp.Versioning;
@@ -110,7 +111,9 @@ public class TvShowsController : Controller
         
         return new AvailableResponseDto
         {
-            Available = tv?.Episodes.Select(episode => episode.VideoFiles).Any() ?? false
+            Available = tv?.Episodes
+                .Select(episode => episode.VideoFiles)
+                .Any() ?? false
         };
     }
 
@@ -150,6 +153,8 @@ public class TvShowsController : Controller
             
             .FirstOrDefaultAsync();
 
-        return tv?.Episodes.Select(episode => new PlaylistResponseDto(episode)).ToArray() ?? [];
+        return tv?.Episodes
+            .Select(episode => new PlaylistResponseDto(episode))
+            .ToArray() ?? [];
     }
 }

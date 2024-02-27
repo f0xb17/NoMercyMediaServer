@@ -57,11 +57,11 @@ public class LibrariesResponseItemDto
         CreatedAt = library.CreatedAt;
         UpdatedAt = library.UpdatedAt;
         
-        Subtitles = library.LanguageLibraries?
+        Subtitles = library.LanguageLibraries
             .Select(languageLibrary => languageLibrary.Language.Iso6391)
             .ToArray() ?? [];
         
-        FolderLibrary = library.FolderLibraries?
+        FolderLibrary = library.FolderLibraries
             .Select(folderLibrary => new FolderLibraryDto
             {
                 FolderId = folderLibrary.FolderId,
@@ -70,7 +70,7 @@ public class LibrariesResponseItemDto
                 {
                     Id = folderLibrary.Folder.Id,
                     Path = folderLibrary.Folder.Path,
-                    EncoderProfiles = folderLibrary.Folder.EncoderProfileFolder?
+                    EncoderProfiles = folderLibrary.Folder.EncoderProfileFolder
                         .Select(encoderProfileFolder => encoderProfileFolder.EncoderProfile.Id)
                         .ToArray() ?? []
                 }

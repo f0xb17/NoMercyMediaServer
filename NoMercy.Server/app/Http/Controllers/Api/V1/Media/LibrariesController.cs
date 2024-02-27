@@ -29,13 +29,19 @@ public class LibrariesController : Controller
             
             .Include(library => library.FolderLibraries)
                 .ThenInclude(folderLibrary => folderLibrary.Folder)
+                    .ThenInclude(folder => folder.EncoderProfileFolder)
+                        .ThenInclude(library => library.EncoderProfile)
+            
+            .Include(library => library.LanguageLibraries)
+                .ThenInclude(languageLibrary => languageLibrary.Language)
             
             .OrderBy(library => library.Order)
             .ToListAsync();
 
         return new LibrariesResponseDto
         {
-            Data = libraries.Select(library => new LibrariesResponseItemDto(library))
+            Data = libraries
+                .Select(library => new LibrariesResponseItemDto(library))
         };
     }
     
@@ -48,8 +54,8 @@ public class LibrariesController : Controller
         await using MediaContext mediaContext = new();
         var library = await mediaContext.Libraries
             .AsNoTracking()
-            .Where(library => library.Id == libraryId)
             
+            .Where(library => library.Id == libraryId)
             .Where(library => library.LibraryUsers
                 .FirstOrDefault(u => u.UserId == userId) != null
             )
@@ -101,13 +107,17 @@ public class LibrariesController : Controller
                 .ThenInclude(libraryTv => libraryTv.Tv.CertificationTvs)
                     .ThenInclude(certificationTv => certificationTv.Certification)
             
-            .FirstOrDefaultAsync();
+            .FirstAsync();
         
         return new LibraryResponseDto
         {
-            Data = (library?.LibraryMovies.Select(movie => new LibraryResponseItemDto(movie))
-                .Concat(library.LibraryTvs.Select(tv => new LibraryResponseItemDto(tv))) ?? [])
-                .OrderBy(movie => movie.TitleSort)
+            Data = library.LibraryMovies
+                    .Select(movie => new LibraryResponseItemDto(movie))
+                    
+                    .Concat(library.LibraryTvs
+                        .Select(tv => new LibraryResponseItemDto(tv)))
+                    
+                    .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort)
         };
     }
 
