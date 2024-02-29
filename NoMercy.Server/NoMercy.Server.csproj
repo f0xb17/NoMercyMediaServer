@@ -14,7 +14,6 @@
         <Product>NoMercy MediaServer</Product>
         <LangVersion>12</LangVersion>
         <BuildFrameworkVersion>6.0.2</BuildFrameworkVersion>
-        <OutputType>WinExe</OutputType>
     </PropertyGroup>
     
     <ItemGroup>

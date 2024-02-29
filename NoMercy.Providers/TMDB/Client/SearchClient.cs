@@ -10,7 +10,7 @@ namespace NoMercy.Providers.TMDB.Client;
 
 public class SearchClient : BaseClient
 {
-    public Task<PaginatedResponse<Movie>?> Movie(string query, string year)
+    public Task<PaginatedResponse<Movie>> Movie(string query, string year)
     {
         var queryParams = new Dictionary<string, string>
         {
@@ -22,7 +22,7 @@ public class SearchClient : BaseClient
         return Get<PaginatedResponse<Movie>>("search/movie", queryParams);
     }
     
-    public Task<PaginatedResponse<TvShow>?> TvShow(string query, string year)
+    public Task<PaginatedResponse<TvShow>> TvShow(string query, string year)
     {
         var queryParams = new Dictionary<string, string>
         {
@@ -34,7 +34,7 @@ public class SearchClient : BaseClient
         return Get<PaginatedResponse<TvShow>>("search/tv", queryParams);
     }
 
-    public Task<PaginatedResponse<Person>?> Person(string query, string year)
+    public Task<PaginatedResponse<Person>> Person(string query, string year)
     {
         var queryParams = new Dictionary<string, string>
         {
@@ -46,7 +46,7 @@ public class SearchClient : BaseClient
         return Get<PaginatedResponse<Person>>("search/person", queryParams);
     }
 
-    public Task<PaginatedResponse<Multi>?> Multi(string query, string year)
+    public Task<PaginatedResponse<Multi>> Multi(string query, string year)
     {
         var queryParams = new Dictionary<string, string>
         {
@@ -58,7 +58,7 @@ public class SearchClient : BaseClient
         return Get<PaginatedResponse<Multi>>("search/multi", queryParams);
     }
     
-    public Task<PaginatedResponse<Collection>?> Collection(string query, string year)
+    public Task<PaginatedResponse<Collection>> Collection(string query, string year)
     {
         var queryParams = new Dictionary<string, string>
         {
@@ -70,7 +70,7 @@ public class SearchClient : BaseClient
         return Get<PaginatedResponse<Collection>>("search/collection", queryParams);
     }
 
-    public Task<PaginatedResponse<Network>?> Network(string query, string year)
+    public Task<PaginatedResponse<Network>> Network(string query, string year)
     {
         var queryParams = new Dictionary<string, string>
         {
@@ -82,7 +82,7 @@ public class SearchClient : BaseClient
         return Get<PaginatedResponse<Network>>("search/network", queryParams);
     }
     
-    public Task<PaginatedResponse<Keyword>?> Keyword(string query, string year)
+    public Task<PaginatedResponse<Keyword>> Keyword(string query, string year)
     {
         var queryParams = new Dictionary<string, string>
         {

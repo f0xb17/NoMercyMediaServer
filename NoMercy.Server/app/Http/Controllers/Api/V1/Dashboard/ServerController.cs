@@ -2,7 +2,10 @@ using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using NoMercy.Database;
+using NoMercy.Database.Models;
 using NoMercy.Helpers;
 using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
@@ -33,6 +36,52 @@ public class ServerController : Controller
         return Ok();
     }
 
+    [HttpGet]
+    [Route("setup")]
+    public async Task<StatusResponseDto<SetupResponseDto>> Setup()
+    {
+        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        
+        await using MediaContext mediaContext = new();
+        List<Library> libraries = await mediaContext.Libraries
+            .Where(library => library.LibraryUsers
+                .Any(libraryUser => libraryUser.UserId == userId)
+            )
+            
+            .Include(library => library.FolderLibraries)
+                .ThenInclude(folderLibrary => folderLibrary.Folder)
+                    .ThenInclude(folder => folder.EncoderProfileFolder)
+                        .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
+            
+            .Include(library => library.LibraryUsers)
+                .ThenInclude(libraryUser => libraryUser.User)
+            
+            .ToListAsync();
+
+        int libraryCount = libraries.Count;
+
+        int folderCount = libraries
+            .SelectMany(library => library.FolderLibraries)
+            .Select(folderLibrary => folderLibrary.Folder)
+            .Count();
+        
+        int encoderProfileCount = libraries
+            .SelectMany(library => library.FolderLibraries)
+            .Select(folderLibrary => folderLibrary.Folder)
+            .Count(folder => folder.EncoderProfileFolder.Count > 0);
+
+        return new StatusResponseDto<SetupResponseDto>
+        {
+            Status = "ok",
+            Data = new SetupResponseDto
+            {
+                SetupComplete = libraryCount > 0
+                                && folderCount > 0 
+                                && encoderProfileCount > 0
+            },
+        };
+    }
+    
     [HttpPost]
     [Route("start")]
     public IActionResult StartServer()
@@ -173,7 +222,7 @@ public class ServerController : Controller
             Os = SystemInfo.Platform.ToTitleCase(),
             Arch = SystemInfo.Architecture,
             Version = SystemInfo.Version,
-            BootTime = SystemInfo.StartTime
+            BootTime = SystemInfo.StartTime,
         };
     }
 
@@ -275,4 +324,10 @@ public class DirectoryTreeDto
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("parent")] public string Parent { get; set; }
     [JsonProperty("full_path")] public string FullPath { get; set; }
+}
+
+public class SetupResponseDto
+{
+    [JsonProperty("setup_complete")]
+    public bool SetupComplete { get; set; }
 }

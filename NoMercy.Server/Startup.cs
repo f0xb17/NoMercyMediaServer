@@ -173,7 +173,6 @@ namespace NoMercy.Server
             app.UseResponseCompression();
             app.UseRequestLocalization();
             app.UseResponseCaching();
-            app.UseWebSockets();
 
             app.UseMiddleware<TokenParamAuthMiddleware>();
 

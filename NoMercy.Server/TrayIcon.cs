@@ -25,15 +25,6 @@ public class TrayIcon
             Items =
             {
                 new PopupMenuItem("Show App", (_, _) => Show()),
-                // new PopupSubMenu("Mistaa FILLYBILLY is?")
-                // {
-                //     Items =
-                //     {
-                //         new PopupMenuItem("A: Gek", (_, _) => Show()),
-                //         new PopupMenuItem("B: Vliegtuig", (_, _) => Show()),
-                //        
-                //     }
-                // },
                 new PopupMenuSeparator(),
                 new PopupMenuItem("Pause Server", (_, _) => Pause()),
                 new PopupMenuItem("Restart Server", (_, _) => Restart()),

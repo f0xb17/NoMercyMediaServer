@@ -97,11 +97,26 @@ public class LibrariesController : Controller
                     Order = li.Order,
                 })
                 .RunAsync();
+            
+            await mediaContext.LibraryUser.Upsert(new LibraryUser
+            {
+                LibraryId = profile.Id,
+                UserId = userId
+            })
+                .On(lu => new { lu.LibraryId, lu.UserId })
+                .WhenMatched((lus, lui) => new LibraryUser
+                {
+                    LibraryId = lui.LibraryId,
+                    UserId = lui.UserId
+                })
+                .RunAsync();
 
             return new StatusResponseDto<Library>()
             {
                 Status = "ok",
-                Data = profile
+                Data = profile,
+                Message = "Successfully created a new library.",
+                Args = []
             };
         }
         catch (Exception e)
@@ -297,6 +312,57 @@ public class LibrariesController : Controller
                 Args = [e.Message]
             };
         }
+    }
+
+    [HttpPatch]
+    [Route("sort")]
+    public async Task<StatusResponseDto<string>> Sort(Ulid id, [FromBody] LibrarySortRequest request)
+    {
+        await using MediaContext mediaContext = new();
+        var libraries = await mediaContext.Libraries
+            .AsTracking()
+            .ToListAsync();
+        
+        if (libraries.Count == 0)
+        {
+            return new StatusResponseDto<string>()
+            {
+                Status = "error",
+                Message = "No libraries exist.",
+                Args = []
+            };
+        }
+        
+        try
+        {
+            foreach (var item in request.Libraries)
+            {
+                Logger.Access(item);
+                var lib = libraries.FirstOrDefault(l => l.Id == item.Id);
+                // if (lib is null) continue;
+                lib.Order = item.Order;
+            }
+            
+            // Logger.Access(libraries);
+            
+            await mediaContext.SaveChangesAsync();
+        }
+        catch (Exception e)
+        {
+            return new StatusResponseDto<string>()
+            {
+                Status = "error",
+                Message = "Something went wrong sorting the libraries: {0}",
+                Args = [e.Message]
+            };
+        }
+        
+        return new StatusResponseDto<string>()
+        {
+            Status = "ok",
+            Message = "Successfully sorted libraries.",
+            Args = []
+        };
     }
 
     [HttpPost]
@@ -627,4 +693,14 @@ public class RescanLibraryRequest
 public class FolderRequest
 {
     [JsonProperty("path")] public string Path { get; set; }
+}
+
+public class LibrarySortRequest
+{
+    [JsonProperty("libraries")] public LibrarySortRequestItem[] Libraries { get; set; }
+}
+public class LibrarySortRequestItem
+{
+    [JsonProperty("id")] public Ulid Id { get; set; }
+    [JsonProperty("order")] public int Order { get; set; }
 }

@@ -7,6 +7,7 @@ using NoMercy.Database.Models;
 using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Server.app.Helper;
+using File = System.IO.File;
 using Genre = NoMercy.Database.Models.Genre;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -18,6 +19,7 @@ public static class Seed
     private static MovieClient MovieClient { get; set; } = new();
     private static TvClient TvClient { get; set; } = new();
     private static readonly MediaContext MediaContext = new();
+    private static readonly QueueContext QueueContext = new();
     private static Folder[] _folders = [];
     private static User?[] _users = [];
 
@@ -32,6 +34,9 @@ public static class Seed
     {
         await MediaContext.Database.EnsureCreatedAsync();
         await MediaContext.SaveChangesAsync();
+        
+        await QueueContext.Database.EnsureCreatedAsync();
+        await QueueContext.SaveChangesAsync();
     }
 
     private static async Task SeedDatabase()
@@ -57,8 +62,10 @@ public static class Seed
 
     private static async Task AddEncoerProfiles()
     {
+        if (!File.Exists(AppFiles.EncoderProfilesSeedFile)) return;
+        
         var encoderProfiles = JsonConvert.DeserializeObject<EncoderProfileDto[]>(
-            await System.IO.File.ReadAllTextAsync(AppFiles.EncoderProfilesSeedFile)) ?? [];
+            await File.ReadAllTextAsync(AppFiles.EncoderProfilesSeedFile)) ?? [];
 
         await MediaContext.EncoderProfiles.UpsertRange(encoderProfiles.ToList()
                 .ConvertAll<EncoderProfile>(encoderProfile => new EncoderProfile
@@ -141,9 +148,11 @@ public static class Seed
             })
             .RunAsync();
 
+        if (!File.Exists(AppFiles.LibrariesSeedFile)) return;
+        
         Library[] libraries =
             JsonConvert.DeserializeObject<Library[]>(
-                await System.IO.File.ReadAllTextAsync(AppFiles.LibrariesSeedFile)) ?? [];
+                await File.ReadAllTextAsync(AppFiles.LibrariesSeedFile)) ?? [];
 
         List<LibraryUser> libraryUsers = [];
 
@@ -270,8 +279,10 @@ public static class Seed
     {
         try
         {
+            if(!File.Exists(AppFiles.FolderRootsSeedFile)) return;
+            
             _folders = JsonConvert.DeserializeObject<Folder[]>(
-                await System.IO.File.ReadAllTextAsync(AppFiles.FolderRootsSeedFile)) ?? [];
+                await File.ReadAllTextAsync(AppFiles.FolderRootsSeedFile)) ?? [];
 
             await MediaContext.Folders.UpsertRange(_folders)
                 .On(v => new { v.Path })
@@ -285,7 +296,6 @@ public static class Seed
         catch (Exception e)
         {
             Console.WriteLine(e);
-            throw;
         }
     }
 
@@ -293,9 +303,11 @@ public static class Seed
     {
         try
         {
+            if (!File.Exists(AppFiles.LibrariesSeedFile)) return;
+            
             List<LibrarySeedDto> librarySeed =
                 (JsonConvert.DeserializeObject<LibrarySeedDto[]>(
-                    await System.IO.File.ReadAllTextAsync(AppFiles.LibrariesSeedFile)) ?? Array.Empty<LibrarySeedDto>())
+                    await File.ReadAllTextAsync(AppFiles.LibrariesSeedFile)) ?? Array.Empty<LibrarySeedDto>())
                 .ToList()
                 ?? [];
 

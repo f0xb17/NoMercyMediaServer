@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
@@ -122,18 +123,19 @@ public class UsersController : Controller
     [Route("permissions")]
     public async Task<PermissionsResponseDto> UserPermissions()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-        
         await using MediaContext mediaContext = new();
         
         var permissions = await mediaContext.Users
+            
             .Include(user => user.LibraryUser)
                 .ThenInclude(libraryUser => libraryUser.Library)
             .ToListAsync();
         
+        Logger.Access(permissions);
+        
         return new PermissionsResponseDto
         {
-            Data = permissions.Select(user => new PermissionsResponseItemDto(user))
+            Data = permissions?.Select(user => new PermissionsResponseItemDto(user)) ?? []
         };
     }
 

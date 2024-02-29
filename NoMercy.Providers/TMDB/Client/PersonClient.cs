@@ -8,12 +8,12 @@ public class PersonClient : BaseClient
     public PersonClient(int? id = 0, string[]? appendices = null) : base((int)id!)
     {}
 
-    public Task<PersonDetails?> Details()
+    public Task<PersonDetails> Details()
     {
         return Get<PersonDetails>("person/" + Id);
     }
 
-    private Task<PersonAppends?> WithAppends(string[] appendices)
+    private Task<PersonAppends> WithAppends(string[] appendices)
     {
         var queryParams = new Dictionary<string, string>
         {
@@ -23,7 +23,7 @@ public class PersonClient : BaseClient
         return Get<PersonAppends>("person/" + Id, queryParams);
     }
 
-    public Task<PersonAppends?> WithAllAppends()
+    public Task<PersonAppends> WithAllAppends()
     {
         return WithAppends([
             "changes",
@@ -35,7 +35,7 @@ public class PersonClient : BaseClient
         ]);
     }
 
-    public Task<PersonChanges?> Changes(string startDate, string endDate)
+    public Task<PersonChanges> Changes(string startDate, string endDate)
     {
         var queryParams = new Dictionary<string, string>
         {
@@ -46,27 +46,27 @@ public class PersonClient : BaseClient
         return Get<PersonChanges>("person/" + Id + "/changes", queryParams);
     }
 
-    public Task<PersonMovieCredits?> MovieCredits()
+    public Task<PersonMovieCredits> MovieCredits()
     {
         return Get<PersonMovieCredits>("person/" + Id + "/movie_credits");
     }
 
-    public Task<PersonTvCredits?> TvCredits()
+    public Task<PersonTvCredits> TvCredits()
     {
         return Get<PersonTvCredits>("person/" + Id + "/tv_credits");
     }
 
-    public Task<PersonExternalIds?> ExternalIds()
+    public Task<PersonExternalIds> ExternalIds()
     {
         return Get<PersonExternalIds>("person/" + Id + "/external_ids");
     }
 
-    public Task<PersonImages?> Images()
+    public Task<PersonImages> Images()
     {
         return Get<PersonImages>("person/" + Id + "/images");
     }
 
-    public Task<PersonTranslations?> Translations()
+    public Task<PersonTranslations> Translations()
     {
         return Get<PersonTranslations>("person/" + Id + "/translations");
     }

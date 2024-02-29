@@ -7,7 +7,7 @@ using NoMercy.Helpers;
 
 namespace NoMercy.Server.app.Helper;
 
-public abstract partial class Networking
+public class Networking
 {
     private static INatDevice? _device;
 
@@ -20,8 +20,9 @@ public abstract partial class Networking
         return Task.CompletedTask;
     }
 
-    public static string InternalIp => GetInternalIp() ?? "";
-    private static string ExternalIp { get; set; } = "";
+    public static string InternalIp => GetInternalIp();
+    private static string ExternalIp { get; set; } = GetExternalIp();
+    
     public static int InternalServerPort { get; set; } = 7626;
     public static int ExternalServerPort { get; set; } = 7626;
     
@@ -32,28 +33,28 @@ public abstract partial class Networking
     private static string GetInternalIp()
     {
         using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0);
-
-        socket.Connect("1.1.1.1", 65530);
-
-        var endPoint = socket.LocalEndPoint as IPEndPoint;
-
-        var localIp = endPoint?.Address.ToString();
-
-        if (localIp != null)
-        {
-            InternalAddress = $"https://{Regex.Replace(ExternalIp, "\\.","-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
-
-            return localIp;
-        }
         
-        return "";
+        socket.Connect("1.1.1.1", 65530);
+        
+        var endPoint = socket.LocalEndPoint as IPEndPoint;
+        
+        var localIp = endPoint?.Address.ToString();
+        
+        if (localIp == null) return "";
+        
+        InternalAddress = $"https://{Regex.Replace(localIp, "\\.","-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
+
+        return localIp;
+
     }
 
     private static string GetExternalIp()
     {
         var client = new HttpClient();
 
-        var externalIp = client.GetStringAsync("https://api-dev.nomercy.tv/server/ip").Result;
+        string externalIp = client.GetStringAsync("https://api-dev.nomercy.tv/server/ip").Result;
+
+        ExternalAddress = $"https://{Regex.Replace(externalIp, "\\.","-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
         
         return externalIp;
     }
@@ -66,9 +67,15 @@ public abstract partial class Networking
         _device.CreatePortMap(new Mapping(Protocol.Udp, 7626, 7626, 9999999, "NoMercy MediaServer (UDP)"));
 
         ExternalIp = _device.GetExternalIP().ToString();
-        if (ExternalIp == "") ExternalIp = GetExternalIp();
         
-        ExternalAddress = $"https://{Regex.Replace(ExternalIp, "\\.","-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
+        if (ExternalIp == "")
+        {
+            ExternalIp = GetExternalIp();
+        }
+        else
+        {
+            ExternalAddress = $"https://{Regex.Replace(ExternalIp, "\\.","-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
+        }
     }
     
     public static IWebHost TempServer()

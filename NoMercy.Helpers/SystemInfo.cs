@@ -9,7 +9,7 @@ namespace NoMercy.Helpers;
 
 public static class SystemInfo
 {
-    public static readonly string DeviceName = "VLIEGTUIG!";
+    public static readonly string DeviceName = Environment.MachineName;
     public static readonly Guid DeviceId = GetDeviceId();
     public static readonly string Os = RuntimeInformation.OSDescription;
     public static readonly string Platform = GetPlatform();
