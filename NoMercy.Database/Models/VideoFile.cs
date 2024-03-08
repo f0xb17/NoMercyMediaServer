@@ -13,7 +13,7 @@ namespace NoMercy.Database.Models
         [JsonProperty("id")]
         public Ulid Id { get; set; } = Ulid.NewUlid();
 
-        [JsonProperty("duration")] public string Duration { get; set; }
+        [JsonProperty("duration")] public string? Duration { get; set; }
         [JsonProperty("filename")] public string Filename { get; set; }
         [JsonProperty("folder")] public string? Folder { get; set; }
         [JsonProperty("host_folder")] public string HostFolder { get; set; }

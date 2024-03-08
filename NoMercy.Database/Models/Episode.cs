@@ -42,31 +42,31 @@ namespace NoMercy.Database.Models
         public virtual Season Season { get; set; }
         
         [JsonProperty("casts")] 
-        public virtual ICollection<Cast>? Casts { get; set; }
+        public virtual ICollection<Cast> Casts { get; set; }
 
         [JsonProperty("crews")] 
-        public virtual ICollection<Crew>? Crews { get; set; }
+        public virtual ICollection<Crew> Crews { get; set; }
 
         [JsonProperty("special_items")] 
-        public virtual ICollection<SpecialItem>? SpecialItems { get; set; }
+        public virtual ICollection<SpecialItem> SpecialItems { get; set; }
 
         [JsonProperty("video_files")] 
-        public virtual ICollection<VideoFile> VideoFiles { get; set; }
+        public virtual ICollection<VideoFile> VideoFiles { get; set; } = new HashSet<VideoFile>();
 
         [JsonProperty("medias")] 
-        public virtual ICollection<Media>? Media { get; set; }
+        public virtual ICollection<Media> Media { get; set; }
 
         [JsonProperty("images")] 
-        public virtual ICollection<Image>? Images { get; set; }
+        public virtual ICollection<Image> Images { get; set; }
 
         [JsonProperty("guest_stars")] 
-        public virtual ICollection<GuestStar>? GuestStars { get; set; }
+        public virtual ICollection<GuestStar> GuestStars { get; set; }
 
         [JsonProperty("files")] 
-        public virtual ICollection<File>? Files { get; set; }
+        public virtual ICollection<File> Files { get; set; }
 
         [JsonProperty("translations")] 
-        public virtual ICollection<Translation>? Translations { get; set; }
+        public virtual ICollection<Translation> Translations { get; set; }
 
         public Episode()
         {

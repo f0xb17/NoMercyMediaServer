@@ -86,16 +86,27 @@ public class HomeController: Controller
     [HttpGet]
     [Route("screensaver")]
     public async Task<ScreensaverDto> Screensaver()
-    {
+    {       
+        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+
         await using MediaContext mediaContext = new();
         var data = await mediaContext.Images
             .AsNoTracking()
+            
+            .Where(image => image.Movie.Library.LibraryUsers
+                .FirstOrDefault(u => u.UserId == userId) != null || 
+                image.Tv.Library.LibraryUsers
+                    .FirstOrDefault(u => u.UserId == userId) != null
+            )
+            
             .Where(image =>
                 (image.Type == "backdrop" && image.VoteAverage > 2 && image.Iso6391 == null) || 
                 (image.Type == "logo" && image.Iso6391 == "en")
             )
+            
             .Include(image => image.Movie)
             .Include(image => image.Tv)
+            
             .ToListAsync();
 
         var tvCollection = data.Where(image => image is { Type: "backdrop", Tv: not null })
@@ -122,7 +133,10 @@ public class HomeController: Controller
         
         await using MediaContext mediaContext = new();
         User? user = await mediaContext.Users
+            .AsNoTracking()
+            
             .Where(user => user.Id == userId)
+            
             .FirstOrDefaultAsync();
 
         return new PermissionsResponseDto

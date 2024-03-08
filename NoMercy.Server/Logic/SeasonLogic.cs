@@ -234,7 +234,7 @@ public class SeasonLogic(TvShowAppends show, MediaContext mediaContext)
                     })
                     .Run();
 
-                Logger.MovieDb($@"TvShow {show?.Name}, Season {season.SeasonNumber}: Translations stored");
+                Logger.MovieDb($@"TvShow {show?.Name}, Season {season.SeasonNumber}: TranslationsDto stored");
             }
         }
         

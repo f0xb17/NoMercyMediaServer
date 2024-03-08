@@ -6,30 +6,34 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models
 {
     [PrimaryKey(nameof(Id))]
+    [Index(nameof(DeviceId), IsUnique = true)]
     public class Device : Timestamps
     {
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         [JsonProperty("id")]
-        public required Ulid Id { get; set; } = Ulid.NewUlid();
+        public Ulid Id { get; set; } = Ulid.NewUlid();
 
-        [JsonProperty("device_id")] public required string DeviceId { get; set; }
+        [JsonProperty("device_id")] public string DeviceId { get; set; }
 
-        [JsonProperty("user_id")] public required string Browser { get; set; }
+        [JsonProperty("browser")] public string Browser { get; set; }
 
-        [JsonProperty("os")] public required string Os { get; set; }
+        [JsonProperty("os")] public string Os { get; set; }
 
         [Column("Device")]
         [JsonProperty("model")]
-        public required string Model { get; set; }
+        public string Model { get; set; }
 
-        [JsonProperty("type")] public required string Type { get; set; }
+        [JsonProperty("type")] public string Type { get; set; }
 
-        [JsonProperty("name")] public required string Name { get; set; }
+        [JsonProperty("name")] public string Name { get; set; }
 
         [JsonProperty("custom_name")] public string? CustomName { get; set; }
 
-        [JsonProperty("version")] public required string Version { get; set; }
+        [JsonProperty("version")] public string Version { get; set; }
 
-        [JsonProperty("ip")] public required string Ip { get; set; }
+        [JsonProperty("ip")] public string Ip { get; set; }
+        
+        [JsonProperty("activity_logs")]
+        public virtual ICollection<ActivityLog> ActivityLogs { get; set; }
     }
 }

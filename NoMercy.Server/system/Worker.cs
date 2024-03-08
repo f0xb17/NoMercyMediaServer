@@ -33,9 +33,10 @@ public class Worker(JobQueue queue, string name = "default")
                 var payload = JsonConvert.DeserializeObject<Dictionary<string, string>>(job.Payload);
                 if (payload != null)
                 {
-                    var className = Type.GetType(payload["className"]);
+                    Type className = Type.GetType(payload["className"])!;
                     var jobMethod = className?.GetMethod(payload["jobMethod"]);
-                    var jobParams = JsonConvert.DeserializeObject<object?[]>(payload["jobParams"]);
+                    
+                    var jobParams = JsonConvert.DeserializeObject<dynamic[]>(payload["jobParams"]);
 
                     if (className != null)
                     {

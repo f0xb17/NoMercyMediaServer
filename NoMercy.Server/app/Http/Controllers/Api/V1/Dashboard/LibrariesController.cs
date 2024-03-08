@@ -153,7 +153,7 @@ public class LibrariesController : Controller
             library.PerfectSubtitleMatch = request.PerfectSubtitleMatch;
             library.Realtime = request.Realtime;
             library.SpecialSeasonName = request.SpecialSeasonName;
-            library.Type = request.Type.Value;
+            library.Type = request.Type;
 
             await mediaContext.SaveChangesAsync();
         }
@@ -337,13 +337,10 @@ public class LibrariesController : Controller
         {
             foreach (var item in request.Libraries)
             {
-                Logger.Access(item);
                 var lib = libraries.FirstOrDefault(l => l.Id == item.Id);
-                // if (lib is null) continue;
+                if (lib is null) continue;
                 lib.Order = item.Order;
             }
-            
-            // Logger.Access(libraries);
             
             await mediaContext.SaveChangesAsync();
         }
@@ -558,29 +555,46 @@ public class LibrariesController : Controller
                 Args = [id.ToString()]
             };
         }
-        
+
         try
         {
-            var folder = new Folder()
+            Folder folder = new Folder()
             {
                 Id = Ulid.NewUlid(),
                 Path = request.Path,
             };
-            
+
             await mediaContext.Folders.Upsert(folder)
-                .On(f => new { f.Id })
+                .On(f => new { f.Path })
                 .WhenMatched((fs, fi) => new Folder()
                 {
                     Path = fi.Path,
                 })
                 .RunAsync();
+
+        }
+        catch (Exception e)
+        {
+            return new StatusResponseDto<string>()
+            {
+                Status = "error",
+                Message = "Something went wrong adding a new folder {0}: {1}",
+                Args = [id.ToString(), e.Message]
+            };
+        }
+        try
+        {
+
+            Folder? folder = await mediaContext.Folders
+                .Where(folder => folder.Path == request.Path)
+                .FirstOrDefaultAsync();
             
             var folderLibrary = new FolderLibrary()
             {
                 LibraryId = library.Id,
                 FolderId = folder.Id
             };
-            
+
             await mediaContext.FolderLibrary.Upsert(folderLibrary)
                 .On(fl => new { fl.LibraryId, fl.FolderId })
                 .WhenMatched((fls, fli) => new FolderLibrary()
@@ -588,7 +602,7 @@ public class LibrariesController : Controller
                     LibraryId = fli.LibraryId,
                     FolderId = fli.FolderId
                 })
-                .RunAsync();
+                    .RunAsync();
         }
         catch (Exception e)
         {
@@ -649,26 +663,125 @@ public class LibrariesController : Controller
             Args = [folder.Path]
         };
     }
+    
+    [HttpPost]
+    [Route("{id}/folders/{folderId}/encoder_profiles")]
+    public async Task<StatusResponseDto<string>> AddEncoderProfile(Ulid id, Ulid folderId, [FromBody] ProfilesRequest request)
+    {
+        Logger.App(request.Profiles);
+        await using MediaContext mediaContext = new();
+        var folder = await mediaContext.Folders
+            .Where(folder => folder.Id == folderId)
+            .FirstOrDefaultAsync();
+        
+        if (folder is null)
+        {
+            return new StatusResponseDto<string>()
+            {
+                Status = "error",
+                Message = "Folder {0} does not exist.",
+                Args = [id.ToString()]
+            };
+        }
+        
+        try
+        {
+            var encoderProfileFolder = request.Profiles
+                .Select(profile => new EncoderProfileFolder
+                {
+                    FolderId = folder.Id,
+                    EncoderProfileId = Ulid.Parse(profile)
+                })
+                .ToArray();
+
+            await mediaContext.EncoderProfileFolder.UpsertRange(encoderProfileFolder)
+                .On(epf => new { epf.FolderId, epf.EncoderProfileId })
+                .WhenMatched((epfs, epfi) => new EncoderProfileFolder()
+                {
+                    FolderId = epfi.FolderId,
+                    EncoderProfileId = epfi.EncoderProfileId
+                })
+                .RunAsync();
+        }
+        catch (Exception e)
+        {
+            return new StatusResponseDto<string>()
+            {
+                Status = "error",
+                Message = "Something went wrong adding a new encoder profile to {0} folder: {1}",
+                Args = [id.ToString(), e.Message]
+            };
+        }
+        
+        return new StatusResponseDto<string>()
+        {
+            Status = "ok",
+            Message = "Successfully added encoder profile to {0} folder.",
+            Args = [id.ToString()]
+        };
+    }
+    
+    [HttpDelete]
+    [Route("{id}/folders/{folderId}/encoder_profiles/{encoderProfileId}")]
+    public async Task<StatusResponseDto<string>> DeleteEncoderProfile(Ulid id, Ulid profileId)
+    {
+        await using MediaContext mediaContext = new();
+        var encoderProfile = await mediaContext.EncoderProfiles
+            .Where(folder => folder.Id == profileId)
+            .FirstOrDefaultAsync();
+        
+        if (encoderProfile is null)
+        {
+            return new StatusResponseDto<string>()
+            {
+                Status = "error",
+                Message = "Folder {0} does not exist.",
+                Args = [id.ToString()]
+            };
+        }
+        
+        try {
+            mediaContext.EncoderProfiles.Remove(encoderProfile);
+            
+            await mediaContext.SaveChangesAsync();
+        }
+        catch (Exception e)
+        {
+            return new StatusResponseDto<string>()
+            {
+                Status = "error",
+                Message = "Something went wrong deleting the encoder profile: {0}",
+                Args = [e.Message]
+            };
+        }
+        
+        return new StatusResponseDto<string>()
+        {
+            Status = "ok",
+            Message = "Successfully deleted encoder profile {0}.",
+            Args = [encoderProfile.Name]
+        };
+    }
 }
 
 public class LibraryUpdateRequest
 {
     [JsonProperty("id")] public Ulid Id { get; set; }
     [JsonProperty("title")] public string Title { get; set; }
-    [JsonProperty("image")] public string Image { get; set; }
+    [JsonProperty("image")] public string? Image { get; set; }
     [JsonProperty("autoRefreshInterval")] public bool PerfectSubtitleMatch { get; set; }
     [JsonProperty("realtime")] public bool Realtime { get; set; }
     [JsonProperty("specialSeasonName")] public string SpecialSeasonName { get; set; }
-    [JsonProperty("type")] public Type Type { get; set; }
+    [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("folder_library")] public FolderLibraryDto[] FolderLibrary { get; set; }
     [JsonProperty("subtitles")] public string[] Subtitles { get; set; }
 }
 
-public class Type
-{
-    [JsonProperty("title")] public string Title { get; set; }
-    [JsonProperty("value")] public string Value { get; set; }
-}
+// public class Type
+// {
+//     [JsonProperty("title")] public string? Title { get; set; }
+//     [JsonProperty("value")] public string Value { get; set; }
+// }
 
 public class FolderLibraryDto
 {
@@ -703,4 +816,9 @@ public class LibrarySortRequestItem
 {
     [JsonProperty("id")] public Ulid Id { get; set; }
     [JsonProperty("order")] public int Order { get; set; }
+}
+
+public class ProfilesRequest
+{
+    [JsonProperty("profiles")] public string[] Profiles { get; set; }
 }

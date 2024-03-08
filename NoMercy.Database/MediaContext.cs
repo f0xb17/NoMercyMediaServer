@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
 using File = NoMercy.Database.Models.File;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Database;
 
@@ -121,6 +122,9 @@ public class MediaContext : DbContext
     public virtual DbSet<LibraryMovie> LibraryMovie { get; init; }
     public virtual DbSet<LibraryTv> LibraryTv { get; init; }
     public virtual DbSet<LibraryUser> LibraryUser { get; init; }
+    public virtual DbSet<CollectionUser> CollectionUser { get; init; }
+    public virtual DbSet<MovieUser> MovieUser { get; init; }
+    public virtual DbSet<TvUser> TvUser { get; init; }
     public virtual DbSet<MediaAttachment> MediaAttachments { get; init; }
     public virtual DbSet<Media> Medias { get; init; }
     public virtual DbSet<MediaStream> MediaStreams { get; init; }
@@ -165,6 +169,64 @@ public class Timestamps
     [JsonProperty("updated_at")]
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
 }
+
+// public class ColorPalettes
+// {
+//     [Column("ColorPalette")]
+//     [StringLength(1024)]
+//     [JsonProperty("color_palette")]
+//     [System.Text.Json.Serialization.JsonIgnore]
+//     public string _colorPalette { get; set; } = string.Empty;
+//     
+//     [NotMapped]    
+//     public IColorPalettes? ColorPalette
+//     {
+//         get => (_colorPalette != string.Empty 
+//             ? JsonConvert.DeserializeObject<IColorPalettes>(_colorPalette) 
+//             : null);
+//         set => _colorPalette = JsonConvert.SerializeObject(value);
+//     }
+// }
+//
+// public class ColorPaletteTimeStamps: Timestamps
+// {
+//     [Column("ColorPalette")]
+//     [StringLength(1024)]
+//     [System.Text.Json.Serialization.JsonIgnore]
+//     public string _colorPalette { get; set; } = string.Empty;
+//     
+//     [NotMapped]
+//     public IColorPalettes? ColorPalette
+//     {
+//         get => (_colorPalette != string.Empty 
+//             ? JsonConvert.DeserializeObject<IColorPalettes>(_colorPalette) 
+//             : null);
+//         set => _colorPalette = JsonConvert.SerializeObject(value);
+//     }
+// }
+//
+// public class IColorPalettes
+// {
+//     [JsonProperty("poster")]
+//     public IPalette? Poster { get; set; }
+//     [JsonProperty("backdrop")]
+//     public IPalette? Backdrop { get; set; }
+//     [JsonProperty("still")]
+//     public IPalette? Still { get; set; }
+//     [JsonProperty("profile")]
+//     public IPalette? Profile { get; set; }
+//     [JsonProperty("image")]
+//     public IPalette? Image { get; set; }
+// }
+//
+// public class IPalette
+// {
+//     public string Primary { get; set; }
+//     public string LightVibrant { get; set; }
+//     public string DarkVibrant { get; set; }
+//     public string LightMuted { get; set; }
+//     public string DarkMuted { get; set; }
+// }
 
 public class ColorPalettes
 {
@@ -226,13 +288,13 @@ public class IPalette
 
 public class UlidToStringConverter : ValueConverter<Ulid, string>
 {
-    private static readonly ConverterMappingHints defaultHints = new ConverterMappingHints(size: 26);
+    private static readonly ConverterMappingHints defaultHints = new(size: 26);
 
     public UlidToStringConverter() : this(null)
     {
     }
 
-    public UlidToStringConverter(ConverterMappingHints mappingHints = null)
+    private UlidToStringConverter(ConverterMappingHints? mappingHints = null)
         : base(
             convertToProviderExpression: x => x.ToString(),
             convertFromProviderExpression: x => Ulid.Parse(x),

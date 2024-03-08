@@ -26,7 +26,6 @@ public class PersonJob : IShouldQueue
             case "tv" when _id != null:
             {
                 TvShowAppends? show = await new TvClient(_id).WithAllAppends();
-                if (show is null) return;
             
                 PersonLogic personShowLogic = new PersonLogic(show);
                 await personShowLogic.FetchPeople();
@@ -36,7 +35,6 @@ public class PersonJob : IShouldQueue
                 {
                     using SeasonClient seasonClient = new(show.Id, s.SeasonNumber);
                     SeasonAppends? season = await seasonClient.WithAllAppends();
-                    if (season is null) continue;
                 
                     PersonLogic personSeasonLogic = new PersonLogic(show, season);
                     await personSeasonLogic.FetchPeople();
@@ -59,7 +57,6 @@ public class PersonJob : IShouldQueue
             case "movie" when _id != null:
             {
                 MovieAppends? movie = await new MovieClient(_id).WithAllAppends();
-                if (movie is null) return;
                 
                 PersonLogic personMovieLogic = new PersonLogic(movie);
                 await personMovieLogic.FetchPeople();

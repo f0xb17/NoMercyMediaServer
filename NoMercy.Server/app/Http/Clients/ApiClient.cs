@@ -19,6 +19,8 @@ public class ApiClient
 
         Client = new HttpClient(handler);
         
+        Client.BaseAddress = new Uri("https://dev.nomercy.tv/api/v1/");
+        
         Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));  
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Auth.AccessToken);
         

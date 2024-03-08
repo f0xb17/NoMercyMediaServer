@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using CommandLine;
 using Microsoft.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using NoMercy.Database;
 using NoMercy.Helpers;
 using NoMercy.Server.app.Helper;
 using NoMercy.Server.Logic;
@@ -54,7 +56,7 @@ public static class Program
         });
 
         app.RunAsync().Wait();
-
+        
         await Task.CompletedTask;
     }
 
@@ -84,7 +86,7 @@ public static class Program
             TrayIcon.Make()
         ];
         RunStartup(startupTasks).Wait();
-
+        
         // Task.Run(async () =>
         // {
         //     MediaContext context = new();
@@ -178,4 +180,5 @@ public static class Program
             await task;
         }
     }
+
 }

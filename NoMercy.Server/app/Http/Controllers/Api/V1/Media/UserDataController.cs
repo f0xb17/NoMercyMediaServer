@@ -20,7 +20,7 @@ public class UserDataController : Controller
     {
         return Ok();
     }
-    
+
     [HttpGet]
     [Route("continue")]
     public async Task<ContinueWatchingDto> ContinueWatching()
@@ -30,13 +30,10 @@ public class UserDataController : Controller
         await using MediaContext mediaContext = new();
         var continueWatching = await mediaContext.UserData
             .AsNoTracking()
-            
             .Where(user => user.UserId == userId)
-            
             .Include(userData => userData.Movie)
             .Include(userData => userData.Tv)
             .Include(userData => userData.Special)
-            
             .OrderByDescending(userData => userData.UpdatedAt)
             .ToListAsync();
 
@@ -54,7 +51,7 @@ public class UserDataController : Controller
                 .Select(item => new ContinueWatchingItemDto(item))
         };
     }
-    
+
     [HttpDelete]
     [Route("continue")]
     public async Task<StatusResponseDto<string>> RemoveContinue(UserRequest body)
@@ -65,13 +62,19 @@ public class UserDataController : Controller
 
         UserData? userData = body.Type switch
         {
-            "movie" => await mediaContext.UserData.Where(data => data.UserId == userId)
+            "movie" => await mediaContext.UserData
+                .AsNoTracking()
+                .Where(data => data.UserId == userId)
                 .Where(data => data.MovieId == body.Id)
                 .FirstOrDefaultAsync(),
-            "tv" => await mediaContext.UserData.Where(data => data.UserId == userId)
+            "tv" => await mediaContext.UserData
+                .AsNoTracking()
+                .Where(data => data.UserId == userId)
                 .Where(data => data.TvId == body.Id)
                 .FirstOrDefaultAsync(),
-            "special" => await mediaContext.UserData.Where(data => data.UserId == userId)
+            "special" => await mediaContext.UserData
+                .AsNoTracking()
+                .Where(data => data.UserId == userId)
                 .Where(data => data.SpecialId == body.Id.ToString())
                 .FirstOrDefaultAsync(),
             _ => null
@@ -85,7 +88,7 @@ public class UserDataController : Controller
                 Message = "Item not found"
             };
         }
-        
+
         mediaContext.UserData.Remove(userData);
         await mediaContext.SaveChangesAsync();
 
@@ -103,16 +106,22 @@ public class UserDataController : Controller
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
 
         await using MediaContext mediaContext = new();
-        
+
         UserData? userData = body.Type switch
         {
-            "movie" => await mediaContext.UserData.Where(data => data.UserId == userId)
+            "movie" => await mediaContext.UserData
+                .AsNoTracking()
+                .Where(data => data.UserId == userId)
                 .Where(data => data.MovieId == body.Id)
                 .FirstOrDefaultAsync(),
-            "tv" => await mediaContext.UserData.Where(data => data.UserId == userId)
+            "tv" => await mediaContext.UserData
+                .AsNoTracking()
+                .Where(data => data.UserId == userId)
                 .Where(data => data.TvId == body.Id)
                 .FirstOrDefaultAsync(),
-            "special" => await mediaContext.UserData.Where(data => data.UserId == userId)
+            "special" => await mediaContext.UserData
+                .AsNoTracking()
+                .Where(data => data.UserId == userId)
                 .Where(data => data.SpecialId == body.Id.ToString())
                 .FirstOrDefaultAsync(),
             _ => null
@@ -126,7 +135,7 @@ public class UserDataController : Controller
                 Message = "Item not found"
             };
         }
-        
+
         userData.Played = true;
 
         await mediaContext.SaveChangesAsync();
@@ -137,7 +146,7 @@ public class UserDataController : Controller
             Message = "Item marked as watched"
         };
     }
-    
+
     [HttpGet]
     [Route("favorites")]
     public async Task<StatusResponseDto<string>> Favorites([FromBody] UserRequest body)
@@ -145,16 +154,22 @@ public class UserDataController : Controller
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
 
         await using MediaContext mediaContext = new();
-        
+
         UserData? userData = body.Type switch
         {
-            "movie" => await mediaContext.UserData.Where(data => data.UserId == userId)
+            "movie" => await mediaContext.UserData
+                .AsNoTracking()
+                .Where(data => data.UserId == userId)
                 .Where(data => data.MovieId == body.Id)
                 .FirstOrDefaultAsync(),
-            "tv" => await mediaContext.UserData.Where(data => data.UserId == userId)
+            "tv" => await mediaContext.UserData
+                .AsNoTracking()
+                .Where(data => data.UserId == userId)
                 .Where(data => data.TvId == body.Id)
                 .FirstOrDefaultAsync(),
-            "special" => await mediaContext.UserData.Where(data => data.UserId == userId)
+            "special" => await mediaContext.UserData
+                .AsNoTracking()
+                .Where(data => data.UserId == userId)
                 .Where(data => data.SpecialId == body.Id.ToString())
                 .FirstOrDefaultAsync(),
             _ => null
@@ -168,7 +183,7 @@ public class UserDataController : Controller
                 Message = "Item not found"
             };
         }
-        
+
         userData.IsFavorite = true;
 
         await mediaContext.SaveChangesAsync();
@@ -179,13 +194,10 @@ public class UserDataController : Controller
             Message = "Item marked as favorite"
         };
     }
-    
 }
 
 public class UserRequest
 {
-    [JsonProperty("id")]
-    public int Id { get; set; }
-    [JsonProperty("type")]
-    public string Type { get; set; }
+    [JsonProperty("id")] public int Id { get; set; }
+    [JsonProperty("type")] public string Type { get; set; }
 }

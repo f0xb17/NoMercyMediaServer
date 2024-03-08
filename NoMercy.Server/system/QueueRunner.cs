@@ -1,4 +1,5 @@
 using NoMercy.Database;
+using NoMercy.Database.Models;
 using NoMercy.Helpers;
 using LogLevel = NoMercy.Helpers.LogLevel;
 
@@ -28,6 +29,17 @@ public static class QueueRunner
         _isInitialized = true;
 
         List<Task> taskList = [];
+
+        using (QueueContext context = new())
+        {
+            List<QueueJob> queueJobs = context.QueueJobs.ToList();
+            foreach (var queueJob in queueJobs)
+            {
+                queueJob.ReservedAt = null;
+            }
+            
+            context.SaveChanges();
+        }
 
         foreach (var keyValuePair in Workers)
         {

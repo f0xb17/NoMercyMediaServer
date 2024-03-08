@@ -196,7 +196,7 @@ public class EpisodeLogic(TvShowAppends show, SeasonAppends season, MediaContext
                         .Run();
 
                     Logger.MovieDb(
-                        $@"TvShow {show?.Name}, Season {season.SeasonNumber}, Episode {episode.EpisodeNumber}: Translations stored");
+                        $@"TvShow {show?.Name}, Season {season.SeasonNumber}, Episode {episode.EpisodeNumber}: TranslationsDto stored");
 
                 }
                 catch (Exception e)

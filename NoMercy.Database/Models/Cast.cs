@@ -40,7 +40,7 @@ namespace NoMercy.Database.Models
         public virtual Episode Episode { get; set; }
 
         [JsonProperty("role_id")] public int? RoleId { get; set; }
-        public virtual Role? Role { get; set; }
+        public virtual Role Role { get; set; }
 
         public Cast()
         {

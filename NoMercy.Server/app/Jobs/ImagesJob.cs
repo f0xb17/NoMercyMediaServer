@@ -50,6 +50,9 @@ public class ImagesJob : IShouldQueue
             case "collection":
                 await CollectionLogic.StoreImages(_id);
                 break;
+            case "person":
+                await PersonLogic.StoreImages(_id);
+                break;
         }
     }
 }

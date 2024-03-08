@@ -47,7 +47,7 @@ public class LibrariesController : Controller
     
     [HttpGet]
     [Route("{libraryId}")]
-    public async Task<LibraryResponseDto> Library(Ulid libraryId)
+    public async Task<LibraryResponseDto> Library(Ulid libraryId, [FromQuery] PageRequestDto requestDto)
     {        
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
 
@@ -60,6 +60,9 @@ public class LibrariesController : Controller
                 .FirstOrDefault(u => u.UserId == userId) != null
             )
             
+            .Take(requestDto.Take)
+            .Skip(requestDto.Page * requestDto.Take)
+            
             .Include(library => library.LibraryMovies
                 .Where(libraryMovie => libraryMovie.Movie.VideoFiles
                     .Any(videoFile => videoFile.Folder != null) == true
@@ -69,15 +72,21 @@ public class LibrariesController : Controller
                     .ThenInclude(movie => movie.VideoFiles
                         .Where(videoFile => videoFile.Folder != null)
                     )
+            
             .Include(library => library.LibraryMovies)
                 .ThenInclude(libraryMovie => libraryMovie.Movie.Media)
+            
             .Include(library => library.LibraryMovies)
                 .ThenInclude(libraryMovie => libraryMovie.Movie.Images)
+            
             .Include(library => library.LibraryMovies)
                 .ThenInclude(libraryMovie => libraryMovie.Movie.GenreMovies)
-                .ThenInclude(genreMovie => genreMovie.Genre)
+                    .ThenInclude(genreMovie => genreMovie.Genre)
+            
             .Include(library => library.LibraryMovies)
-                .ThenInclude(libraryMovie => libraryMovie.Movie.Translations)
+                .ThenInclude(libraryMovie => libraryMovie.Movie.Translations
+                    .Where(translation => translation.Iso6391 == HttpContext.Request.Headers.AcceptLanguage[0]))
+            
             .Include(library => library.LibraryMovies)
                 .ThenInclude(libraryMovie => libraryMovie.Movie.CertificationMovies)
                     .ThenInclude(certificationMovie => certificationMovie.Certification)
@@ -94,15 +103,21 @@ public class LibrariesController : Controller
                         .ThenInclude(episode => episode.VideoFiles
                             .Where(videoFile => videoFile.Folder != null)
                         )
+            
             .Include(library => library.LibraryTvs)
                 .ThenInclude(libraryTv => libraryTv.Tv.Media)
+            
             .Include(library => library.LibraryTvs)
                 .ThenInclude(libraryTv => libraryTv.Tv.Images)
+            
             .Include(library => library.LibraryTvs)
                 .ThenInclude(libraryTv => libraryTv.Tv.GenreTvs)
                     .ThenInclude(genreTv => genreTv.Genre)
+            
             .Include(library => library.LibraryTvs)
-                .ThenInclude(libraryTv => libraryTv.Tv.Translations)
+                .ThenInclude(libraryTv => libraryTv.Tv.Translations
+                    .Where(translation => translation.Iso6391 == HttpContext.Request.Headers.AcceptLanguage[0]))
+            
             .Include(library => library.LibraryTvs)
                 .ThenInclude(libraryTv => libraryTv.Tv.CertificationTvs)
                     .ThenInclude(certificationTv => certificationTv.Certification)
@@ -117,7 +132,11 @@ public class LibrariesController : Controller
                     .Concat(library.LibraryTvs
                         .Select(tv => new LibraryResponseItemDto(tv)))
                     
-                    .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort)
+                    .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort),
+            
+            NextId = (library.LibraryMovies.Count + library.LibraryTvs.Count) < requestDto.Take
+                ? null 
+                : (library.LibraryMovies.Count + library.LibraryTvs.Count) + (requestDto.Page * requestDto.Take)
         };
     }
 

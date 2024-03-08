@@ -26,6 +26,7 @@ using Job = NoMercy.Database.Models.Job;
 
 using Exception = System.Exception;
 using GuestStar = NoMercy.Database.Models.GuestStar;
+using Image = NoMercy.Database.Models.Image;
 using LogLevel = NoMercy.Helpers.LogLevel;
 
 namespace NoMercy.Server.Logic;
@@ -257,6 +258,7 @@ public class PersonLogic
                         Biography = pi.Biography,
                         BirthDay = pi.BirthDay,
                         DeathDay = pi.DeathDay,
+                        _externalIds = pi._externalIds,
                         _gender = pi._gender,
                         Homepage = pi.Homepage,
                         ImdbId = pi.ImdbId,
@@ -605,7 +607,7 @@ public class PersonLogic
             Logger.MovieDb(e, LogLevel.Error);
         }
     }
-
+    
     private async Task DispatchJobs()
     {
         lock (_personAppends)
@@ -616,7 +618,10 @@ public class PersonLogic
                 
                 ColorPaletteJob colorPaletteJob = new ColorPaletteJob(id:person.Id, model:"person");
                 JobDispatcher.Dispatch(colorPaletteJob, "data");
-
+                
+                ImagesJob imagesJob = new ImagesJob(id:person.Id, type:"person");
+                JobDispatcher.Dispatch(imagesJob, "queue", 2);
+                
                 foreach (var image in person.Images.Profiles)
                 {
                     if (string.IsNullOrEmpty(image.FilePath)) continue;
@@ -627,6 +632,42 @@ public class PersonLogic
             }
         }
 
+        await Task.CompletedTask;
+    }
+
+    public static async Task StoreImages(int id)
+    {
+        PersonClient personClient = new(id);
+        PersonAppends? personAppend = personClient.WithAllAppends().Result;
+        
+        var profiles = personAppend?.Images?.Profiles.ToList()
+            .ConvertAll<Image>(profile => new Image(image: profile, person:personAppend, type:"poster")) ?? [];
+        
+        await using MediaContext mediaContext = new();
+        await mediaContext.Images.UpsertRange(profiles)
+            .On(v => new { v.FilePath, v.MovieId })
+            .WhenMatched((ts, ti) => new Image
+            {
+                AspectRatio = ti.AspectRatio,
+                FilePath = ti.FilePath,
+                Height = ti.Height,
+                Iso6391 = ti.Iso6391,
+                VoteAverage = ti.VoteAverage,
+                VoteCount = ti.VoteCount,
+                Width = ti.Width,
+                Type = ti.Type,
+                PersonId = ti.PersonId,
+            })
+            .RunAsync();
+        
+        foreach (var image in profiles)
+        {
+            if (string.IsNullOrEmpty(image.FilePath)) continue;
+            ColorPaletteJob colorPaletteJob = new ColorPaletteJob(filePath:image.FilePath, model:"image");
+            JobDispatcher.Dispatch(colorPaletteJob, "data");
+        }
+
+        Logger.MovieDb($@"Collection {personAppend?.Name}: Images stored");
         await Task.CompletedTask;
     }
 

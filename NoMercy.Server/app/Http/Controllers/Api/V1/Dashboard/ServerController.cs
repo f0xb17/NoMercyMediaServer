@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +9,9 @@ using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Helpers.Monitoring;
 using NoMercy.Server.app.Helper;
+using NoMercy.Server.app.Http.Clients;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.system;
 using LogLevel = NoMercy.Helpers.LogLevel;
@@ -41,21 +45,18 @@ public class ServerController : Controller
     public async Task<StatusResponseDto<SetupResponseDto>> Setup()
     {
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-        
+
         await using MediaContext mediaContext = new();
         List<Library> libraries = await mediaContext.Libraries
             .Where(library => library.LibraryUsers
                 .Any(libraryUser => libraryUser.UserId == userId)
             )
-            
             .Include(library => library.FolderLibraries)
-                .ThenInclude(folderLibrary => folderLibrary.Folder)
-                    .ThenInclude(folder => folder.EncoderProfileFolder)
-                        .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
-            
+            .ThenInclude(folderLibrary => folderLibrary.Folder)
+            .ThenInclude(folder => folder.EncoderProfileFolder)
+            .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
             .Include(library => library.LibraryUsers)
-                .ThenInclude(libraryUser => libraryUser.User)
-            
+            .ThenInclude(libraryUser => libraryUser.User)
             .ToListAsync();
 
         int libraryCount = libraries.Count;
@@ -64,7 +65,7 @@ public class ServerController : Controller
             .SelectMany(library => library.FolderLibraries)
             .Select(folderLibrary => folderLibrary.Folder)
             .Count();
-        
+
         int encoderProfileCount = libraries
             .SelectMany(library => library.FolderLibraries)
             .Select(folderLibrary => folderLibrary.Folder)
@@ -76,12 +77,12 @@ public class ServerController : Controller
             Data = new SetupResponseDto
             {
                 SetupComplete = libraryCount > 0
-                                && folderCount > 0 
+                                && folderCount > 0
                                 && encoderProfileCount > 0
             },
         };
     }
-    
+
     [HttpPost]
     [Route("start")]
     public IActionResult StartServer()
@@ -133,7 +134,7 @@ public class ServerController : Controller
     public StatusResponseDto<List<DirectoryTreeDto>> DirectoryTree([FromBody] PathRequest request)
     {
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-        
+
         string? path = request.Path ?? request.Folder;
 
         List<DirectoryTreeDto> array = [];
@@ -196,17 +197,30 @@ public class ServerController : Controller
 
         string type = fileInfo.Attributes.HasFlag(FileAttributes.Directory) ? "folder" : "file";
 
+        string newPath = string.IsNullOrEmpty(fileInfo.Name)
+            ? path
+            : fileInfo.Name;
+        
+        string parentPath = string.IsNullOrEmpty(parent)
+            ? "/"
+            : Path.Combine(fullPath, @"..\..");
+        
         return new DirectoryTreeDto
         {
-            Path = string.IsNullOrEmpty(fileInfo.Name)
-                ? path
-                : fileInfo.Name,
-            Parent = Path.Combine(fullPath, ".."),
-            FullPath = fullPath,
+            Path = newPath,
+            Parent = parentPath,
+            FullPath = fullPath.Replace(@"..\", ""),
             Mode = (int)fileInfo.Attributes,
             Size = type == "file" ? int.Parse(fileInfo.Length.ToString()) : null,
             Type = type
         };
+    }
+
+    public static string GetDeviceName()
+    {
+        MediaContext mediaContext = new();
+        Configuration? device = mediaContext.Configuration?.FirstOrDefault(device => device.Key == "server_name");
+        return device?.Value ?? Environment.MachineName;
     }
 
     [HttpGet]
@@ -214,16 +228,107 @@ public class ServerController : Controller
     public ServerInfoDto ServerInfo()
     {
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-        
+
         return new ServerInfoDto
         {
-            Server = SystemInfo.DeviceName,
+            Server = GetDeviceName(),
             Cpu = SystemInfo.Cpu,
             Os = SystemInfo.Platform.ToTitleCase(),
             Arch = SystemInfo.Architecture,
             Version = SystemInfo.Version,
             BootTime = SystemInfo.StartTime,
         };
+    }
+
+    [HttpGet]
+    [Route("resources")]
+    public ResourceInfoDto Resources()
+    {
+        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+
+        double totalCpu = 0.0;
+        double totalMemory = 0.0;
+        foreach (var aProc in Process.GetProcesses())
+        {
+            totalMemory += aProc.WorkingSet64 / 1024.0;
+        }
+        
+        return new ResourceInfoDto
+        {
+            Cpu = totalCpu / Environment.ProcessorCount,
+            Ram = totalMemory / 1024.0 / 1024.0,
+            Storage = StorageMonitor.Main(),
+        };
+    }
+
+    [HttpPatch]
+    [Route("info")]
+    public async Task<StatusResponseDto<string>> Update([FromBody] ServerUpdateRequest request)
+    {
+        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        await using MediaContext mediaContext = new();
+        var configuration = await mediaContext.Configuration
+            .AsTracking()
+            .FirstOrDefaultAsync(configuration => configuration.Key == "server_name");
+
+        try
+        {
+            if (configuration == null)
+            {
+                configuration = new Configuration
+                {
+                    Key = "server_name",
+                    Value = request.Name,
+                    ModifiedBy = userId,
+                };
+                await mediaContext.Configuration.AddAsync(configuration);
+            }
+            else
+            {
+                configuration.Value = request.Name;
+                configuration.ModifiedBy = userId;
+            }
+
+            await mediaContext.SaveChangesAsync();
+
+            HttpClient client = new HttpClient();
+
+            client.BaseAddress = new Uri("https://api-dev.nomercy.tv/v1/");
+
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Auth.AccessToken);
+
+            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Patch, "server/name")
+            {
+                Content = new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    ["id"] = SystemInfo.DeviceId.ToString(),
+                    ["server_name"] = request.Name
+                })
+            };
+
+            var response = client
+                .SendAsync(httpRequestMessage)
+                .Result.Content.ReadAsStringAsync().Result;
+
+            var data = JsonConvert.DeserializeObject<StatusResponseDto<string>>(response);
+
+            return new StatusResponseDto<string>
+            {
+                Status = data.Status,
+                Message = data.Message,
+                Args = [],
+            };
+        }
+        catch (Exception e)
+        {
+            return new StatusResponseDto<string>
+            {
+                Status = "error",
+                Message = "Server name could not be updated: {0}",
+                Args = [e.Message],
+            };
+        }
     }
 
     [HttpGet]
@@ -328,6 +433,17 @@ public class DirectoryTreeDto
 
 public class SetupResponseDto
 {
-    [JsonProperty("setup_complete")]
-    public bool SetupComplete { get; set; }
+    [JsonProperty("setup_complete")] public bool SetupComplete { get; set; }
+}
+
+public class ServerUpdateRequest
+{
+    [JsonProperty("name")] public string Name { get; set; }
+}
+
+public class ResourceInfoDto
+{
+    [JsonProperty("cpu")] public double Cpu { get; set; }
+    [JsonProperty("ram")] public double Ram { get; set; }
+    [JsonProperty("storage")] public List<ResourceMonitorDto> Storage { get; set; }
 }

@@ -138,8 +138,7 @@ public class CollectionLogic(int id, Library library)
                 {
                     MovieClient movieClient = new(movie.Id);
                     MovieAppends? movieAppends = movieClient.WithAllAppends().Result;
-                    if (movieAppends is null) continue;
-                    
+
                     Logger.MovieDb($@"Collection {Collection.Name}: Dispatching movie {movieAppends.Title}");
                     
                     PersonJob personJob = new PersonJob(id:movieAppends.Id, type:"movie");
@@ -157,7 +156,7 @@ public class CollectionLogic(int id, Library library)
             
             ColorPaletteJob colorPaletteCollectionJob = new ColorPaletteJob(id:Collection.Id, model:"collection");
             JobDispatcher.Dispatch(colorPaletteCollectionJob, "data");
-        
+            
             ImagesJob imagesJob = new ImagesJob(id:Collection.Id, type:"collection");
             JobDispatcher.Dispatch(imagesJob, "queue", 2);
         }
@@ -215,12 +214,12 @@ public class CollectionLogic(int id, Library library)
         var backdrops = collection?.Images?.Backdrops.ToList()
             .ConvertAll<Image>(image => new Image(image:image, collection:collection, type:"backdrop")) ?? [];
         
-        var logos = collection?.Images?.Logos.ToList()
-            .ConvertAll<Image>(image => new Image(image:image, collection:collection, type:"logo")) ?? [];
+        // var logos = collection?.Images?.Logos.ToList()
+        //     .ConvertAll<Image>(image => new Image(image:image, collection:collection, type:"logo")) ?? [];
         
         var images = posters
             .Concat(backdrops)
-            .Concat(logos)
+            // .Concat(logos)
             .ToList();
         
         await using MediaContext mediaContext = new();

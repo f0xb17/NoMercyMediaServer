@@ -94,7 +94,7 @@ public class PlaylistResponseDto
 
     }
 
-    public PlaylistResponseDto(Movie movie)
+    public PlaylistResponseDto(Movie movie, int? index = null)
     {
         VideoFile? videoFile = movie.VideoFiles.FirstOrDefault();
         if (videoFile is null) return;
@@ -111,7 +111,6 @@ public class PlaylistResponseDto
         Id = movie.Id;
         Title = title;
         Description = overview;
-        Show = movie.Title;
         Origin = SystemInfo.DeviceId;
         Uuid = movie.Id;
         VideoId = videoFile.Id;
@@ -142,6 +141,12 @@ public class PlaylistResponseDto
         FontsFile = subs.FontsFile;
         TextTracks = subs.TextTracks;
         Tracks = subs.TextTracks;
+
+        if (index is null) return;
+        SeasonName = "Collection";
+        Season = 0;
+        Episode = index;
+        EpisodeId = movie.Id;
     }
 
     private class Subs

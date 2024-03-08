@@ -25,7 +25,7 @@ public class Movie
 
     [JsonProperty("tagline")] public string? Tagline { get; set; }
 
-    [JsonProperty("title")] public string? Title { get; set; }
+    [JsonProperty("title")] public string Title { get; set; }
     
     [JsonProperty("release_date")] public DateTime? ReleaseDate { get; set; }
 

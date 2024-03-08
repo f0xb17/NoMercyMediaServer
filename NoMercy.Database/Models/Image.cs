@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using NoMercy.Providers.TMDB.Models.Collections;
 using NoMercy.Providers.TMDB.Models.Episode;
 using NoMercy.Providers.TMDB.Models.Movies;
+using NoMercy.Providers.TMDB.Models.People;
 using NoMercy.Providers.TMDB.Models.Season;
 using NoMercy.Providers.TMDB.Models.Shared;
 using NoMercy.Providers.TMDB.Models.TV;
@@ -149,6 +150,18 @@ namespace NoMercy.Database.Models
             VoteCount = image.VoteCount;
             Width = image.Width;
             CollectionId = collection.Id;
+            Type = type;
+        }
+        public Image(Providers.TMDB.Models.Shared.Profile image, PersonAppends? person, string type)
+        {
+            AspectRatio = image.AspectRatio;
+            FilePath = image.FilePath;
+            Height = image.Height;
+            Iso6391 = (string?)image.Iso6391;
+            VoteAverage = image.VoteAverage;
+            VoteCount = image.VoteCount;
+            Width = image.Width;
+            PersonId = person.Id;
             Type = type;
         }
     }

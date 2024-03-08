@@ -9,7 +9,7 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
 public class LibraryResponseDto
 {
-    [JsonProperty("nextId")] public object NextId { get; set; }
+    [JsonProperty("nextId")] public long? NextId { get; set; }
 
     [JsonProperty("data")] public IOrderedEnumerable<LibraryResponseItemDto> Data { get; set; }
 }

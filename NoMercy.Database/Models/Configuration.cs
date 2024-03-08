@@ -8,12 +8,16 @@ namespace NoMercy.Database.Models
     public class Configuration : Timestamps
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        [JsonProperty("id")] public required string Id { get; set; }
+        [JsonProperty("id")] public string Id { get; set; }
 
-        [JsonProperty("key")] public required string Key { get; set; }
+        [JsonProperty("key")] public string Key { get; set; }
 
         [JsonProperty("value")] public string? Value { get; set; }
 
-        [JsonProperty("modified_by")] public string? ModifiedBy { get; set; }
+        [JsonProperty("modified_by")] public Guid? ModifiedBy { get; set; }
+        
+        public Configuration()
+        {
+        }
     }
 }

@@ -23,7 +23,7 @@ public static class StringParser
         
     }
     
-    public static string? TitleSort<T>(this T? self, DateTime? date = null)
+    public static string TitleSort<T>(this T? self, DateTime? date = null)
     {        
         return _parseTitleSort(self?.ToString(), date);
     }

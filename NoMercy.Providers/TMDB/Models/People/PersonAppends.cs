@@ -8,7 +8,7 @@ public class PersonAppends : PersonDetails
 
     [JsonProperty("tv_credits")] public PersonTvCredits TvCredits { get; set; } = new();
 
-    [JsonProperty("external_ids")] public PersonExternalIds ExternalIds { get; set; } = new();
+    [JsonProperty("external_ids")] public PersonExternalIds? ExternalIds { get; set; } = new();
 
     [JsonProperty("images")] public PersonImages Images { get; set; } = new();
 

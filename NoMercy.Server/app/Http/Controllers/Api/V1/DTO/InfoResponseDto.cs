@@ -15,90 +15,64 @@ public class InfoResponseDto
 public class InfoResponseItemDto
 {
     [JsonProperty("id")] public long Id { get; set; }
-
     [JsonProperty("title")] public string? Title { get; set; }
-
     [JsonProperty("overview")] public string? Overview { get; set; }
-
     [JsonProperty("poster")] public string? Poster { get; set; }
-
     [JsonProperty("backdrop")] public string? Backdrop { get; set; }
-
     [JsonProperty("logo")] public string? Logo { get; set; }
-
-    [JsonProperty("color_palette")]
-    public IColorPalettes? ColorPalette { get; set; }
-
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("videos")] public VideoDto[] Videos { get; set; }
-
     [JsonProperty("backdrops")] public ImageDto[] Backdrops { get; set; }
-
     [JsonProperty("posters")] public ImageDto[] Posters { get; set; }
-
     [JsonProperty("similar")] public RelatedDto[] Similar { get; set; }
-
     [JsonProperty("recommendations")] public RelatedDto[] Recommendations { get; set; }
-
     [JsonProperty("cast")] public PeopleDto[] Cast { get; set; }
-
     [JsonProperty("crew")] public PeopleDto[] Crew { get; set; }
-
     [JsonProperty("contentRatings")] public ContentRating[]? ContentRatings { get; set; }
-
     [JsonProperty("watched")] public bool Watched { get; set; }
-
     [JsonProperty("favorite")] public bool Favorite { get; set; }
-
     [JsonProperty("titleSort")] public string? TitleSort { get; set; }
-
     [JsonProperty("duration")] public double Duration { get; set; }
-
     [JsonProperty("numberOfEpisodes")] public int NumberOfEpisodes { get; set; }
-
     [JsonProperty("haveEpisodes")] public int? HaveEpisodes { get; set; }
-
     [JsonProperty("year")] public int Year { get; set; }
-
     [JsonProperty("voteAverage")] public double VoteAverage { get; set; }
-
     [JsonProperty("externalIds")] public ExternalIds? ExternalIds { get; set; }
-
     [JsonProperty("creators")] public DirectorDto[] Creators { get; set; }
-
     [JsonProperty("directors")] public DirectorDto[] Directors { get; set; }
-
     [JsonProperty("writers")] public DirectorDto[] Writers { get; set; }
-
     [JsonProperty("director")] public DirectorDto Director { get; set; }
-
     [JsonProperty("genres")] public GenreDto[] Genres { get; set; }
-
     [JsonProperty("keywords")] public string[] Keywords { get; set; }
-
     [JsonProperty("type")] public string Type { get; set; }
-
     [JsonProperty("mediaType")] public string MediaType { get; set; }
-
-    [JsonProperty("seasons")] public IEnumerable<SeasonDto>? Seasons { get; set; }
-
-    public InfoResponseItemDto(Movie movie)
+    [JsonProperty("translations")] public TranslationDto[] Translations { get; set; }
+    [JsonProperty("seasons")] public SeasonDto[] Seasons { get; set; }
+    
+    public InfoResponseItemDto(Movie movie, string country)
     {
+        string title = movie.Translations
+            .FirstOrDefault()?.Title ?? movie.Title;
+        
+        string overview = movie.Translations
+            .FirstOrDefault()?.Overview ?? movie.Overview ?? string.Empty;
+
         Id = movie.Id;
-        Title = movie.Title;
-        Overview = movie.Overview;
+        Title = title;
+        Overview = overview;
         Type = "movie";
         MediaType = "movie";
         
         Watched = movie.VideoFiles
             .Any(videoFile => videoFile.UserData.FirstOrDefault()?.Played == true);
         
-        Favorite = movie.VideoFiles
-            .Any(videoFile => videoFile.UserData.FirstOrDefault()?.IsFavorite == true);
+        Favorite = movie.MovieUser.Count != 0;
         
         TitleSort = movie.Title.TitleSort(movie.ReleaseDate);
         
-        Duration = (int)movie.VideoFiles
-            .Select(videoFile => videoFile.Duration.ToSeconds() / 60).Average();
+        Duration = movie.VideoFiles.Count != 0
+            ? movie.VideoFiles.Select(videoFile => videoFile.Duration?.ToSeconds() ?? 0).Average() / 60
+            : movie.Duration ?? 0;
         
         Year = movie.ReleaseDate.ParseYear();
         VoteAverage = movie.VoteAverage ?? 0;
@@ -107,28 +81,33 @@ public class InfoResponseItemDto
         Backdrop = movie.Backdrop;
         Poster = movie.Poster;
         
+        Translations = movie.Translations
+            .Select(translation => new TranslationDto(translation))
+            .ToArray();
+        
         ContentRatings = movie.CertificationMovies
+            .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US" || certificationMovie.Certification.Iso31661 == country)
             .Select(certificationMovie => new ContentRating
             {
                 Rating = certificationMovie.Certification.Rating,
                 Iso31661 = certificationMovie.Certification.Iso31661
             })
-            .ToArray() ?? [];
+            .ToArray();
         
         Creators = movie.Crew
             .Where(crew => crew.Job?.Task == "Creator")
             .Select(crew => new DirectorDto(crew))
-            .ToArray() ?? [];
+            .ToArray();
         
         Directors = movie.Crew
             .Where(crew => crew.Job?.Task == "Director") 
             .Select(crew => new DirectorDto(crew))
-            .ToArray() ?? [];
+            .ToArray();
         
         Writers = movie.Crew
             .Where(crew => crew.Job?.Task == "Writer") 
             .Select(crew => new DirectorDto(crew))
-            .ToArray() ?? [];
+            .ToArray();
         
         // Director = movie.Crew?.Where(crew => crew.Job?.Task == "Director") 
         //     .Select(crew => new DirectorDto(crew))
@@ -136,11 +115,10 @@ public class InfoResponseItemDto
         //
         Keywords = movie.KeywordMovies
             .Select(keywordMovie => keywordMovie.Keyword.Name)
-            .ToArray() ?? [];
+            .ToArray();
 
-        Logo = movie.Media
-            .Select(media => media.Type == "logo" ? media.Src : null)
-            .FirstOrDefault(logo => logo != null);
+        Logo = movie.Images
+            .FirstOrDefault(media => media.Type == "logo")?.FilePath;
 
         Videos = movie.Media
             .Where(media => media.Type == "video")
@@ -150,24 +128,24 @@ public class InfoResponseItemDto
         Backdrops = movie.Images
             .Where(media => media.Type == "backdrop")
             .Select(media => new ImageDto(media))
-            .ToArray() ?? [];
+            .ToArray();
 
-        Posters = movie.Images?
+        Posters = movie.Images
             .Where(media => media.Type == "poster")
             .Select(media => new ImageDto(media))
-            .ToArray() ?? [];
+            .ToArray();
 
         Genres = movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie))
-            .ToArray() ?? [];
+            .ToArray();
 
         Cast = movie.Cast
             .Select(cast => new PeopleDto(cast))
-            .ToArray() ?? [];
+            .ToArray();
         
-        Crew = movie.Crew?
+        Crew = movie.Crew
             .Select(crew => new PeopleDto(crew))
-            .ToArray() ?? [];
+            .ToArray();
 
         Similar = movie.SimilarFrom
             .Select(similar => new RelatedDto(similar, "movie"))
@@ -178,11 +156,17 @@ public class InfoResponseItemDto
             .ToArray();
     }
 
-    public InfoResponseItemDto(Tv tv)
+    public InfoResponseItemDto(Tv tv, string country)
     {
+        string title = tv.Translations
+            .FirstOrDefault()?.Title ?? tv.Title ?? string.Empty;
+        
+        string overview = tv.Translations
+            .FirstOrDefault()?.Overview ?? tv.Overview ?? string.Empty;
+
         Id = tv.Id;
-        Title = tv.Title;
-        Overview = tv.Overview;
+        Title = title;
+        Overview = overview;
         Type = tv.Type ?? "tv";
         MediaType = "tv";
         
@@ -190,15 +174,19 @@ public class InfoResponseItemDto
             .Any(episode => episode.VideoFiles
                 .Any(videoFile => videoFile.UserData.FirstOrDefault()?.Played == true));
         
-        Favorite = tv.Episodes
-            .Any(episode => episode.VideoFiles
-                .Any(videoFile => videoFile.UserData.FirstOrDefault()?.IsFavorite == true));
+        Favorite = tv.TvUser.Count != 0;
         
         TitleSort = tv.Title.TitleSort(tv.FirstAirDate);
         
-        Duration = (int)tv.Episodes
-            .SelectMany(episode => episode.VideoFiles)
-            .Select(videoFile => videoFile.Duration.ToSeconds() / 60).Average();
+        Translations = tv.Translations
+            .Select(translation => new TranslationDto(translation))
+            .ToArray();
+        
+        Duration = tv.Episodes.Any(episode => episode.VideoFiles?.Count > 0)
+            ? tv.Episodes
+                .SelectMany(episode => episode.VideoFiles)
+                .Select(videoFile => (videoFile.Duration?.ToSeconds() ?? 0) / 60).Average() 
+            : tv.Duration ?? 0;
         
         NumberOfEpisodes = tv.NumberOfEpisodes;
         HaveEpisodes = tv.HaveEpisodes;
@@ -210,27 +198,28 @@ public class InfoResponseItemDto
         Poster = tv.Poster;
 
         ContentRatings = tv.CertificationTvs
+            .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US" || certificationMovie.Certification.Iso31661 == country)
             .Select(certificationTv => new ContentRating
             {
                 Rating = certificationTv.Certification.Rating,
                 Iso31661 = certificationTv.Certification.Iso31661
             })
-            .ToArray() ?? [];
+            .ToArray();
 
         Creators = tv.Crew
             .Where(crew => crew.Job?.Task == "Creator")
             .Select(crew => new DirectorDto(crew))
-            .ToArray() ?? [];
+            .ToArray();
         
         Directors = tv.Crew
             .Where(crew => crew.Job?.Task == "Director") 
             .Select(crew => new DirectorDto(crew))
-            .ToArray() ?? [];
+            .ToArray();
         
         Writers = tv.Crew
             .Where(crew => crew.Job?.Task == "Writer") 
             .Select(crew => new DirectorDto(crew))
-            .ToArray() ?? [];
+            .ToArray();
         
         // Director = tv.Crew?.Where(crew => crew.Job?.Task == "Director") 
         //     .Select(crew => new DirectorDto(crew))
@@ -238,38 +227,37 @@ public class InfoResponseItemDto
         
         Keywords = tv.KeywordTvs
             .Select(keywordTv => keywordTv.Keyword.Name)
-            .ToArray() ?? [];
+            .ToArray();
 
-        Logo = tv.Media
-            .Select(media => media.Type == "logo" ? media.Src : null)
-            .FirstOrDefault(logo => logo != null);
+        Logo = tv.Images
+            .FirstOrDefault(media => media.Type == "logo")?.FilePath;
 
-        Videos = tv.Media?
+        Videos = tv.Media
             .Where(media => media.Type == "video")
             .Select(media => new VideoDto(media))
-            .ToArray() ?? [];
+            .ToArray();
 
         Backdrops = tv.Images
             .Where(media => media.Type == "backdrop")
             .Select(media => new ImageDto(media))
             .ToArray();
 
-        Posters = tv.Images?
+        Posters = tv.Images
             .Where(media => media.Type == "poster")
             .Select(media => new ImageDto(media))
-            .ToArray() ?? [];
+            .ToArray();
 
         Genres = tv.GenreTvs
             .Select(genreTv => new GenreDto(genreTv))
             .ToArray();
         
-        Cast = tv.Cast?
+        Cast = tv.Cast
             .Select(cast => new PeopleDto(cast))
-            .ToArray() ?? [];
+            .ToArray();
         
-        Crew = tv.Crew?
+        Crew = tv.Crew
             .Select(crew => new PeopleDto(crew))
-            .ToArray() ?? [];
+            .ToArray();
 
         Similar = tv.SimilarFrom
             .Select(similar => new RelatedDto(similar, "tv"))
@@ -280,17 +268,24 @@ public class InfoResponseItemDto
             .ToArray();
 
         Seasons = tv.Seasons
-            .OrderBy(season => season.SeasonNumber)?
-            .Select(season => new SeasonDto(season));
+            .OrderBy(season => season.SeasonNumber)
+            .Select(season => new SeasonDto(season))
+            .ToArray();
     }
 
-    public InfoResponseItemDto(Collection collection)
+    public InfoResponseItemDto(Collection collection, string country)
     {
+        string title = collection.Translations
+            .FirstOrDefault()?.Title ?? collection.Title;
+        
+        string overview = collection.Translations
+            .FirstOrDefault()?.Overview ?? collection.Overview ?? string.Empty;
+
         Id = collection.Id;
-        Title = collection.Title;
-        Overview = collection.Overview;
-        Type = "collections";
-        MediaType = "collections";
+        Title = title;
+        Overview = overview;
+        Type = "collection";
+        MediaType = "collection";
         // Watched = tv.Watched;
         // Favorite = tv.Favorite;
         TitleSort = collection.Title
@@ -298,6 +293,10 @@ public class InfoResponseItemDto
                 .MinBy(collectionMovie => collectionMovie.Movie.ReleaseDate)
                 ?.Movie.ReleaseDate
                 .ParseYear());
+        
+        Translations = collection.Translations
+            .Select(translation => new TranslationDto(translation))
+            .ToArray();
         
         Year = collection.CollectionMovies
             .MinBy(collectionMovie => collectionMovie.Movie.ReleaseDate)
@@ -310,29 +309,31 @@ public class InfoResponseItemDto
         ColorPalette = collection.ColorPalette;
         Backdrop = collection.Backdrop;
         Poster = collection.Poster;
-
+        
         ContentRatings = collection.CollectionMovies
             .Select(certificationMovie => new ContentRating
             {
-                Rating = certificationMovie.Movie.CertificationMovies.First().Certification.Rating,
-                Iso31661 = certificationMovie.Movie.CertificationMovies.First().Certification.Iso31661
+                Rating = certificationMovie.Movie.CertificationMovies
+                    .First(cert => cert.Certification.Iso31661 == "US" || cert.Certification.Iso31661 == country).Certification.Rating,
+                Iso31661 = certificationMovie.Movie.CertificationMovies
+                    .First(cert => cert.Certification.Iso31661 == "US" || cert.Certification.Iso31661 == country).Certification.Iso31661
             })
-            .ToArray() ?? [];
+            .ToArray();
 
         Creators = collection.CollectionMovies
             .Select(collectionMovie => new DirectorDto(collectionMovie.Movie.Crew
                .FirstOrDefault(crew => crew.Job?.Task == "Creator") ?? new Crew()))
-            .ToArray() ?? [];
+            .ToArray();
         
         Directors = collection.CollectionMovies
             .Select(collectionMovie => new DirectorDto(collectionMovie.Movie.Crew
                .FirstOrDefault(crew => crew.Job?.Task == "Director") ?? new Crew()))
-            .ToArray() ?? [];
+            .ToArray();
         
         Writers = collection.CollectionMovies
-            .Select(collectionMovie => new DirectorDto(collectionMovie.Movie.Crew?
+            .Select(collectionMovie => new DirectorDto(collectionMovie.Movie.Crew
                .FirstOrDefault(crew => crew.Job?.Task == "Writer") ?? new Crew()))
-            .ToArray() ?? [];
+            .ToArray();
         
         // Director = collection.Movies?
         //     .Select(collectionMovie => new DirectorDto(collectionMovie.Movie.Crew?
@@ -342,11 +343,11 @@ public class InfoResponseItemDto
         Keywords = collection.CollectionMovies
             .SelectMany(collectionMovie => collectionMovie.Movie.KeywordMovies)
             .Select(keywordMovie => keywordMovie.Keyword.Name)
-            .ToArray() ?? [];
+            .ToArray();
 
         Logo = collection.CollectionMovies
-            .Select(collectionMovie => collectionMovie.Movie.Media?
-               .FirstOrDefault(media => media.Type == "logo")?.Src)
+            .Select(collectionMovie => collectionMovie.Movie.Images
+               .FirstOrDefault(media => media.Type == "logo")?.FilePath)
             .FirstOrDefault();
     }
 }
@@ -354,17 +355,11 @@ public class InfoResponseItemDto
 public class ImageDto
 {
     [JsonProperty("height")] public long Height { get; set; }
-
     [JsonProperty("id")] public long Id { get; set; }
-
     [JsonProperty("src")] public string? Src { get; set; }
-
     [JsonProperty("width")] public long Width { get; set; }
-
     [JsonProperty("voteAverage")] public double VoteAverage { get; set; }
-
     [JsonProperty("voteCount")] public long VoteCount { get; set; }
-
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
 
     public ImageDto(Image media)
@@ -379,69 +374,10 @@ public class ImageDto
     }
 }
 
-public class PeopleDto
-{
-    [JsonProperty("character", NullValueHandling = NullValueHandling.Ignore)]
-    public string? Character { get; set; }
-
-    [JsonProperty("job", NullValueHandling = NullValueHandling.Ignore)]
-    public string? Job { get; set; }
-
-    [JsonProperty("profilePath")] public string? ProfilePath { get; set; }
-
-    [JsonProperty("_gender")] public string Gender { get; set; }
-
-    [JsonProperty("id")] public long Id { get; set; }
-
-    [JsonProperty("knownForDepartment")] public string? KnownForDepartment { get; set; }
-
-    [JsonProperty("name")] public string Name { get; set; }
-
-    [JsonProperty("popularity")] public double Popularity { get; set; }
-
-    [JsonProperty("color_palette", NullValueHandling = NullValueHandling.Include)]
-    public IColorPalettes? ColorPalette { get; set; }
-
-    [JsonProperty("deathDay")] public DateTime? DeathDay { get; set; }
-
-    public PeopleDto(Cast cast)
-    {
-        Character = cast.Role?.Character;
-        ProfilePath = cast.Person.Profile;
-        KnownForDepartment = cast.Person.KnownForDepartment;
-        Name = cast.Person.Name;
-        ColorPalette = cast.Person.ColorPalette;
-        DeathDay = cast.Person.DeathDay;
-        Gender = cast.Person.Gender;
-        Id = cast.Person.Id;
-    }
-
-    public PeopleDto(Crew crew)
-    {
-        Job = crew.Job?.Task;
-        ProfilePath = crew.Person.Profile;
-        KnownForDepartment = crew.Person.KnownForDepartment;
-        Name = crew.Person.Name;
-        ColorPalette = crew.Person.ColorPalette;
-        DeathDay = crew.Person.DeathDay;
-        Gender = crew.Person.Gender;
-        Id = crew.Person.Id;
-    }
-}
-
-public class ContentRating
-{
-    [JsonProperty("rating")] public string Rating { get; set; }
-
-    [JsonProperty("iso31661")] public string Iso31661 { get; set; }
-}
-
 public class DirectorDto
 {
     [JsonProperty("id")] public long Id { get; set; }
-
     [JsonProperty("name")] public string Name { get; set; }
-
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     
     public DirectorDto(Crew crew)
@@ -455,28 +391,19 @@ public class DirectorDto
 public class ExternalIds
 {
     [JsonProperty("imdbId")] public string ImdbId { get; set; }
-
     [JsonProperty("tvdbId")] public long TvdbId { get; set; }
 }
 
 public class RelatedDto
 {
     [JsonProperty("backdrop")] public string? Backdrop { get; set; }
-
     [JsonProperty("id")] public int Id { get; set; }
-
     [JsonProperty("overview")] public string? Overview { get; set; }
-
     [JsonProperty("poster")] public string? Poster { get; set; }
-
     [JsonProperty("title")] public string? Title { get; set; }
-
     [JsonProperty("titleSort")] public string? TitleSort { get; set; }
-
     [JsonProperty("mediaType")] public string MediaType { get; set; }
-
     [JsonProperty("numberOfEpisodes")] public int? NumberOfEpisodes { get; set; }
-
     [JsonProperty("haveEpisodes")] public int? HaveEpisodes { get; set; }
 
     [JsonProperty("color_palette")]
@@ -492,7 +419,7 @@ public class RelatedDto
         MediaType = type;
         ColorPalette = similar.ColorPalette;
         NumberOfEpisodes = type == "tv" ? similar.TvFrom.NumberOfEpisodes : null;
-        HaveEpisodes = type == "tv" ? similar.TvFrom?.HaveEpisodes : null;
+        HaveEpisodes = type == "tv" ? similar.TvFrom.HaveEpisodes : null;
     }
 
     public RelatedDto(Recommendation recommendation, string type)
@@ -505,7 +432,7 @@ public class RelatedDto
         MediaType = type;
         ColorPalette = recommendation.ColorPalette;
         NumberOfEpisodes = type == "tv" ? recommendation.TvFrom.NumberOfEpisodes : null;
-        HaveEpisodes = type == "tv" ? recommendation.TvFrom?.HaveEpisodes : null;
+        HaveEpisodes = type == "tv" ? recommendation.TvFrom.HaveEpisodes : null;
     }
 }
 
@@ -519,68 +446,71 @@ public class RecommendationColorPaletteDto
 public class SeasonDto
 {
     [JsonProperty("id")] public long Id { get; set; }
-
     [JsonProperty("overview")] public string? Overview { get; set; }
-
     [JsonProperty("poster")] public string? Poster { get; set; }
-
     [JsonProperty("seasonNumber")] public long SeasonNumber { get; set; }
-
     [JsonProperty("title")] public string? Title { get; set; }
-
-    [JsonProperty("color_palette")]
-    public IColorPalettes? ColorPalette { get; set; }
-
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("episodes")] public EpisodeDto[] Episodes { get; set; }
+    [JsonProperty("translations")] public TranslationDto[] Translations { get; set; }
 
     public SeasonDto(Season season)
     {
+        string title = season.Translations
+            .FirstOrDefault()?.Title ?? season.Title ?? string.Empty;
+        
+        string overview = season.Translations
+            .FirstOrDefault()?.Overview ?? season.Overview ?? string.Empty;
+        
         Id = season.Id;
-        Overview = season.Overview;
+        Title = title;
+        Overview = overview;
         Poster = season.Poster;
         SeasonNumber = season.SeasonNumber;
-        Title = season.Title;
         ColorPalette = season.ColorPalette;
+        Translations = season.Translations
+            .Select(translation => new TranslationDto(translation))
+            .ToArray();
         Episodes = season.Episodes
             .OrderBy(episode => episode.EpisodeNumber)
             .Select(episode => new EpisodeDto(episode))
-            .ToArray() ?? [];
+            .ToArray();
     }
 }
 
 public class EpisodeDto
 {
     [JsonProperty("id")] public long Id { get; set; }
-
     [JsonProperty("episodeNumber")] public long EpisodeNumber { get; set; }
-
     [JsonProperty("seasonNumber")] public long SeasonNumber { get; set; }
-
     [JsonProperty("title")] public string? Title { get; set; }
-
     [JsonProperty("overview")] public string? Overview { get; set; }
-
     [JsonProperty("airDate")] public DateTime? AirDate { get; set; }
-
     [JsonProperty("still")] public string? Still { get; set; }
-
-    [JsonProperty("color_palette")]
-    public IColorPalettes? ColorPalette { get; set; }
-
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("progress")] public object? Progress { get; set; }
-
     [JsonProperty("available")] public bool Available { get; set; }
+    [JsonProperty("translations")] public TranslationDto[] Translations { get; set; }
 
     public EpisodeDto(Episode episode)
     {
+        string title = episode.Translations
+            .FirstOrDefault()?.Title ?? episode.Title ?? string.Empty;
+        
+        string overview = episode.Translations
+            .FirstOrDefault()?.Overview ?? episode.Overview ?? string.Empty;
+        
         Id = episode.Id;
+        Title = title;
+        Overview = overview;
         EpisodeNumber = episode.EpisodeNumber;
         SeasonNumber = episode.SeasonNumber;
-        Title = episode.Title;
-        Overview = episode.Overview;
         AirDate = episode.AirDate;
         Still = episode.Still;
         ColorPalette = episode.ColorPalette;
-        Available = episode.VideoFiles?.Count > 0;
+        Available = episode.VideoFiles.Count != 0;
+        Translations = episode.Translations
+            .Select(translation => new TranslationDto(translation))
+            .ToArray();
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Models.Collections;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Database.Models
 {
@@ -11,15 +12,10 @@ namespace NoMercy.Database.Models
     {
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         [JsonProperty("id")] public int Id { get; set; }
-        
         [JsonProperty("title")] public string Title { get; set; }
-
         [JsonProperty("title_sort")] public string? TitleSort { get; set; }
-
         [JsonProperty("backdrop")] public string? Backdrop { get; set; }
-
         [JsonProperty("poster")] public string? Poster { get; set; }
-
         [JsonProperty("overview")] public string? Overview { get; set; }
 
         [JsonProperty("parts")] public int Parts { get; set; }
@@ -35,6 +31,9 @@ namespace NoMercy.Database.Models
         
         [JsonProperty("images")]
         public virtual ICollection<Image> Images { get; set; }
+        
+        [JsonProperty("collection_user")] 
+        public virtual ICollection<CollectionUser> CollectionUser { get; set; }
 
         public Collection()
         {

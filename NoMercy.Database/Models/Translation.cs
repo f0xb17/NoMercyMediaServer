@@ -34,22 +34,22 @@ namespace NoMercy.Database.Models
         [JsonProperty("biography")] public string? Biography { get; set; }
 
         [JsonProperty("tv_id")] public int? TvId { get; set; }
-        public virtual ICollection<Tv>? Tvs { get; set; }
+        public virtual Tv Tv { get; set; }
 
         [JsonProperty("season_id")] public int? SeasonId { get; set; }
-        public virtual ICollection<Season>? Seasons { get; set; }
+        public virtual Season Season { get; set; }
 
         [JsonProperty("episode_id")] public int? EpisodeId { get; set; }
-        public virtual ICollection<Episode>? Episodes { get; set; }
+        public virtual Episode Episode { get; set; }
 
         [JsonProperty("movie_id")] public int? MovieId { get; set; }
-        public virtual ICollection<Movie>? Movies { get; set; }
+        public virtual Movie Movie { get; set; }
 
         [JsonProperty("collection_id")] public int? CollectionId { get; set; }
-        public virtual ICollection<Collection>? Collections { get; set; }
+        public virtual Collection Collection { get; set; }
 
         [JsonProperty("person_id")] public int? PersonId { get; set; }
-        public virtual ICollection<Person>? People { get; set; }
+        public virtual Person People { get; set; }
 
         public Translation()
         {

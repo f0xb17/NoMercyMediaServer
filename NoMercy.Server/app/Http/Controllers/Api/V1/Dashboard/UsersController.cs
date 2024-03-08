@@ -131,8 +131,6 @@ public class UsersController : Controller
                 .ThenInclude(libraryUser => libraryUser.Library)
             .ToListAsync();
         
-        Logger.Access(permissions);
-        
         return new PermissionsResponseDto
         {
             Data = permissions?.Select(user => new PermissionsResponseItemDto(user)) ?? []

@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Microsoft.Extensions.Primitives;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
 
 namespace NoMercy.Server.app.Http.Middleware;
 
@@ -26,7 +27,7 @@ public class TokenParamAuthMiddleware
             
         string url = context.Request.Path;
         
-        if (!exemptions.Any(x => url.Contains(x.ToString())))
+        if (!exemptions.Any(x => url.StartsWith("/" + x)))
         {
             await _next(context);
             return;
@@ -37,10 +38,7 @@ public class TokenParamAuthMiddleware
         if(claim is null)
         {
             var jwt = context.Request.Query
-                .FirstOrDefault(q => q.Key == "token")
-                .ToString()
-                .Split(",")[1]
-                .Split("]")[0];
+                .FirstOrDefault(q => q.Key == "token" || q.Key == "access_token").Value.ToString();
             
             if (string.IsNullOrEmpty(jwt))
             {

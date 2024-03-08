@@ -39,6 +39,8 @@ public class TvShowLogic(int id, Library library)
                 Logger.MovieDb($@"TvShow {TvClient.Id}: not found");
                 return;
             }
+                
+            Logger.MovieDb($@"TvShow {Show.Name}: found");
             
             Folder = FindFolder();
             Logger.MovieDb(Folder);

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Models.TV;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Database.Models
 {
@@ -47,24 +48,54 @@ namespace NoMercy.Database.Models
 
         [JsonProperty("alternative_titles")]
         public virtual ICollection<AlternativeTitle> AlternativeTitles { get; set; }
+        
+        [JsonProperty("casts")] 
+        public virtual ICollection<Cast> Cast { get; set; }
+        
+        [JsonProperty("certifications")] 
+        public virtual ICollection<CertificationTv> CertificationTvs { get; set; }
+        
+        [JsonProperty("crews")] 
+        public virtual ICollection<Crew> Crew { get; set; }
+        
+        [JsonProperty("genres")] 
+        public virtual ICollection<GenreTv> GenreTvs { get; set; }
+        
+        [JsonProperty("keywords")] 
+        public virtual ICollection<KeywordTv> KeywordTvs { get; set; }
+        
+        [JsonProperty("medias")] 
+        public virtual ICollection<Media> Media { get; set; }
+        
+        [JsonProperty("images")] 
+        public virtual ICollection<Image> Images { get; set; }
+        
+        [JsonProperty("seasons")] 
+        public virtual ICollection<Season> Seasons { get; set; }
+        
+        [JsonProperty("translations")] 
+        public virtual ICollection<Translation> Translations { get; set; }
+        
+        [JsonProperty("user_data")] 
+        public virtual ICollection<UserData> UserData { get; set; }
 
-        [JsonProperty("casts")] public virtual ICollection<Cast>? Cast { get; set; }
-        [JsonProperty("certifications")] public virtual ICollection<CertificationTv> CertificationTvs { get; set; }
-        [JsonProperty("crews")] public virtual ICollection<Crew>? Crew { get; set; }
-        [JsonProperty("genres")] public virtual ICollection<GenreTv> GenreTvs { get; set; }
-        [JsonProperty("keywords")] public virtual ICollection<KeywordTv> KeywordTvs { get; set; }
-        [JsonProperty("medias")] public virtual ICollection<Media> Media { get; set; }
-        [JsonProperty("images")] public virtual ICollection<Image> Images { get; set; }
-        [JsonProperty("seasons")] public virtual ICollection<Season> Seasons { get; set; }
-
-        [JsonProperty("translations")] public virtual ICollection<Translation> Translations { get; set; }
-        [JsonProperty("user_data")] public virtual ICollection<UserData> UserData { get; set; }
-        [JsonProperty("episodes")] public virtual ICollection<Episode> Episodes { get; set; }
-
-        [InverseProperty("TvFrom")] public virtual ICollection<Recommendation> RecommendationFrom { get; set; }
-        [InverseProperty("TvTo")] public virtual ICollection<Recommendation> RecommendationTo { get; set; }
-        [InverseProperty("TvFrom")] public virtual ICollection<Similar> SimilarFrom { get; set; }
-        [InverseProperty("TvTo")] public virtual ICollection<Similar> SimilarTo { get; set; }
+        [JsonProperty("episodes")] 
+        public virtual ICollection<Episode> Episodes { get; set; } = new HashSet<Episode>();
+        
+        [InverseProperty("TvFrom")] 
+        public virtual ICollection<Recommendation> RecommendationFrom { get; set; }
+        
+        [InverseProperty("TvTo")] 
+        public virtual ICollection<Recommendation> RecommendationTo { get; set; }
+        
+        [InverseProperty("TvFrom")] 
+        public virtual ICollection<Similar> SimilarFrom { get; set; }
+        
+        [InverseProperty("TvTo")] 
+        public virtual ICollection<Similar> SimilarTo { get; set; }
+        
+        [JsonProperty("tv_user")] 
+        public virtual ICollection<TvUser> TvUser { get; set; }
 
         public Tv()
         {
@@ -78,7 +109,7 @@ namespace NoMercy.Database.Models
             FirstAirDate = tvShowAppends.FirstAirDate;
             HaveEpisodes = 0;
             Homepage = tvShowAppends.Homepage?.ToString();
-            ImdbId = tvShowAppends.ExternalIds?.ImdbId;
+            ImdbId = tvShowAppends.ExternalIds.ImdbId;
             InProduction = tvShowAppends.InProduction;
             LastEpisodeToAir = tvShowAppends.LastEpisodeToAir?.Id;
             NextEpisodeToAir = tvShowAppends.NextEpisodeToAir?.Id;
@@ -94,8 +125,8 @@ namespace NoMercy.Database.Models
             Tagline = tvShowAppends.Tagline;
             Title = tvShowAppends.Name;
             TitleSort = tvShowAppends.Name.TitleSort(tvShowAppends.FirstAirDate);
-            Trailer = tvShowAppends.Videos?.Results.Length > 0 ? tvShowAppends.Videos?.Results[0].Key : null;
-            TvdbId = tvShowAppends.ExternalIds?.TvdbId;
+            Trailer = tvShowAppends.Videos.Results.Length > 0 ? tvShowAppends.Videos.Results[0].Key : null;
+            TvdbId = tvShowAppends.ExternalIds.TvdbId;
             Type = tvShowAppends.Type;
             VoteAverage = tvShowAppends.VoteAverage;
             VoteCount = tvShowAppends.VoteCount;

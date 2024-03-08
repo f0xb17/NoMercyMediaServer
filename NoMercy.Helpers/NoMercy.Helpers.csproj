@@ -18,8 +18,10 @@
       <PackageReference Include="DeviceId.Windows" Version="6.6.0" />
       <PackageReference Include="DeviceId.Windows.Wmi" Version="6.6.0" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.1" />
+      <PackageReference Include="Microsoft.Extensions.Diagnostics.ResourceMonitoring" Version="8.2.0" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
       <PackageReference Include="Pastel" Version="4.2.0" />
+      <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
     </ItemGroup>
 
     <ItemGroup>

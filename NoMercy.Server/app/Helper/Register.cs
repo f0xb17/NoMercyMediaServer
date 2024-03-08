@@ -1,17 +1,26 @@
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
+using NoMercy.Database;
+using NoMercy.Database.Models;
 using NoMercy.Helpers;
 
 namespace NoMercy.Server.app.Helper;
 
 public static class Register
 {
+    private static string GetDeviceName()
+    {
+        MediaContext mediaContext = new();
+        Configuration? device = mediaContext.Configuration?.FirstOrDefault(device => device.Key == "server_name");
+        return device?.Value ?? Environment.MachineName;
+    }
+    
     public static Task Init()
     {
         var serverData = new Dictionary<string, string>
         {
             {"server_id", SystemInfo.DeviceId.ToString()},
-            {"server_name", SystemInfo.DeviceName},
+            {"server_name", GetDeviceName()},
             {"internal_ip", Networking.InternalIp},
             {"internal_port", Networking.InternalServerPort.ToString()},
             {"external_port", Networking.ExternalServerPort.ToString()},

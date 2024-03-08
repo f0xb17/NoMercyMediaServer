@@ -15,34 +15,34 @@ public class SpecialController : Controller
     public IActionResult Index()
     {
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-        
+
         return Ok();
     }
-    
+
     [HttpGet]
     [Route("{id}")]
     public IActionResult Show(Ulid id)
     {
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-        
+
         return Ok();
     }
-    
+
     [HttpGet]
     [Route("{id}/available")]
     public IActionResult Available(Ulid id)
     {
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-        
+
         return Ok();
     }
-    
+
     [HttpGet]
     [Route("{id}/watch")]
     public IActionResult Watch(Ulid id)
     {
         Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-        
+
         return Ok();
     }
 }

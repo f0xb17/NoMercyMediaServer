@@ -21,7 +21,7 @@ public static class Seed
     private static readonly MediaContext MediaContext = new();
     private static readonly QueueContext QueueContext = new();
     private static Folder[] _folders = [];
-    private static User?[] _users = [];
+    private static User[] _users = [];
 
 
     public static async Task Init()
@@ -49,7 +49,7 @@ public static class Seed
             await AddCountries();
             await AddMusicGenres();
             await AddFolderRoots();
-            await AddEncoerProfiles();
+            await AddEncoderProfiles();
             await AddLibraries();
             await GetUsers();
         }
@@ -60,13 +60,76 @@ public static class Seed
         }
     }
 
-    private static async Task AddEncoerProfiles()
+    private static async Task AddEncoderProfiles()
     {
-        if (!File.Exists(AppFiles.EncoderProfilesSeedFile)) return;
+        EncoderProfileDto[] encoderProfiles;
+        if (File.Exists(AppFiles.EncoderProfilesSeedFile))
+        {
+            encoderProfiles = JsonConvert.DeserializeObject<EncoderProfileDto[]>(
+                await File.ReadAllTextAsync(AppFiles.EncoderProfilesSeedFile)) ?? [];
+        }
+        else
+        {
+            encoderProfiles = [
+                new EncoderProfileDto
+                {
+                    Id = Ulid.Parse("01HQ6298ZSZYKJT83WDWTPG4G8"),
+                    Name = "2160p high",
+                    Container = "auto",
+                    Params = new EncoderProfileParamsDto {
+                        Width = 3840,
+                        Crf = 20,
+                        Preset = "slow",
+                        Profile = "high",
+                        Codec = "H.264",
+                        Audio = "libfdk_aac"
+                    }
+                },
+                new EncoderProfileDto
+                {
+                    Id = Ulid.Parse("01HQ629JAYQDEQAH0GW3ZHGW8Z"),
+                    Name = "1080p high",
+                    Container = "auto",
+                    Params = new EncoderProfileParamsDto {
+                        Width = 1920,
+                        Crf = 20,
+                        Preset = "slow",
+                        Profile = "high",
+                        Codec = "H.264",
+                        Audio = "libfdk_aac"
+                    }
+                },
+                new EncoderProfileDto
+                {
+                    Id = Ulid.Parse("01HQ629SJ32FTV2Q46NX3H1CK9"),
+                    Name = "1080p regular",
+                    Container = "auto",
+                    Params = new EncoderProfileParamsDto {
+                        Width = 1920,
+                        Crf = 25,
+                        Preset = "slow",
+                        Profile = "high",
+                        Codec = "H.264",
+                        Audio = "libfdk_aac"
+                    }
+                },
+                new EncoderProfileDto
+                {
+                    Id = Ulid.Parse("01HR360AKTW47XC6ZQ2V9DF024"),
+                    Name = "1080p low",
+                    Container = "auto",
+                    Params = new EncoderProfileParamsDto {
+                        Width = 1920,
+                        Crf = 28,
+                        Preset = "slow",
+                        Profile = "high",
+                        Codec = "H.264",
+                        Audio = "libfdk_aac"
+                    }
+                }
+            ];
+        }
         
-        var encoderProfiles = JsonConvert.DeserializeObject<EncoderProfileDto[]>(
-            await File.ReadAllTextAsync(AppFiles.EncoderProfilesSeedFile)) ?? [];
-
         await MediaContext.EncoderProfiles.UpsertRange(encoderProfiles.ToList()
                 .ConvertAll<EncoderProfile>(encoderProfile => new EncoderProfile
                 {

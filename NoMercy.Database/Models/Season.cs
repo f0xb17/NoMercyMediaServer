@@ -22,12 +22,23 @@ namespace NoMercy.Database.Models
         [JsonProperty("tv_id")] public int TvId { get; set; }
         public virtual Tv Tv { get; set; }
 
-        [JsonProperty("episodes")] public virtual ICollection<Episode> Episodes { get; set; }
-        [JsonProperty("casts")] public virtual ICollection<Cast> Casts { get; set; }
-        [JsonProperty("crews")] public virtual ICollection<Crew> Crews { get; set; }
-        [JsonProperty("medias")] public virtual ICollection<Media> Medias { get; set; }
-        [JsonProperty("images")] public virtual ICollection<Image> Images { get; set; }
-        [JsonProperty("translations")] public virtual ICollection<Translation> Translations { get; set; }
+        [JsonProperty("episodes")]
+        public virtual ICollection<Episode> Episodes { get; set; }
+        
+        [JsonProperty("casts")]
+        public virtual ICollection<Cast> Casts { get; set; }
+        
+        [JsonProperty("crews")]
+        public virtual ICollection<Crew> Crews { get; set; }
+        
+        [JsonProperty("medias")]
+        public virtual ICollection<Media> Medias { get; set; }
+        
+        [JsonProperty("images")]
+        public virtual ICollection<Image> Images { get; set; }
+        
+        [JsonProperty("translations")]
+        public virtual ICollection<Translation> Translations { get; set; }
 
         public Season()
         {

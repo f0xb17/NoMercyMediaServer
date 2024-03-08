@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Database.Models
 {
@@ -21,6 +22,15 @@ namespace NoMercy.Database.Models
 
         [JsonProperty("library_user")] 
         public virtual ICollection<LibraryUser> LibraryUser { get; set; }
+        
+        [JsonProperty("movie_user")] 
+        public virtual ICollection<MovieUser> MovieUser { get; set; }
+        
+        [JsonProperty("tv_user")] 
+        public virtual ICollection<TvUser> TvUser { get; set; }
+        
+        [JsonProperty("collection_user")] 
+        public virtual ICollection<CollectionUser> CollectionUser { get; set; }
         
         [JsonProperty("notification_user")] 
         public virtual ICollection<NotificationUser> NotificationUser { get; set; }

@@ -2,10 +2,11 @@
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
@@ -13,6 +14,7 @@ using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Server.app.Http.Controllers.Socket;
 using NoMercy.Server.app.Http.Middleware;
 using NoMercy.Server.system;
 
@@ -42,6 +44,17 @@ namespace NoMercy.Server
             services.AddDbContext<MediaContext>(optionsAction =>
             {
                 optionsAction.UseSqlite($"Data Source={AppFiles.MediaDatabase}");
+            });
+            
+            services.Configure<RequestLocalizationOptions>(options =>
+            {
+                options.RequestCultureProviders.Insert(0, new CustomRequestCultureProvider(context =>
+                {                    
+                    var userLangs = context.Request.Headers["Accept-Language"].ToString();
+                    var firstLang = userLangs.Split(',').FirstOrDefault();
+                    var defaultLang = string.IsNullOrEmpty(firstLang) ? "en" : firstLang;
+                    return Task.FromResult(new ProviderCultureResult(defaultLang, defaultLang))!;
+                }));
             });
 
             services.ConfigureHttpJsonOptions(config =>
@@ -75,7 +88,23 @@ namespace NoMercy.Server
                     options.RequireHttpsMetadata = true;
                     options.Audience = "nomercy-ui";
                     options.Audience = "nomercy-server";
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            string[] result = accessToken.ToString().Split('&');
+                            
+                            if (result.Length > 0 && !string.IsNullOrEmpty(result[0]))
+                            {
+                                context.Token = result[0];
+                            }
+
+                            return Task.CompletedTask;
+                        }
+                    };
                 });
+
             services.AddAuthorization();
 
             services.AddCors();
@@ -156,48 +185,81 @@ namespace NoMercy.Server
                 });
             });
 
+            services.AddHttpContextAccessor();
+            services.AddSignalR();
+            
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowNoMercyOrigins",
+                    builder =>
+                    {
+                        builder
+                            .WithOrigins("https://dev.nomercy.tv")
+                            .WithOrigins("https://nomercy.tv")
+                            .WithOrigins("https://app-dev.nomercy.tv")
+                            .WithOrigins("https://app.nomercy.tv")
+                            .WithOrigins("https://vue-dev.nomercy.tv")
+                            .WithOrigins("https://vue.nomercy.tv")
+
+                            // .AllowAnyOrigin()
+                            .AllowAnyMethod()
+                            .AllowCredentials()
+                            .SetIsOriginAllowedToAllowWildcardSubdomains()
+                            .WithHeaders("Access-Control-Allow-Private-Network", "true")
+                            .AllowAnyHeader();
+                    });
+            });
+
             services.AddResponseCompression(options => { options.EnableForHttps = true; });
+            
         }
 
         public static void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.UseCors(options =>
-            {
-                options.AllowAnyOrigin()
-                    .AllowAnyMethod()
-                    .WithHeaders("Access-Control-Allow-Private-Network", "true")
-                    .AllowAnyHeader();
-            });
+            app.UseDeveloperExceptionPage();
+            
+            app.UseRouting();
+            app.UseCors("AllowNoMercyOrigins");
 
             app.UseHttpsRedirection();
             app.UseResponseCompression();
             app.UseRequestLocalization();
             app.UseResponseCaching();
 
-            app.UseMiddleware<TokenParamAuthMiddleware>();
-
+            app.UseMiddleware<LocalizationMiddleware>();
+            
             app.UseAuthentication();
-
+            
+            app.UseMiddleware<TokenParamAuthMiddleware>();
+            
             app.UseAuthorization();
-
-            if (env.IsDevelopment())
+            
+            app.UseMiddleware<AccessLogMiddleware>();
+            // if (env.IsDevelopment())
+            // {
+            app.UseSwagger();
+            app.UseSwaggerUI(options =>
             {
-                app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(options =>
-                {
-                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "NoMercy API");
-                    options.RoutePrefix = string.Empty;
-                    options.OAuthClientId("nomercy-server");
-                    options.OAuthScopes("openid");
-                    options.EnablePersistAuthorization();
-                    options.EnableTryItOutByDefault();
-                });
-            }
-
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "NoMercy API");
+                options.RoutePrefix = string.Empty;
+                options.OAuthClientId("nomercy-server");
+                options.OAuthScopes("openid");
+                options.DocumentTitle = "NoMercy MediaServer API";
+                options.EnablePersistAuthorization();
+                options.EnableTryItOutByDefault();
+            });
+            // }
+            
             app.UseMvcWithDefaultRoute();
-
-            app.UseWebSockets();
+            
+            app.UseWebSockets().UseEndpoints(endpoints =>
+            {
+                endpoints.MapHub<PingPongHub>("/socket", options =>
+                {
+                    options.Transports = HttpTransportType.WebSockets;
+                    options.CloseOnAuthenticationExpiration = true;
+                });
+            });
 
             MediaContext mediaContext = new();
             List<Folder> folderLibraries = mediaContext.Folders

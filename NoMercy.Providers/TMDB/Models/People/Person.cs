@@ -20,14 +20,14 @@ public class Person
 
     [JsonProperty("name")] public string Name { get; set; } = string.Empty;
 
-    [JsonProperty("also_known_as")] public string[]? AlsoKnownAs { get; set; } = [];
+    [JsonProperty("also_known_as")] public string[] AlsoKnownAs { get; set; }
     
     [JsonProperty("gender")]
     public Gender Gender { get; set; } = Gender.Unknown;
 
     [JsonProperty("biography")] public string? Biography { get; set; }
 
-    [JsonProperty("popularity")] public float? Popularity { get; set; }
+    [JsonProperty("popularity")] public double Popularity { get; set; }
 
     [JsonProperty("place_of_birth")] public string? PlaceOfBirth { get; set; }
 
@@ -36,5 +36,7 @@ public class Person
     [JsonProperty("adult")] public bool Adult { get; set; }
 
     [JsonProperty("imdb_id")] public string? ImdbId { get; set; }
+    
+    [JsonProperty("external_ids")] public PersonExternalIds? ExternalIds { get; set; }
 
 }
