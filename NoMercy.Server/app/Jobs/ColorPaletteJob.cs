@@ -72,12 +72,8 @@ public class ColorPaletteJob : IShouldQueue
                 await TvShowLogic.GetSimilarPalette(_id);
                 break;
             default:
-                Console.WriteLine(_model);
-                Console.WriteLine(_filePath);
-                Console.WriteLine(_id);
-                Console.WriteLine(_type);
+                Logger.Queue(@"Invalid model Type" + _model + @" " +_id, LogLevel.Error);
             
-                Logger.Queue("Invalid model Type", LogLevel.Error);
                 break;
         }
     }

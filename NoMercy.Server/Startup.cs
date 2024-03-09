@@ -37,15 +37,6 @@ namespace NoMercy.Server
                 options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore
             );
 
-            services.AddDbContext<QueueContext>(optionsAction =>
-            {
-                optionsAction.UseSqlite($"Data Source={AppFiles.QueueDatabase}");
-            });
-            services.AddDbContext<MediaContext>(optionsAction =>
-            {
-                optionsAction.UseSqlite($"Data Source={AppFiles.MediaDatabase}");
-            });
-            
             services.Configure<RequestLocalizationOptions>(options =>
             {
                 options.RequestCultureProviders.Insert(0, new CustomRequestCultureProvider(context =>

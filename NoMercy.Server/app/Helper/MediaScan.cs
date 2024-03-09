@@ -57,7 +57,6 @@ public class MediaFile
 
 public class MediaScan
 {
-    private readonly MediaContext _mediaContext = new();
     private readonly MovieDetector _movieDetector = new();
     
     private bool _fileListingEnabled;

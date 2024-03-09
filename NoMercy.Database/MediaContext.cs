@@ -15,18 +15,15 @@ namespace NoMercy.Database;
 
 public class MediaContext : DbContext
 {
-    public MediaContext(DbContextOptions<MediaContext> options) : base(options)
-    {
-    }
-
-    public MediaContext()
-    {
-    }
-
+    
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
-        options.UseSqlite($"Data Source={AppFiles.MediaDatabase}",
-            o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+        options.UseSqlite($"Data Source={AppFiles.MediaDatabase};Pooling=True", sqliteOptionsAction =>
+        {
+            sqliteOptionsAction.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+        });
+        options.EnableDetailedErrors();
+        options.EnableSensitiveDataLogging();
         // options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
     }
     
@@ -169,64 +166,6 @@ public class Timestamps
     [JsonProperty("updated_at")]
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
 }
-
-// public class ColorPalettes
-// {
-//     [Column("ColorPalette")]
-//     [StringLength(1024)]
-//     [JsonProperty("color_palette")]
-//     [System.Text.Json.Serialization.JsonIgnore]
-//     public string _colorPalette { get; set; } = string.Empty;
-//     
-//     [NotMapped]    
-//     public IColorPalettes? ColorPalette
-//     {
-//         get => (_colorPalette != string.Empty 
-//             ? JsonConvert.DeserializeObject<IColorPalettes>(_colorPalette) 
-//             : null);
-//         set => _colorPalette = JsonConvert.SerializeObject(value);
-//     }
-// }
-//
-// public class ColorPaletteTimeStamps: Timestamps
-// {
-//     [Column("ColorPalette")]
-//     [StringLength(1024)]
-//     [System.Text.Json.Serialization.JsonIgnore]
-//     public string _colorPalette { get; set; } = string.Empty;
-//     
-//     [NotMapped]
-//     public IColorPalettes? ColorPalette
-//     {
-//         get => (_colorPalette != string.Empty 
-//             ? JsonConvert.DeserializeObject<IColorPalettes>(_colorPalette) 
-//             : null);
-//         set => _colorPalette = JsonConvert.SerializeObject(value);
-//     }
-// }
-//
-// public class IColorPalettes
-// {
-//     [JsonProperty("poster")]
-//     public IPalette? Poster { get; set; }
-//     [JsonProperty("backdrop")]
-//     public IPalette? Backdrop { get; set; }
-//     [JsonProperty("still")]
-//     public IPalette? Still { get; set; }
-//     [JsonProperty("profile")]
-//     public IPalette? Profile { get; set; }
-//     [JsonProperty("image")]
-//     public IPalette? Image { get; set; }
-// }
-//
-// public class IPalette
-// {
-//     public string Primary { get; set; }
-//     public string LightVibrant { get; set; }
-//     public string DarkVibrant { get; set; }
-//     public string LightMuted { get; set; }
-//     public string DarkMuted { get; set; }
-// }
 
 public class ColorPalettes
 {

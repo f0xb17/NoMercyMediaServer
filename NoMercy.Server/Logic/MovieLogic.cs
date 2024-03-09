@@ -25,43 +25,40 @@ public class MovieLogic(int id, Library library)
 
     public async Task Process()
     {
-        lock (_mediaContext)
+        // var movie = _mediaContext.Movies.FirstOrDefault(e => e.Id == Id);
+        // if (movie is not null)
+        // {
+        //     Logger.MovieDb($@"Movie {movie.Title}: already exists");
+        //     return;
+        // }
+        
+        Movie = MovieClient.WithAllAppends().Result;
+        if (Movie is null)
         {
-            // var movie = _mediaContext.Movies.FirstOrDefault(e => e.Id == Id);
-            // if (movie is not null)
-            // {
-            //     Logger.MovieDb($@"Movie {movie.Title}: already exists");
-            //     return;
-            // }
-            
-            Movie = MovieClient.WithAllAppends().Result;
-            if (Movie is null)
-            {
-                Logger.MovieDb($@"Movie {MovieClient.Id}: not found");
-                return;
-            }
-            
-            Folder = FindFolder();
-            Logger.MovieDb(Folder);
-            MediaType = GetMediaType();
-            
-            Store().Wait();
-            
-            StoreAlternativeTitles().Wait();
-            StoreTranslations().Wait();
-            StoreGenres().Wait();
-            StoreKeywords().Wait();
-            StoreCompanies().Wait();
-            StoreNetworks().Wait();
-            StoreVideos().Wait();
-            StoreRecommendations().Wait();
-            StoreSimilar().Wait();
-            StoreContentRatings().Wait();
-            StoreWatchProviders().Wait();
-            
-            // FindMediaFilesJob job = new(Movie.Id, library.Id.ToString());
-            // job.Handle().Wait();
+            Logger.MovieDb($@"Movie {MovieClient.Id}: not found");
+            return;
         }
+        
+        Folder = FindFolder();
+        Logger.MovieDb(Folder);
+        MediaType = GetMediaType();
+        
+        Store().Wait();
+        
+        StoreAlternativeTitles().Wait();
+        StoreTranslations().Wait();
+        StoreGenres().Wait();
+        StoreKeywords().Wait();
+        StoreCompanies().Wait();
+        StoreNetworks().Wait();
+        StoreVideos().Wait();
+        StoreRecommendations().Wait();
+        StoreSimilar().Wait();
+        StoreContentRatings().Wait();
+        StoreWatchProviders().Wait();
+            
+        // FindMediaFilesJob job = new(Movie.Id, library.Id.ToString());
+        // job.Handle().Wait();
         
         await DispatchJobs();
     }
@@ -277,7 +274,7 @@ public class MovieLogic(int id, Library library)
         {
             if (string.IsNullOrEmpty(image.FilePath)) continue;
             ColorPaletteJob colorPaletteJob = new ColorPaletteJob(filePath:image.FilePath, model:"image");
-            JobDispatcher.Dispatch(colorPaletteJob, "data");
+            JobDispatcher.Dispatch(colorPaletteJob, "data").Wait();
         }
 
         Logger.MovieDb($@"Movie {movie.Title}: Images stored");
@@ -435,26 +432,26 @@ public class MovieLogic(int id, Library library)
         if (Movie is null) return Task.CompletedTask;
         
         FindMediaFilesJob findMediaFilesJob = new FindMediaFilesJob(id: Movie.Id, libraryId:library.Id.ToString());
-        JobDispatcher.Dispatch(findMediaFilesJob, "queue", 3);
+        JobDispatcher.Dispatch(findMediaFilesJob, "queue", 3).Wait();
         
         PersonJob personJob = new PersonJob(id:Movie.Id, type:"movie");
-        JobDispatcher.Dispatch(personJob, "queue", 3);
+        JobDispatcher.Dispatch(personJob, "queue", 3).Wait();
         
         ColorPaletteJob colorPaletteMovieJob = new ColorPaletteJob(id:Movie.Id, model:"movie");
-        JobDispatcher.Dispatch(colorPaletteMovieJob, "data");
+        JobDispatcher.Dispatch(colorPaletteMovieJob, "data").Wait();
         
         ColorPaletteJob colorPaletteSimilarJob = new ColorPaletteJob(id:Movie.Id, model:"similar", type:"movie");
-        JobDispatcher.Dispatch(colorPaletteSimilarJob, "data");
+        JobDispatcher.Dispatch(colorPaletteSimilarJob, "data").Wait();
         
         ColorPaletteJob colorPaletteRecommendationJob = new ColorPaletteJob(id:Movie.Id, model:"recommendation", type:"movie");
-        JobDispatcher.Dispatch(colorPaletteRecommendationJob, "data");
+        JobDispatcher.Dispatch(colorPaletteRecommendationJob, "data").Wait();
         
         ImagesJob imagesJob = new ImagesJob(id:Movie.Id, type:"movie");
-        JobDispatcher.Dispatch(imagesJob, "queue", 2);
+        JobDispatcher.Dispatch(imagesJob, "queue", 2).Wait();
         
         if(Movie.BelongsToCollection is null) return Task.CompletedTask;
         CollectionJob collectionJob = new CollectionJob(id:Movie.BelongsToCollection.Id, libraryId:library.Id.ToString());
-        JobDispatcher.Dispatch(collectionJob, "queue", 3);
+        JobDispatcher.Dispatch(collectionJob, "queue", 3).Wait();
         
         return Task.CompletedTask;
     }

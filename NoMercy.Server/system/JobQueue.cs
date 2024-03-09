@@ -10,7 +10,7 @@ namespace NoMercy.Server.system;
 
 public class JobQueue
 {
-    private readonly QueueContext _context;
+    private QueueContext _context { get; set; }
     private readonly int _maxAttempts;
 
     public JobQueue(QueueContext context, int maxAttempts = 3)
@@ -19,12 +19,15 @@ public class JobQueue
         _maxAttempts = maxAttempts;
     }
 
-    public void Enqueue(QueueJob queueJob)
+    public Task Enqueue(QueueJob queueJob)
     {
         lock (_context)
         {
             _context.QueueJobs.Add(queueJob);
+
             _context.SaveChanges();
+            
+            return Task.CompletedTask;
         }
     }
 
@@ -36,6 +39,7 @@ public class JobQueue
             if (job == null) return job;
             
             _context.QueueJobs.Remove(job);
+            
             _context.SaveChanges();
 
             return job;
@@ -57,14 +61,8 @@ public class JobQueue
             
             job.ReservedAt = DateTime.UtcNow;
             job.Attempts++;
-            try
-            {
-                _context.SaveChanges();
-            }
-            catch (Exception e)
-            {
-                Logger.Queue(e, LogLevel.Error);
-            }
+            
+            _context.SaveChanges();
 
             return job;
         }
@@ -91,14 +89,7 @@ public class JobQueue
                 _context.FailedJobs.Add(failedJob);
             }
 
-            try
-            {
-                _context.SaveChanges();
-            }
-            catch (Exception e)
-            {
-                Logger.Queue(e, LogLevel.Error);
-            }
+            _context.SaveChanges();
         }
     }
 
@@ -107,6 +98,7 @@ public class JobQueue
         lock (_context)
         {
             _context.QueueJobs.Remove(queueJob);
+            
             _context.SaveChanges();
         }
     }
@@ -126,6 +118,7 @@ public class JobQueue
                 AvailableAt = DateTime.UtcNow,
                 Attempts = 0
             });
+            
             _context.SaveChanges();
         }
     }

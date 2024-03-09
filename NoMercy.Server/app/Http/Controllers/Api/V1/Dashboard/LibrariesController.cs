@@ -424,7 +424,7 @@ public class LibrariesController : Controller
                         titles.Add(res[0].Title);
 
                         AddMovieJob addMovieJob = new AddMovieJob(id:res[0].Id, libraryId:library.Id.ToString());
-                        JobDispatcher.Dispatch(addMovieJob, "queue", 5);
+                        JobDispatcher.Dispatch(addMovieJob, "queue", 5).Wait();
                         break;
                     }
                     case "tv":
@@ -440,7 +440,7 @@ public class LibrariesController : Controller
                         titles.Add(res[0].Name);
 
                         AddShowJob addShowJob = new AddShowJob(id:res[0].Id, libraryId:library.Id.ToString());
-                        JobDispatcher.Dispatch(addShowJob, "queue", 5);
+                        JobDispatcher.Dispatch(addShowJob, "queue", 5).Wait();
                         break;
                     }
                 }
@@ -511,7 +511,7 @@ public class LibrariesController : Controller
                 titles.Add(res[0].Title);
 
                 AddMovieJob addMovieJob = new AddMovieJob(id: res[0].Id, libraryId:library.Id.ToString());
-                JobDispatcher.Dispatch(addMovieJob, "queue", 5);
+                JobDispatcher.Dispatch(addMovieJob, "queue", 5).Wait();
             }
             else if (library.Type == "tv")
             {
@@ -526,7 +526,7 @@ public class LibrariesController : Controller
                 titles.Add(res[0].Name);
                     
                 AddShowJob addShowJob = new AddShowJob(id:res[0].Id, libraryId:library.Id.ToString());
-                JobDispatcher.Dispatch(addShowJob, "queue", 5);
+                JobDispatcher.Dispatch(addShowJob, "queue", 5).Wait();
             }
         }
         

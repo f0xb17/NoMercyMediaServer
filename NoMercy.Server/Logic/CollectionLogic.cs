@@ -16,33 +16,29 @@ namespace NoMercy.Server.Logic;
 public class CollectionLogic(int id, Library library)
 {
     private CollectionClient CollectionClient { get; set; } = new(id);
+    private MediaContext MediaContext { get; set; } = new();
 
     public CollectionAppends? Collection { get; set; }
     
-    private readonly MediaContext _mediaContext = new();
-
     public async Task Process()
     {
-        lock (_mediaContext)
+        // var collection = _mediaContext.Collections.FirstOrDefault(e => e.Id == id);
+        // if (collection is not null)
+        // {
+        //     Logger.MovieDb($@"Collection {collection.Title}: already exists");
+        //     return;
+        // }
+
+        Collection = CollectionClient.WithAllAppends().Result;
+        if (Collection is null)
         {
-            // var collection = _mediaContext.Collections.FirstOrDefault(e => e.Id == id);
-            // if (collection is not null)
-            // {
-            //     Logger.MovieDb($@"Collection {collection.Title}: already exists");
-            //     return;
-            // }
-
-            Collection = CollectionClient.WithAllAppends().Result;
-            if (Collection is null)
-            {
-                Logger.MovieDb($@"Collection {CollectionClient.Id}: not found");
-                return;
-            }
-
-            Store().Wait();
-            
-            StoreTranslations().Wait();
+            Logger.MovieDb($@"Collection {CollectionClient.Id}: not found");
+            return;
         }
+
+        Store().Wait();
+        
+        StoreTranslations().Wait();
         
         await DispatchJobs();
     }
@@ -53,7 +49,7 @@ public class CollectionLogic(int id, Library library)
         
         var collections = new Collection(Collection, library.Id);
 
-        await _mediaContext.Collections.Upsert(collections)
+        await MediaContext.Collections.Upsert(collections)
             .On(v => new { v.Id })
             .WhenMatched((ts, ti) => new Collection
             {
@@ -74,7 +70,7 @@ public class CollectionLogic(int id, Library library)
         var movies = Collection?.Parts.ToList()
             .ConvertAll<Movie>(x => new Movie(x, library.Id)).ToArray() ?? [];
         
-        await _mediaContext.Movies.UpsertRange(movies)
+        await MediaContext.Movies.UpsertRange(movies)
             .On(v => new { v.Id })
             .WhenMatched((ts, ti) => new Movie
             {
@@ -105,7 +101,7 @@ public class CollectionLogic(int id, Library library)
         foreach (var movie in movies)
         {
             ColorPaletteJob colorPaletteMovieJob = new ColorPaletteJob(id:movie.Id, model:"movie");
-            JobDispatcher.Dispatch(colorPaletteMovieJob, "data");
+            JobDispatcher.Dispatch(colorPaletteMovieJob, "data").Wait();
         }
         
         Logger.MovieDb($@"Collection {Collection?.Name} movies stored");
@@ -113,7 +109,7 @@ public class CollectionLogic(int id, Library library)
         var collectionMovies = Collection?.Parts.ToList()
             .ConvertAll<CollectionMovie>(x => new CollectionMovie(x, collections.Id)).ToArray() ?? [];
         
-        await _mediaContext.CollectionMovie.UpsertRange(collectionMovies)
+        await MediaContext.CollectionMovie.UpsertRange(collectionMovies)
             .On(v => new { v.CollectionId, v.MovieId })
             .WhenMatched((ts, ti) => new CollectionMovie
             {
@@ -137,15 +133,15 @@ public class CollectionLogic(int id, Library library)
                 try
                 {
                     MovieClient movieClient = new(movie.Id);
-                    MovieAppends? movieAppends = movieClient.WithAllAppends().Result;
+                    MovieAppends movieAppends = movieClient.WithAllAppends().Result;
 
                     Logger.MovieDb($@"Collection {Collection.Name}: Dispatching movie {movieAppends.Title}");
                     
                     PersonJob personJob = new PersonJob(id:movieAppends.Id, type:"movie");
-                    JobDispatcher.Dispatch(personJob, "queue", 4);
+                    JobDispatcher.Dispatch(personJob, "queue", 4).Wait();
         
                     ImagesJob movieImagesJob = new ImagesJob(id:movieAppends.Id, type:"movie");
-                    JobDispatcher.Dispatch(movieImagesJob, "queue");
+                    JobDispatcher.Dispatch(movieImagesJob, "queue").Wait();
                 }
                 catch (Exception e)
                 {
@@ -155,10 +151,10 @@ public class CollectionLogic(int id, Library library)
             }
             
             ColorPaletteJob colorPaletteCollectionJob = new ColorPaletteJob(id:Collection.Id, model:"collection");
-            JobDispatcher.Dispatch(colorPaletteCollectionJob, "data");
+            JobDispatcher.Dispatch(colorPaletteCollectionJob, "data").Wait();
             
             ImagesJob imagesJob = new ImagesJob(id:Collection.Id, type:"collection");
-            JobDispatcher.Dispatch(imagesJob, "queue", 2);
+            JobDispatcher.Dispatch(imagesJob, "queue", 2).Wait();
         }
         catch (Exception e)
         {
@@ -176,7 +172,7 @@ public class CollectionLogic(int id, Library library)
             var translations = Collection?.Translations.Translations.ToList()
                 .ConvertAll<Translation>(x => new Translation(x, Collection)).ToArray() ?? [];
             
-            await _mediaContext.Translations
+            await MediaContext.Translations
                 .UpsertRange(translations.Where(translation => translation.Title != null || translation.Overview != ""))
                 .On(t => new { t.Iso31661, t.Iso6391, t.CollectionId })
                 .WhenMatched((ts, ti) => new Translation
@@ -208,14 +204,14 @@ public class CollectionLogic(int id, Library library)
         CollectionClient collectionClient = new(id);
         CollectionAppends? collection = collectionClient.WithAllAppends().Result;
         
-        var posters = collection?.Images?.Posters.ToList()
-            .ConvertAll<Image>(image => new Image(image:image, collection:collection, type:"poster")) ?? [];
+        var posters = collection.Images.Posters.ToList()
+            .ConvertAll<Image>(image => new Image(image:image, collection:collection, type:"poster"));
         
-        var backdrops = collection?.Images?.Backdrops.ToList()
-            .ConvertAll<Image>(image => new Image(image:image, collection:collection, type:"backdrop")) ?? [];
+        var backdrops = collection.Images.Backdrops.ToList()
+            .ConvertAll<Image>(image => new Image(image:image, collection:collection, type:"backdrop"));
         
         // var logos = collection?.Images?.Logos.ToList()
-        //     .ConvertAll<Image>(image => new Image(image:image, collection:collection, type:"logo")) ?? [];
+        //     .ConvertAll<Image>(image => new Image(image:image, collection:collection, type:"logo"));
         
         var images = posters
             .Concat(backdrops)
@@ -243,10 +239,10 @@ public class CollectionLogic(int id, Library library)
         {
             if (string.IsNullOrEmpty(image.FilePath)) continue;
             ColorPaletteJob colorPaletteJob = new ColorPaletteJob(filePath:image.FilePath, model:"image");
-            JobDispatcher.Dispatch(colorPaletteJob, "data");
+            JobDispatcher.Dispatch(colorPaletteJob, "data").Wait();
         }
 
-        Logger.MovieDb($@"Collection {collection?.Name}: Images stored");
+        Logger.MovieDb($@"Collection {collection.Name}: Images stored");
         await Task.CompletedTask;
     }
 

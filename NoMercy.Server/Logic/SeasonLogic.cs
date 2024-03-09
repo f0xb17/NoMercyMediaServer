@@ -23,7 +23,7 @@ public class SeasonLogic(TvShowAppends show, MediaContext mediaContext)
             try
             {
                 using SeasonClient seasonClient = new(show.Id, season.SeasonNumber);
-                using Task<SeasonAppends?> seasonTask = seasonClient.WithAllAppends();
+                using Task<SeasonAppends> seasonTask = seasonClient.WithAllAppends();
                 lock (_seasonAppends)
                 {
                     _seasonAppends.Add(seasonTask.Result);
@@ -57,19 +57,25 @@ public class SeasonLogic(TvShowAppends show, MediaContext mediaContext)
                 try
                 {
                     ColorPaletteJob colorPaletteJob = new ColorPaletteJob(id: season.Id, model: "season");
-                    JobDispatcher.Dispatch(colorPaletteJob, "data");
-
-                    ImagesJob imagesJob =
-                        new ImagesJob(id: season.Id, type: "season", seasonNumber: season.SeasonNumber);
-                    JobDispatcher.Dispatch(imagesJob, "queue", 2);
+                    JobDispatcher.Dispatch(colorPaletteJob, "data").Wait();
                 }
                 catch (Exception e)
                 {
                     Logger.MovieDb(e, LogLevel.Error);
                 }
-            }
 
-            ;
+                try
+                {
+                    ImagesJob imagesJob =
+                        new ImagesJob(id: season.Id, type: "season", seasonNumber: season.SeasonNumber);
+                    JobDispatcher.Dispatch(imagesJob, "queue", 2).Wait();
+                }
+                catch (Exception e)
+                {
+                    Logger.MovieDb(e, LogLevel.Error);
+                    throw;
+                }
+            }
         }
 
         return Task.CompletedTask;
@@ -103,7 +109,7 @@ public class SeasonLogic(TvShowAppends show, MediaContext mediaContext)
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Logger.MovieDb(e, LogLevel.Error);
                 throw;
             }
 
@@ -130,7 +136,7 @@ public class SeasonLogic(TvShowAppends show, MediaContext mediaContext)
                 }
                 catch (Exception e)
                 {
-                    Logger.MovieDb(e, LogLevel.Error);
+                    Logger.Encoder(e, LogLevel.Error);
                 }
             }
         }
@@ -167,9 +173,10 @@ public class SeasonLogic(TvShowAppends show, MediaContext mediaContext)
             .FirstOrDefaultAsync(tv => tv.Id == show);
 
         SeasonClient seasonClient = new(show, id);
-        SeasonAppends? season = seasonClient.WithAllAppends().Result;
+        SeasonAppends season = seasonClient.WithAllAppends().Result;
 
         if (season is null) return;
+        
         var images = season.Images.Posters.ToList()
             .ConvertAll<Image>(image => new Image(image: image, season: season, type: "poster")) ?? [];
 
@@ -193,7 +200,7 @@ public class SeasonLogic(TvShowAppends show, MediaContext mediaContext)
         {
             if (string.IsNullOrEmpty(image.FilePath)) continue;
             ColorPaletteJob colorPaletteJob = new ColorPaletteJob(filePath: image.FilePath, model: "image");
-            JobDispatcher.Dispatch(colorPaletteJob, "data");
+            JobDispatcher.Dispatch(colorPaletteJob, "data").Wait();
         }
 
         Logger.MovieDb($@"TvShow {Show?.Title}, Season {season.SeasonNumber}: Images stored");
@@ -234,7 +241,7 @@ public class SeasonLogic(TvShowAppends show, MediaContext mediaContext)
                     })
                     .Run();
 
-                Logger.MovieDb($@"TvShow {show?.Name}, Season {season.SeasonNumber}: TranslationsDto stored");
+                Logger.MovieDb($@"TvShow {show?.Name}, Season {season.SeasonNumber}: Translations stored");
             }
         }
         

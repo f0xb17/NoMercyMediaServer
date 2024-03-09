@@ -8,17 +8,16 @@ namespace NoMercy.Database;
 
 public class QueueContext : DbContext
 {
-    public QueueContext(DbContextOptions<QueueContext> options) : base(options)
-    {
-    }
-
-    public QueueContext()
-    {
-    }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
-        options.UseSqlite($"Data Source={AppFiles.QueueDatabase}");
+        options.UseSqlite($"Data Source={AppFiles.QueueDatabase};Pooling=True", sqliteOptionsAction =>
+        {
+            sqliteOptionsAction.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery);
+        });
+        
+        options.EnableDetailedErrors();
+        options.EnableSensitiveDataLogging();
     }
     
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

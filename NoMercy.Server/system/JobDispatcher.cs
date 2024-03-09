@@ -2,6 +2,9 @@ using System.Reflection;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
+using NoMercy.Server.app.Helper;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace NoMercy.Server.system;
 
@@ -12,16 +15,12 @@ public interface IShouldQueue
 
 public static class JobDispatcher
 {
-    private static readonly JobQueue Queue;
-
-    static JobDispatcher()
-    {
-        var context = new QueueContext();
-        Queue = new JobQueue(context);
-    }
+    private static readonly JobQueue Queue = new(Databases.QueueContext);
     
-    public static void Dispatch(IShouldQueue job, string onQueue = "default", int priority = 0)
+    public static Task Dispatch(IShouldQueue job, string onQueue = "default", int priority = 0, int attempt = -1)
     {
+        attempt += 1;
+        
         foreach (var constructor in job.GetType().GetConstructors())
         {
             var constructorParameters = constructor.GetParameters();
@@ -63,8 +62,25 @@ public static class JobDispatcher
                 Priority = priority
             };
 
-            Queue.Enqueue(jobData);
+            try
+            {
+                Queue.Enqueue(jobData).Wait();
+            }
+            catch(Exception e)
+            {
+                // if (attempt < 10)
+                // {
+                //     Task.Delay(500).Wait();
+                //     Dispatch(job, onQueue, priority, attempt).Wait();
+                // }
+                // else
+                // {
+                    Logger.Queue(e, Helpers.LogLevel.Error);
+                // }
+            }
         }
+        
+        return Task.CompletedTask;
     }
 
 }

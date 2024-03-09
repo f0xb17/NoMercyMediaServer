@@ -9,6 +9,8 @@ using NoMercy.Providers.TMDB.Client;
 using NoMercy.Server.app.Helper;
 using File = System.IO.File;
 using Genre = NoMercy.Database.Models.Genre;
+using LogLevel = NoMercy.Helpers.LogLevel;
+
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Server.Logic;
@@ -19,7 +21,6 @@ public static class Seed
     private static MovieClient MovieClient { get; set; } = new();
     private static TvClient TvClient { get; set; } = new();
     private static readonly MediaContext MediaContext = new();
-    private static readonly QueueContext QueueContext = new();
     private static Folder[] _folders = [];
     private static User[] _users = [];
 
@@ -35,8 +36,8 @@ public static class Seed
         await MediaContext.Database.EnsureCreatedAsync();
         await MediaContext.SaveChangesAsync();
         
-        await QueueContext.Database.EnsureCreatedAsync();
-        await QueueContext.SaveChangesAsync();
+        await Databases.QueueContext.Database.EnsureCreatedAsync();
+        await Databases.QueueContext.SaveChangesAsync();
     }
 
     private static async Task SeedDatabase()
@@ -55,7 +56,7 @@ public static class Seed
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Logger.Setup(e, LogLevel.Error);
             throw;
         }
     }
@@ -358,7 +359,7 @@ public static class Seed
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Logger.Setup(e, LogLevel.Error);
         }
     }
 
@@ -431,7 +432,7 @@ public static class Seed
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Logger.Setup(e, LogLevel.Error);
         }
     }
 }

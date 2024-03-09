@@ -200,7 +200,7 @@ public static class Logger
             return;
         
         string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss").Pastel(Color.DimGray);
-        string logEntry = $"{Spacer(Capitalize[type] ?? type, 10).Pastel(GetColor(type))}: {timestamp} {message}";
+        string logEntry = $"{Spacer(Capitalize[type] ?? type, 12).Pastel(GetColor(type))}: {timestamp} {message}";
         Console.WriteLine(logEntry);
     }
     
@@ -210,7 +210,7 @@ public static class Logger
             return;
         
         string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss").Pastel(Color.DimGray);
-        string logEntry = $"{Spacer(Capitalize[type] ?? type, 10).Pastel(GetColor(type))}: {timestamp} {message}";
+        string logEntry = $"{Spacer(Capitalize[type] ?? type, 12).Pastel(GetColor(type))}: {timestamp} {message}";
         Console.WriteLine(logEntry);
     }
     

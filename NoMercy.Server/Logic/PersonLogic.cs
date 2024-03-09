@@ -6,6 +6,7 @@ using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Season;
 using NoMercy.Providers.TMDB.Models.Shared;
+using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Jobs;
 using NoMercy.Server.system;
 using TMDBCast = NoMercy.Providers.TMDB.Models.Shared.Cast;
@@ -49,7 +50,6 @@ public class PersonLogic
 
     private readonly string? _logPrefix;
     private readonly Type _currentType;
-    private readonly MediaContext _mediaContext = new();
 
     public PersonLogic(TvShowAppends? show)
     {
@@ -248,7 +248,7 @@ public class PersonLogic
             {
                 Person[] people = _personAppends.ConvertAll<Person>(x => new Person(x)).ToArray();
                 
-                _mediaContext.People.UpsertRange(people)
+                Databases.MediaContext.People.UpsertRange(people)
                     .On(p => new { p.Id })
                     .WhenMatched((ps, pi) => new Person
                     {
@@ -289,7 +289,7 @@ public class PersonLogic
     {
         if (roles is null || roles.Length == 0) return Array.Empty<Role>();
         
-        return _mediaContext.Roles
+        return Databases.MediaContext.Roles
             .Where(role => roles.Select(r => r.CreditId).Contains(role.CreditId))
             .ToArray();
     }
@@ -304,7 +304,7 @@ public class PersonLogic
                 .Where(cast => cast.CreditId is not null)
                 .ToArray();
             
-            await _mediaContext.Roles
+            await Databases.MediaContext.Roles
                 .UpsertRange(roles)
                 .On(p => new { p.CreditId })
                 .WhenMatched((rs, ri) => new Role
@@ -327,10 +327,10 @@ public class PersonLogic
 
             UpsertCommandBuilder<Cast> query = _currentType switch
             {
-                Type.Movie => _mediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.MovieId, c.RoleId }),
-                Type.TvShow => _mediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.TvId, c.RoleId }),
-                Type.Season => _mediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.SeasonId, c.RoleId }),
-                Type.Episode => _mediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.EpisodeId, c.RoleId }),
+                Type.Movie => Databases.MediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.MovieId, c.RoleId }),
+                Type.TvShow => Databases.MediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.TvId, c.RoleId }),
+                Type.Season => Databases.MediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.SeasonId, c.RoleId }),
+                Type.Episode => Databases.MediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.EpisodeId, c.RoleId }),
                 _ => throw new ArgumentOutOfRangeException()
             };
 
@@ -359,7 +359,7 @@ public class PersonLogic
     {
         if (jobs is null || jobs.Length == 0) return Array.Empty<Job>();
         
-        return _mediaContext.Jobs
+        return Databases.MediaContext.Jobs
             .Where(job => jobs.Select(j => j.CreditId).Contains(job.CreditId))
             .ToArray();
     }
@@ -374,7 +374,7 @@ public class PersonLogic
                 .Where(crew => crew.CreditId is not null)
                 .ToArray();
 
-            await _mediaContext.Jobs.UpsertRange(jobs)
+            await Databases.MediaContext.Jobs.UpsertRange(jobs)
                 .On(p => new { p.CreditId })
                 .WhenMatched((js, ji) => new Job
                 {
@@ -395,10 +395,10 @@ public class PersonLogic
             
             UpsertCommandBuilder<Crew> c1 = _currentType switch
             {
-                Type.Movie => _mediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.MovieId, c.JobId }),
-                Type.TvShow => _mediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.TvId, c.JobId }),
-                Type.Season => _mediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.SeasonId, c.JobId }),
-                Type.Episode => _mediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.EpisodeId, c.JobId }),
+                Type.Movie => Databases.MediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.MovieId, c.JobId }),
+                Type.TvShow => Databases.MediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.TvId, c.JobId }),
+                Type.Season => Databases.MediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.SeasonId, c.JobId }),
+                Type.Episode => Databases.MediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.EpisodeId, c.JobId }),
                 _ => throw new ArgumentOutOfRangeException()
             };
 
@@ -432,7 +432,7 @@ public class PersonLogic
                 .Where(crew => crew.CreditId is not "")
                 .ToArray();
             
-            await _mediaContext.GuestStars
+            await Databases.MediaContext.GuestStars
                 .UpsertRange(guestStars)
                 .On(c => new { c.CreditId, c.EpisodeId })
                 .WhenMatched((cs, ci) => new GuestStar
@@ -457,7 +457,7 @@ public class PersonLogic
                 .ConvertAll<Role>(x => new Role(x))
                 .ToArray();
             
-            await _mediaContext.Roles
+            await Databases.MediaContext.Roles
                 .UpsertRange(roles.Where(role => role.Character is not null && role.CreditId is not null))
                 .On(p => new { p.GuestStarId })
                 .WhenMatched((rs, ri) => new Role
@@ -568,7 +568,7 @@ public class PersonLogic
 
         try
         {
-            await _mediaContext.Roles
+            await Databases.MediaContext.Roles
                 .UpsertRange(roles.Where(r => r.Character is not null && r.CreditId is not null))
                 .On(p => new { p.CreditId })
                 .WhenMatched((rs, ri) => new Role()
@@ -592,7 +592,7 @@ public class PersonLogic
 
         try
         {
-            await _mediaContext.Jobs.UpsertRange(jobs)
+            await Databases.MediaContext.Jobs.UpsertRange(jobs)
                 .On(p => new { p.CreditId })
                 .WhenMatched((js, ji) => new Job()
                 {
@@ -617,17 +617,17 @@ public class PersonLogic
                 if (person is null) continue;
                 
                 ColorPaletteJob colorPaletteJob = new ColorPaletteJob(id:person.Id, model:"person");
-                JobDispatcher.Dispatch(colorPaletteJob, "data");
+                JobDispatcher.Dispatch(colorPaletteJob, "data").Wait();
                 
                 ImagesJob imagesJob = new ImagesJob(id:person.Id, type:"person");
-                JobDispatcher.Dispatch(imagesJob, "queue", 2);
+                JobDispatcher.Dispatch(imagesJob, "queue", 2).Wait();
                 
                 foreach (var image in person.Images.Profiles)
                 {
                     if (string.IsNullOrEmpty(image.FilePath)) continue;
                     
                     ColorPaletteJob colorPaletteJob2 = new ColorPaletteJob(filePath:image.FilePath, model:"image");
-                    JobDispatcher.Dispatch(colorPaletteJob2, "data");
+                    JobDispatcher.Dispatch(colorPaletteJob2, "data").Wait();
                 }
             }
         }
@@ -664,7 +664,7 @@ public class PersonLogic
         {
             if (string.IsNullOrEmpty(image.FilePath)) continue;
             ColorPaletteJob colorPaletteJob = new ColorPaletteJob(filePath:image.FilePath, model:"image");
-            JobDispatcher.Dispatch(colorPaletteJob, "data");
+            JobDispatcher.Dispatch(colorPaletteJob, "data").Wait();
         }
 
         Logger.MovieDb($@"Collection {personAppend?.Name}: Images stored");
@@ -709,7 +709,7 @@ public class PersonLogic
                 }
             });
         
-            await _mediaContext.Translations
+            await Databases.MediaContext.Translations
                 .UpsertRange(translations.Where(translation => translation.Title != null || translation.Overview != ""))
                 .On(t => new { t.Iso31661, t.Iso6391, t.PersonId })
                 .WhenMatched((ts, ti) => new Translation

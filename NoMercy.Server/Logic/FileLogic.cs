@@ -125,7 +125,7 @@ public class FileLogic
             }
         }
         
-        Episode? episode = await _mediaContext.Episodes
+        Episode? episode = await Databases.MediaContext.Episodes
             .Where(e => Show != null && e.TvId == Show.Id)
             .Where(e => e.SeasonNumber == item.Parsed.Season)
             .Where(e => e.EpisodeNumber == item.Parsed.Episode)
@@ -150,7 +150,7 @@ public class FileLogic
             Subtitles = JsonConvert.SerializeObject(subtitles),
         };
 
-        await _mediaContext.VideoFiles.Upsert(videoFile)
+        await Databases.MediaContext.VideoFiles.Upsert(videoFile)
             .On(vf => vf.Filename)
             .WhenMatched((vs, vi) => new VideoFile
             {
@@ -175,13 +175,13 @@ public class FileLogic
         switch (Library.Type)
         {
             case "movie":
-                Movie = await _mediaContext.Movies
+                Movie = await Databases.MediaContext.Movies
                     .Where(m => m.Id == Id)
                     .FirstOrDefaultAsync();
                 Type = "movie";
                 break;
             case "tv":
-                Show = await _mediaContext.Tvs
+                Show = await Databases.MediaContext.Tvs
                     .Where(t => t.Id == Id)
                     .FirstOrDefaultAsync();
                 Type = "tv";

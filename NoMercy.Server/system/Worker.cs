@@ -21,7 +21,7 @@ public class Worker(JobQueue queue, string name = "default")
     
     public void Start()
     {
-        Logger.Queue($"Worker {name} - {CurrentIndex}: started", LogLevel.Info);
+        // Logger.Queue($"Worker {name} - {CurrentIndex}: started", LogLevel.Info);
 
         while (_isRunning)
         {
@@ -67,7 +67,7 @@ public class Worker(JobQueue queue, string name = "default")
                     }
                 }
 
-                Thread.Sleep(1000);
+                Thread.Sleep(5000);
             }
             else
             {                            

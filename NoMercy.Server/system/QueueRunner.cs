@@ -1,6 +1,7 @@
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Server.app.Helper;
 using LogLevel = NoMercy.Helpers.LogLevel;
 
 // ReSharper disable All
@@ -13,44 +14,44 @@ public static class QueueRunner
     {
         ["cron"] = (5, [], new CancellationTokenSource()),
         ["queue"] = (1, [], new CancellationTokenSource()),
-        ["data"] = (30, [], new CancellationTokenSource()),
+        ["data"] = (5, [], new CancellationTokenSource()),
         ["encoder"] = (2, [], new CancellationTokenSource()),
         // ["request"] = (15, [], new CancellationTokenSource()),
     };
 
     private static bool _isInitialized;
-    private static readonly JobQueue JobQueue = new(new QueueContext());
+    private static readonly JobQueue JobQueue = new(Databases.QueueContext);
     private static bool _isUpdating;
     
     public static Task Initialize()
     {
         if (_isInitialized) return Task.CompletedTask;
+        
+        Task.Delay(10000);
 
         _isInitialized = true;
 
         List<Task> taskList = [];
-
-        using (QueueContext context = new())
-        {
-            List<QueueJob> queueJobs = context.QueueJobs.ToList();
-            foreach (var queueJob in queueJobs)
-            {
-                queueJob.ReservedAt = null;
-            }
             
-            context.SaveChanges();
+        List<QueueJob> queueJobs = Databases.QueueContext.QueueJobs.ToList();
+        foreach (var queueJob in queueJobs)
+        {
+            queueJob.ReservedAt = null;
         }
-
+        
+        Databases.QueueContext.SaveChanges();
+        
         foreach (var keyValuePair in Workers)
         {
             for (int i = 0; i < keyValuePair.Value.count; i++)
             {
                 taskList.Add(Task.Run(() => SpawnWorker(keyValuePair.Key)));
+                Task.Delay(500).Wait();
             }
         }
         
         Task.WhenAll(taskList);
-
+        
         return Task.CompletedTask;
     }
 
@@ -66,6 +67,7 @@ public static class QueueRunner
         
         return Task.CompletedTask;
     }
+
 
     #region MyRegion
     
