@@ -1,5 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using TMDBCast = NoMercy.Providers.TMDB.Models.Shared.Cast;
@@ -28,10 +32,10 @@ namespace NoMercy.Database.Models
         public virtual Person Person { get; set; }
 
         [JsonProperty("movie_id")] public int? MovieId { get; set; }
-        public virtual Movie Movie { get; set; }
+        public virtual Movie? Movie { get; set; }
 
         [JsonProperty("tv_id")] public int? TvId { get; set; }
-        public virtual Tv Tv { get; set; }
+        public virtual Tv? Tv { get; set; }
 
         [JsonProperty("season_id")] public int? SeasonId { get; set; }
         public virtual Season Season { get; set; }

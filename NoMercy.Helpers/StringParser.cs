@@ -30,6 +30,8 @@ public static class StringParser
     
     private static string _cleanFileName(string? name)
     {
+        if (name == null) return "";
+        
         name = Regex.Replace(name, "/", ".");
         name = Regex.Replace(name, ":\\s", ".");
         name = Regex.Replace(name, "\\s", ".");
@@ -65,7 +67,7 @@ public static class StringParser
         return _cleanFileName(self);
     }
 
-    public static string? TitleSort(this object self, int? parseYear)
+    public static string TitleSort(this object self, int? parseYear)
     {
         return _parseTitleSort(self.ToString(), parseYear != null ? new DateTime(parseYear.Value, 1, 1) : null);
     }

@@ -11,6 +11,5 @@ public class MovieNowPlaying : PaginatedResponse<Movie>
 public class Dates
 {
     [JsonProperty("maximum")] public DateTime? Maximum { get; set; }
-
     [JsonProperty("minimum")] public DateTime? Minimum { get; set; }
 }

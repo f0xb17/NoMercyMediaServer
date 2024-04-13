@@ -1,9 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Providers.TMDB.Models.Certifications;
-using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Database.Models
 {
@@ -14,9 +14,9 @@ namespace NoMercy.Database.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [JsonProperty("id")] public int Id { get; set; }
 
-        [JsonProperty("iso_3166_1")] public string Iso31661 { get; set; } = string.Empty;
+        [JsonProperty("iso_3166_1")] public string? Iso31661 { get; set; } = string.Empty;
 
-        [JsonProperty("rating")] public string Rating { get; set; } = string.Empty;
+        [JsonProperty("rating")] public string? Rating { get; set; } = string.Empty;
 
         [JsonProperty("meaning")] public string Meaning { get; set; } = string.Empty;
 
@@ -26,7 +26,7 @@ namespace NoMercy.Database.Models
         {
         }
 
-        public Certification(string country, TvShowCertification certification)
+        public Certification(string? country, TvShowCertification certification)
         {
             Iso31661 = country;
             Rating = certification.Rating;
@@ -34,7 +34,7 @@ namespace NoMercy.Database.Models
             Order = certification.Order;
         }
 
-        public Certification(string country, MovieCertification certification)
+        public Certification(string? country, MovieCertification certification)
         {
             Iso31661 = country;
             Rating = certification.Rating;

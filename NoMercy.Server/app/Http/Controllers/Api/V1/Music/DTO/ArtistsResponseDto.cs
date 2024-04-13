@@ -1,0 +1,50 @@
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using NoMercy.Database;
+using NoMercy.Database.Models;
+
+namespace NoMercy.Server.app.Http.Controllers.Api.V1.Music.DTO;
+
+public class ArtistsResponseDto
+{
+    [JsonProperty("data")] public IEnumerable<ArtistsResponseItemDto> Data { get; set; } = [];
+    
+    private static readonly string[] Letters = ["*", "#", "'", "\"", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
+
+    public static readonly Func<MediaContext, Guid, string, IAsyncEnumerable<Artist>> GetArtists =
+        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, string letter) =>
+            mediaContext.Artists
+                .AsNoTracking()
+
+                .OrderBy(artist => artist.Name)
+
+                .Where(album => letter == "_"
+                    ? Letters.Any(p => album.Name.StartsWith(p))
+                    : album.Name.StartsWith(letter)
+                )
+        );
+
+}
+
+public class ArtistsResponseItemDto
+{
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
+    [JsonProperty("cover")] public string? Cover { get; set; }
+    [JsonProperty("description")] public string? Description { get; set; }
+    [JsonProperty("id")] public Guid Id { get; set; }
+    [JsonProperty("name")] public string Name { get; set; }
+    [JsonProperty("track_id")] public string? TrackId { get; set; }
+    [JsonProperty("type")] public string Type { get; set; }
+    
+    [JsonProperty("tracks")] public int Tracks { get; set; }
+    
+    public ArtistsResponseItemDto(Artist artist)
+    {
+        ColorPalette = artist.ColorPalette;
+        Cover = artist.Cover;
+        Description = artist.Description;
+        Id = artist.Id;
+        Name = artist.Name;
+        Type = "artists";
+    }
+}

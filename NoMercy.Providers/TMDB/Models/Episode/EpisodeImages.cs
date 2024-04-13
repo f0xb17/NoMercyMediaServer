@@ -6,6 +6,5 @@ namespace NoMercy.Providers.TMDB.Models.Episode;
 public class Images
 {
     [JsonProperty("id")] public int Id { get; set; }
-
     [JsonProperty("stills")] public Image[] Stills { get; set; } = [];
 }

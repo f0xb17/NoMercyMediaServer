@@ -20,14 +20,14 @@ public static class QueueRunner
     };
 
     private static bool _isInitialized;
-    private static readonly JobQueue JobQueue = new(Databases.QueueContext);
+    private static readonly JobQueue JobQueue = new(new QueueContext());
     private static bool _isUpdating;
     
-    public static Task Initialize()
+    public static async Task Initialize()
     {
-        if (_isInitialized) return Task.CompletedTask;
+        if (_isInitialized) return;
         
-        Task.Delay(10000);
+        await Task.Delay(10000);
 
         _isInitialized = true;
 
@@ -46,13 +46,13 @@ public static class QueueRunner
             for (int i = 0; i < keyValuePair.Value.count; i++)
             {
                 taskList.Add(Task.Run(() => SpawnWorker(keyValuePair.Key)));
-                Task.Delay(500).Wait();
+                await Task.Delay(5000);
             }
         }
         
-        Task.WhenAll(taskList);
+        await Task.WhenAll(taskList);
         
-        return Task.CompletedTask;
+        return;
     }
 
     private static Task SpawnWorker(string name)

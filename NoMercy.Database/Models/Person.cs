@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -15,7 +16,7 @@ namespace NoMercy.Database.Models
         [JsonProperty("id")]
         public int Id { get; set; }
 
-        [JsonProperty("adult")] public bool Adult { get; set; } = false;
+        [JsonProperty("adult")] public bool Adult { get; set; }
         [JsonProperty("also_known_as")] public string? AlsoKnownAs { get; set; }
         [JsonProperty("biography")] public string? Biography { get; set; }
         [JsonProperty("birthday")] public DateTime? BirthDay { get; set; }
@@ -38,6 +39,7 @@ namespace NoMercy.Database.Models
         [Column("Gender")]
         [JsonProperty("gender")]
         [System.Text.Json.Serialization.JsonIgnore]
+        
         public PersonGender _gender { get; set; }
 
         [NotMapped]
@@ -51,6 +53,7 @@ namespace NoMercy.Database.Models
         [Column("ExternalIds")]
         [JsonProperty("external_ids")]
         [System.Text.Json.Serialization.JsonIgnore]
+        
         public string? _externalIds { get; set; }
 
         [NotMapped]
@@ -68,7 +71,7 @@ namespace NoMercy.Database.Models
         {
             Id = person.Id;
             Adult = person.Adult;
-            AlsoKnownAs = person.AlsoKnownAs?.Length > 0 ? JsonConvert.SerializeObject(person.AlsoKnownAs) : null;
+            AlsoKnownAs = person.AlsoKnownAs.Length > 0 ? JsonConvert.SerializeObject(person.AlsoKnownAs) : null;
             Biography = person.Biography;
             BirthDay = person.BirthDay;
             DeathDay = person.DeathDay;

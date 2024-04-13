@@ -16,10 +16,16 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [Authorize, Route("api/v{Version:apiVersion}/dashboard/devices", Order = 10)]
 public class DevicesController : Controller
 {
+    [NonAction]
+    private Guid GetUserId()
+    {
+        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+    }
+
     [HttpGet]
     public async Task<DevicesDto[]> Index()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         
         await using MediaContext mediaContext = new();
         var devices = await mediaContext.Devices
@@ -61,14 +67,14 @@ public class DevicesController : Controller
     [HttpPost]
     public IActionResult Create()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
 
     [HttpDelete]
     public IActionResult Destroy()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
 }
@@ -79,7 +85,7 @@ public class DevicesDto
     [JsonProperty("device_id")] public string DeviceId { get; set; }
     [JsonProperty("browser")] public string Browser { get; set; }
     [JsonProperty("os")] public string Os { get; set; }
-    [JsonProperty("device")] public string Device { get; set; }
+    [JsonProperty("device")] public string? Device { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("name")] public string Name { get; set; }
     [JsonProperty("custom_name")] public object? CustomName { get; set; }

@@ -25,10 +25,12 @@ public static class AppFiles
     public static readonly string RootPath = Path.Combine(AppPath, "root");
 
     public static readonly string ApiCachePath = Path.Combine(CachePath, "apiData");
-    public static readonly string ImagesPath = Path.Combine(CachePath, "images");
     public static readonly string OmdbPath = Path.Combine(CachePath, "omdb");
     public static readonly string TempPath = Path.Combine(CachePath, "temp");
     public static readonly string TranscodePath = Path.Combine(CachePath, "transcode");
+    public static readonly string ImagesPath = Path.Combine(CachePath, "images");
+    public static readonly string MusicImagesPath = Path.Combine(ImagesPath, "music");
+    public static readonly string TempImagesPath = Path.Combine(ImagesPath, "temp");
 
     public static readonly string CollectionsPath = Path.Combine(DataPath, "collections");
     public static readonly string PlaylistsPath = Path.Combine(DataPath, "playlists");
@@ -52,6 +54,10 @@ public static class AppFiles
     public static readonly string CertFile = Path.Combine(CertPath, "cert.pem");
     public static readonly string KeyFile = Path.Combine(CertPath, "key.pem");
     public static readonly string CaFile = Path.Combine(CertPath, "ca.pem");
+    
+    public static readonly string SecretsPath = Path.Combine(RootPath, "secrets");
+    public static readonly string SecretsStore = Path.Combine(SecretsPath, "secrets.bin");
+    public static readonly string SecretsKey = Path.Combine(SecretsPath, "secrets.key");
     
     public static readonly string AppIcon = Path.Combine(Directory.GetCurrentDirectory(), "Assets/icon.ico");
     
@@ -85,7 +91,10 @@ public static class AppFiles
             LibraryPath,
             ViewsPath,
             BinariesPath,
-            CertPath
+            CertPath,
+            SecretsPath,
+            MusicImagesPath,
+            TempImagesPath,
         ];
     }
 

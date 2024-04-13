@@ -18,10 +18,16 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [Authorize, Route("api/v{Version:apiVersion}/dashboard/encoderprofiles", Order = 10)]
 public class EncoderController : Controller
 {
+    [NonAction]
+    private Guid GetUserId()
+    {
+        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+    }
+
     [HttpGet]
     public async Task<List<EncoderProfileDto>> Index()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         
         await using MediaContext mediaContext = new();
         var profiles = await mediaContext.EncoderProfiles.ToListAsync();
@@ -62,7 +68,7 @@ public class EncoderController : Controller
     [HttpPost]
     public async Task<StatusResponseDto<EncoderProfile>>  Create()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         
         await using MediaContext mediaContext = new();
         int libraries = await mediaContext.EncoderProfiles.CountAsync();
@@ -92,7 +98,7 @@ public class EncoderController : Controller
     [HttpDelete]
     public IActionResult Destroy()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
 }

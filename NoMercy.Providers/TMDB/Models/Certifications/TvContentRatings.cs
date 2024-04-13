@@ -12,12 +12,9 @@ public class TvShowCertifications
 public class TvShowCertification
 {
     [JsonProperty("certification")]
-    public string Rating { get; set; }
-
+    public string? Rating { get; set; }
     [JsonProperty("meaning")]
     public string Meaning { get; set; }
-
     [JsonProperty("order")]
-    public int Order { get; set; }
-    
+    public int Order { get; set; }    
 }

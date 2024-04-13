@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Providers.MusicBrainz.Models;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.TV;
 using Episode = NoMercy.Providers.TMDB.Models.Episode.Episode;
@@ -90,4 +91,8 @@ public static class FileNameParsers
             .FirstOrDefault(m => folder.Contains(m.Folder.Path))?.Folder.Path;
     }
 
+    public static string CreateBaseFolder(RecordingAppends music)
+    {
+        return string.Concat(music.ArtistCredit[0].Name[0], "/", music.ArtistCredit[0].Name.CleanFileName());
+    }
 }

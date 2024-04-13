@@ -1,7 +1,8 @@
-using System.ComponentModel.DataAnnotations.Schema;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
-using MovieFileLibrary;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
@@ -13,7 +14,6 @@ namespace NoMercy.Server.Logic;
 public class FileLogic
 {
     private readonly MediaContext _mediaContext = new();
-    private readonly MovieDetector _movieDetector = new();
 
     private int Id { get; set; }
     private Library Library { get; set; }
@@ -32,12 +32,12 @@ public class FileLogic
 
     public async Task Process()
     {
-        await GetType();
+        await GetMediaType();
         GetPaths();
 
         foreach (var folder in Folders)
         {
-            List<MediaFolder> files = await GetFiles(folder.Path);
+            ConcurrentBag<MediaFolder> files = await GetFiles(folder.Path);
 
             if (files.Count > 0)
             {
@@ -51,12 +51,28 @@ public class FileLogic
                 await StoreMovie();
                 break;
             case "tv":
+            case "anime":
                 await StoreTvShow();
+                break;
+            case "music":
+                await StoreMusic();
                 break;
             default:
                 Logger.App("Unknown library type");
                 break;
         }
+    }
+
+    private async Task StoreMusic()
+    {
+        await using MediaContext context = new MediaContext();
+
+        MediaFile? item = Files.FirstOrDefault(file => file.Parsed is not null)
+            ?.Files?.FirstOrDefault(file => file.Parsed is not null);
+        
+        if (item == null) return;
+
+        await StoreAudioItem(item);
     }
 
     private async Task StoreMovie()
@@ -68,7 +84,7 @@ public class FileLogic
         
         if (item == null) return;
 
-        await StoreItem(item);
+        await StoreVideoItem(item);
     }
 
     private async Task StoreTvShow()
@@ -80,18 +96,28 @@ public class FileLogic
             .Select(mediaFolder => mediaFolder.SubFolders?.FirstOrDefault())
             .Where(mediaFolder => mediaFolder?.Parsed is not null)
             .Select(mediaFolder => mediaFolder?.Files?.Where(mediaFile => mediaFile.Parsed is not null))
-            .Select(mediaFiles => mediaFiles?.FirstOrDefault())?
-            .ToList() ?? [];
+            .Select(mediaFiles => mediaFiles?.FirstOrDefault())
+            .ToList();
         
         if (items.Count == 0) return;
 
         foreach (var item in items)
         {
-            await StoreItem(item);
+            await StoreVideoItem(item);
         }
     }
 
-    private async Task StoreItem(MediaFile? item)
+    private async Task StoreAudioItem(MediaFile? item)
+    {
+        if (item?.Parsed is null) return;
+
+        var folder = Folders.FirstOrDefault(folder => item.Path.Contains(folder.Path));
+        if (folder == null) return;
+
+        await Task.CompletedTask;
+    }
+
+    private async Task StoreVideoItem(MediaFile? item)
     {
         if (item?.Parsed is null) return;
 
@@ -105,7 +131,7 @@ public class FileLogic
         string baseFolder = Path.DirectorySeparatorChar + (Movie?.Folder ?? Show?.Folder ?? "")
                                                         + item.Path.Replace(folder.Path, "")
                                                             .Replace(fileName, "");
-
+        
         string subtitleFolder = Path.Combine(hostFolder, "subtitles");
         
         if (Directory.Exists(subtitleFolder))
@@ -125,7 +151,7 @@ public class FileLogic
             }
         }
         
-        Episode? episode = await Databases.MediaContext.Episodes
+        Episode? episode = await _mediaContext.Episodes
             .Where(e => Show != null && e.TvId == Show.Id)
             .Where(e => e.SeasonNumber == item.Parsed.Season)
             .Where(e => e.EpisodeNumber == item.Parsed.Episode)
@@ -150,7 +176,7 @@ public class FileLogic
             Subtitles = JsonConvert.SerializeObject(subtitles),
         };
 
-        await Databases.MediaContext.VideoFiles.Upsert(videoFile)
+        await _mediaContext.VideoFiles.Upsert(videoFile)
             .On(vf => vf.Filename)
             .WhenMatched((vs, vi) => new VideoFile
             {
@@ -170,18 +196,18 @@ public class FileLogic
             .RunAsync();
     }
 
-    private async Task GetType()
+    private async Task GetMediaType()
     {
         switch (Library.Type)
         {
             case "movie":
-                Movie = await Databases.MediaContext.Movies
+                Movie = await _mediaContext.Movies
                     .Where(m => m.Id == Id)
                     .FirstOrDefaultAsync();
                 Type = "movie";
                 break;
             case "tv":
-                Show = await Databases.MediaContext.Tvs
+                Show = await _mediaContext.Tvs
                     .Where(t => t.Id == Id)
                     .FirstOrDefaultAsync();
                 Type = "tv";
@@ -189,11 +215,10 @@ public class FileLogic
         }
     }
 
-    private async Task<List<MediaFolder>> GetFiles(string path)
-    {
-        Logger.App($@"Files: {path}");
+    private async Task<ConcurrentBag<MediaFolder>> GetFiles(string path)
+    { 
         MediaScan mediaScan = new();
-
+        
         int depth = Library.Type switch
         {
             "movie" => 1,
@@ -201,13 +226,13 @@ public class FileLogic
             _ => 1
         };
 
-        List<MediaFolder>? folders = await mediaScan
+        ConcurrentBag<MediaFolder> folders = await mediaScan
             .EnableFileListing()
             .Process(path, depth);
 
         mediaScan.Dispose();
 
-        return folders ?? [];
+        return folders;
     }
 
     private void GetPaths()

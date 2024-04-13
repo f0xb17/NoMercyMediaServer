@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using FlexLabs.EntityFrameworkCore.Upsert;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
@@ -18,13 +19,11 @@ using SeasonAppends = NoMercy.Providers.TMDB.Models.Season.SeasonAppends;
 using EpisodeAppends = NoMercy.Providers.TMDB.Models.Episode.EpisodeAppends;
 using MovieAppends = NoMercy.Providers.TMDB.Models.Movies.MovieAppends;
 using TvAggregatedCredits = NoMercy.Providers.TMDB.Models.TV.TvAggregatedCredits;
-
 using Person = NoMercy.Database.Models.Person;
 using Cast = NoMercy.Database.Models.Cast;
 using Crew = NoMercy.Database.Models.Crew;
 using Role = NoMercy.Database.Models.Role;
 using Job = NoMercy.Database.Models.Job;
-
 using Exception = System.Exception;
 using GuestStar = NoMercy.Database.Models.GuestStar;
 using Image = NoMercy.Database.Models.Image;
@@ -54,7 +53,7 @@ public class PersonLogic
     public PersonLogic(TvShowAppends? show)
     {
         if (show is null) return;
-        
+
         _show = show;
         _logPrefix = $"TvShow {show.Name}:";
         _currentType = Type.TvShow;
@@ -68,7 +67,7 @@ public class PersonLogic
     public PersonLogic(TvShowAppends? show, SeasonAppends? season)
     {
         if (show is null || season is null) return;
-        
+
         _show = show;
         _season = season;
         _logPrefix = $"TvShow {show.Name}, Season {season.SeasonNumber}:";
@@ -82,7 +81,7 @@ public class PersonLogic
     public PersonLogic(TvShowAppends? show, SeasonAppends? season, EpisodeAppends? episode)
     {
         if (show is null || season is null || episode is null) return;
-        
+
         _show = show;
         _season = season;
         _episode = episode;
@@ -96,7 +95,7 @@ public class PersonLogic
     public PersonLogic(MovieAppends? movie)
     {
         if (movie is null) return;
-        
+
         _movie = movie;
         _logPrefix = $"Movie {movie.Title}:";
         _currentType = Type.Movie;
@@ -107,7 +106,7 @@ public class PersonLogic
         _episode = new EpisodeAppends();
     }
 
-    private readonly List<PersonAppends?> _personAppends = [];
+    private readonly ConcurrentStack<PersonAppends?> _personAppends = [];
 
     private async Task FetchPeopleByCast(TMDBCast[] cast)
     {
@@ -116,11 +115,8 @@ public class PersonLogic
             try
             {
                 using PersonClient personClient = new PersonClient(person.Id);
-                using var personTask = personClient.WithAllAppends();
-                lock (_personAppends)
-                {
-                    _personAppends.Add(personTask.Result);
-                }
+                PersonAppends? personTask = await personClient.WithAllAppends();
+                _personAppends.Push(personTask);
 
                 await Task.CompletedTask;
             }
@@ -130,7 +126,7 @@ public class PersonLogic
             }
         });
     }
-    
+
     private async Task FetchPeopleByGuestStars(TMDBGuestStar[] cast)
     {
         await Parallel.ForEachAsync(cast, async (person, _) =>
@@ -138,11 +134,8 @@ public class PersonLogic
             try
             {
                 using PersonClient personClient = new PersonClient(person.Id);
-                using var personTask = personClient.WithAllAppends();
-                lock (_personAppends)
-                {
-                    _personAppends.Add(personTask.Result);
-                }
+                PersonAppends? personTask = await personClient.WithAllAppends();
+                _personAppends.Push(personTask);
 
                 await Task.CompletedTask;
             }
@@ -160,11 +153,8 @@ public class PersonLogic
             try
             {
                 using PersonClient personClient = new(person.Id);
-                using var personTask = personClient.WithAllAppends();
-                lock (_personAppends)
-                {
-                    _personAppends.Add(personTask.Result);
-                }
+                PersonAppends? personTask = await personClient.WithAllAppends();
+                _personAppends.Push(personTask);
 
                 await Task.CompletedTask;
             }
@@ -181,7 +171,7 @@ public class PersonLogic
         {
             case Type.TvShow:
                 if (_show is null) return;
-                
+
                 await FetchPeopleByCast(_show.Credits.Cast);
                 await FetchPeopleByCrew(_show.Credits.Crew);
 
@@ -195,7 +185,7 @@ public class PersonLogic
                 break;
             case Type.Season:
                 if (_season is null) return;
-                
+
                 await FetchPeopleByCast(_season.Credits.Cast);
                 await FetchPeopleByCrew(_season.Credits.Crew);
 
@@ -203,12 +193,12 @@ public class PersonLogic
 
                 await StoreCast(_season.Credits.Cast, _season);
                 await StoreCrew(_season.Credits.Crew, _season);
-                
+
                 await StoreAggregateCredits(_season.AggregateCredits, _season);
                 break;
             case Type.Episode:
                 if (_episode is null) return;
-                
+
                 await FetchPeopleByCast(_episode.Cast);
                 await FetchPeopleByCrew(_episode.Crew);
                 await FetchPeopleByGuestStars(_episode.GuestStars);
@@ -217,7 +207,7 @@ public class PersonLogic
 
                 await StoreCast(_episode.Credits.Cast, _episode);
                 await StoreCrew(_episode.Credits.Crew, _episode);
-                
+
                 await StoreGuestStars(_episode.GuestStars, _episode);
                 break;
             case Type.Movie:
@@ -230,9 +220,9 @@ public class PersonLogic
 
                 await StoreCast(_movie.Credits.Cast, _movie);
                 await StoreCrew(_movie.Credits.Crew, _movie);
-                
+
                 break;
-            
+
             default:
                 throw new Exception("Invalid model Type");
         }
@@ -240,56 +230,59 @@ public class PersonLogic
         await DispatchJobs();
     }
 
-    private Task Store()
+    private async Task Store()
     {
         try
         {
-            lock (_personAppends)
+            Person[] people = _personAppends.ToList()
+                .ConvertAll<Person>(x => new Person(x)).ToArray();
+
+            await using MediaContext mediaContext = new MediaContext();
+            await mediaContext.People.UpsertRange(people)
+                .On(p => new { p.Id })
+                .WhenMatched((ps, pi) => new Person
+                {
+                    Id = pi.Id,
+                    Adult = pi.Adult,
+                    AlsoKnownAs = pi.AlsoKnownAs,
+                    Biography = pi.Biography,
+                    BirthDay = pi.BirthDay,
+                    DeathDay = pi.DeathDay,
+                    _externalIds = pi._externalIds,
+                    _gender = pi._gender,
+                    Homepage = pi.Homepage,
+                    ImdbId = pi.ImdbId,
+                    KnownForDepartment = pi.KnownForDepartment,
+                    Name = pi.Name,
+                    PlaceOfBirth = pi.PlaceOfBirth,
+                    Popularity = pi.Popularity,
+                    Profile = pi.Profile,
+                    TitleSort = pi.Name,
+                    _colorPalette = pi._colorPalette,
+                })
+                .RunAsync();
+
+            await StoreTranslations(_personAppends);
+
+            Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
             {
-                Person[] people = _personAppends.ConvertAll<Person>(x => new Person(x)).ToArray();
-                
-                Databases.MediaContext.People.UpsertRange(people)
-                    .On(p => new { p.Id })
-                    .WhenMatched((ps, pi) => new Person
-                    {
-                        Id = pi.Id,
-                        Adult = pi.Adult,
-                        AlsoKnownAs = pi.AlsoKnownAs,
-                        Biography = pi.Biography,
-                        BirthDay = pi.BirthDay,
-                        DeathDay = pi.DeathDay,
-                        _externalIds = pi._externalIds,
-                        _gender = pi._gender,
-                        Homepage = pi.Homepage,
-                        ImdbId = pi.ImdbId,
-                        KnownForDepartment = pi.KnownForDepartment,
-                        Name = pi.Name,
-                        PlaceOfBirth = pi.PlaceOfBirth,
-                        Popularity = pi.Popularity,
-                        Profile = pi.Profile,
-                        TitleSort = pi.Name,
-                        _colorPalette = pi._colorPalette,
-                    })
-                    .Run();
+                QueryKey = ["person"]
+            });
 
-                StoreTranslations(_personAppends).Wait();
-
-                Logger.MovieDb($@"{_logPrefix} {_name} stored {people.Length} people");
-            }
+            Logger.MovieDb($@"{_logPrefix} {_name} stored {people.Length} people");
         }
         catch (Exception e)
         {
             Logger.MovieDb(e, LogLevel.Error);
         }
-
-        return Task.CompletedTask;
     }
 
-    private Role[] GetRoles(Role[]? roles)
+    private static Role[] GetRoles(Role[]? roles)
     {
         if (roles is null || roles.Length == 0) return Array.Empty<Role>();
-        
-        return Databases.MediaContext.Roles
+
+        using MediaContext mediaContext = new MediaContext();
+        return mediaContext.Roles
             .Where(role => roles.Select(r => r.CreditId).Contains(role.CreditId))
             .ToArray();
     }
@@ -303,23 +296,25 @@ public class PersonLogic
                 .ConvertAll<Role>(x => new Role(x))
                 .Where(cast => cast.CreditId is not null)
                 .ToArray();
-            
-            await Databases.MediaContext.Roles
+
+            await using MediaContext mediaContext = new MediaContext();
+            await mediaContext.Roles
                 .UpsertRange(roles)
                 .On(p => new { p.CreditId })
                 .WhenMatched((rs, ri) => new Role
                 {
                     EpisodeCount = ri.EpisodeCount,
                     Character = ri.Character,
+                    Order = ri.Order,
                     CreditId = ri.CreditId,
                 })
                 .RunAsync();
-            
+
             Logger.MovieDb($@"{_logPrefix} {_name} Roles stored");
-        
-            var crewArray = GetRoles(roles);
-            
-            var cast = casts
+
+            Role[] crewArray = GetRoles(roles);
+
+            Cast[] cast = casts
                 .Where(cast => cast.CreditId is not "" && cast.CreditId is not null)
                 .ToList()
                 .ConvertAll<Cast>(x => new Cast(x, model, _movie, _show, _season, crewArray))
@@ -327,10 +322,11 @@ public class PersonLogic
 
             UpsertCommandBuilder<Cast> query = _currentType switch
             {
-                Type.Movie => Databases.MediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.MovieId, c.RoleId }),
-                Type.TvShow => Databases.MediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.TvId, c.RoleId }),
-                Type.Season => Databases.MediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.SeasonId, c.RoleId }),
-                Type.Episode => Databases.MediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.EpisodeId, c.RoleId }),
+                Type.Movie => mediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.MovieId, c.RoleId }),
+                Type.TvShow => mediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.TvId, c.RoleId }),
+                Type.Season => mediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.SeasonId, c.RoleId }),
+                Type.Episode => mediaContext.Casts.UpsertRange(cast)
+                    .On(c => new { c.CreditId, c.EpisodeId, c.RoleId }),
                 _ => throw new ArgumentOutOfRangeException()
             };
 
@@ -345,27 +341,27 @@ public class PersonLogic
                     RoleId = ci.RoleId,
                 })
                 .RunAsync();
-            
+
             Logger.MovieDb($@"{_logPrefix} {_name} Cast stored");
         }
         catch (Exception e)
         {
             Logger.MovieDb(e, LogLevel.Error);
         }
-
     }
 
-    private Job[] GetJobs(Job[]? jobs)
+    private static Job[] GetJobs(Job[]? jobs)
     {
         if (jobs is null || jobs.Length == 0) return Array.Empty<Job>();
-        
-        return Databases.MediaContext.Jobs
+
+        using MediaContext mediaContext = new MediaContext();
+        return mediaContext.Jobs
             .Where(job => jobs.Select(j => j.CreditId).Contains(job.CreditId))
             .ToArray();
     }
-    
+
     private async Task StoreCrew(TMDBCrew[] crews, dynamic? model)
-    {  
+    {
         try
         {
             Job[] jobs = crews
@@ -374,7 +370,8 @@ public class PersonLogic
                 .Where(crew => crew.CreditId is not null)
                 .ToArray();
 
-            await Databases.MediaContext.Jobs.UpsertRange(jobs)
+            await using MediaContext mediaContext = new MediaContext();
+            await mediaContext.Jobs.UpsertRange(jobs)
                 .On(p => new { p.CreditId })
                 .WhenMatched((js, ji) => new Job
                 {
@@ -382,23 +379,23 @@ public class PersonLogic
                     CreditId = ji.CreditId,
                 })
                 .RunAsync();
-            
+
             Logger.MovieDb($@"{_logPrefix} {_name} Jobs stored");
-              
-                var jobArray = GetJobs(jobs);
-                
-                var crew = crews
-                    .Where(crew => crew.CreditId is not "" && crew.CreditId is not null)
-                    .ToList()
-                    .ConvertAll<Crew>(x => new Crew(x, model, _movie, _show, _season, jobArray))
-                    .ToArray();
-            
+
+            Job[] jobArray = GetJobs(jobs);
+
+            Crew[] crew = crews
+                .Where(crew => crew.CreditId is not "" && crew.CreditId is not null)
+                .ToList()
+                .ConvertAll<Crew>(x => new Crew(x, model, _movie, _show, _season, jobArray))
+                .ToArray();
+
             UpsertCommandBuilder<Crew> c1 = _currentType switch
             {
-                Type.Movie => Databases.MediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.MovieId, c.JobId }),
-                Type.TvShow => Databases.MediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.TvId, c.JobId }),
-                Type.Season => Databases.MediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.SeasonId, c.JobId }),
-                Type.Episode => Databases.MediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.EpisodeId, c.JobId }),
+                Type.Movie => mediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.MovieId, c.JobId }),
+                Type.TvShow => mediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.TvId, c.JobId }),
+                Type.Season => mediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.SeasonId, c.JobId }),
+                Type.Episode => mediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.EpisodeId, c.JobId }),
                 _ => throw new ArgumentOutOfRangeException()
             };
 
@@ -421,18 +418,19 @@ public class PersonLogic
             Logger.MovieDb(e, LogLevel.Error);
         }
     }
-    
+
     private async Task StoreGuestStars(Providers.TMDB.Models.Shared.GuestStar[] guests, EpisodeAppends? episode)
     {
         try
         {
-            var guestStars = guests
+            GuestStar[] guestStars = guests
                 .ToList()
                 .ConvertAll<GuestStar>(x => new GuestStar(x, episode))
                 .Where(crew => crew.CreditId is not "")
                 .ToArray();
-            
-            await Databases.MediaContext.GuestStars
+
+            await using MediaContext mediaContext = new MediaContext();
+            await mediaContext.GuestStars
                 .UpsertRange(guestStars)
                 .On(c => new { c.CreditId, c.EpisodeId })
                 .WhenMatched((cs, ci) => new GuestStar
@@ -443,7 +441,7 @@ public class PersonLogic
                     EpisodeId = ci.EpisodeId,
                 })
                 .RunAsync();
-            
+
             Logger.MovieDb($@"{_logPrefix} Cast stored");
         }
         catch (Exception e)
@@ -453,11 +451,12 @@ public class PersonLogic
 
         try
         {
-            var roles = guests.ToList()
+            Role[] roles = guests.ToList()
                 .ConvertAll<Role>(x => new Role(x))
                 .ToArray();
-            
-            await Databases.MediaContext.Roles
+
+            await using MediaContext mediaContext = new MediaContext();
+            await mediaContext.Roles
                 .UpsertRange(roles.Where(role => role.Character is not null && role.CreditId is not null))
                 .On(p => new { p.GuestStarId })
                 .WhenMatched((rs, ri) => new Role
@@ -468,7 +467,7 @@ public class PersonLogic
                     GuestStarId = ri.GuestStarId,
                 })
                 .RunAsync();
-            
+
             Logger.MovieDb($@"{_logPrefix} Roles stored");
         }
         catch (Exception e)
@@ -480,7 +479,7 @@ public class PersonLogic
     private async Task StoreAggregateCredits(TvAggregatedCredits showAggregateCredits, TvShowAppends? show)
     {
         if (show is null) return;
-        
+
         try
         {
             await StoreAggregateCast(showAggregateCredits.Cast, show);
@@ -493,7 +492,7 @@ public class PersonLogic
             Logger.MovieDb(e, LogLevel.Error);
         }
     }
-    
+
     private async Task StoreAggregateCredits(SeasonAggregatedCredits seasonAggregateCredits, SeasonAppends? season)
     {
         if (_show is null || season is null) return;
@@ -513,7 +512,7 @@ public class PersonLogic
     private async Task StoreAggregateCast(AggregatedCast[] aggregatedCasts, dynamic? model)
     {
         List<TMDBCast> cast = [];
-        
+
         cast.AddRange(aggregatedCasts.Select(aggregatedCast => new TMDBCast
         {
             Adult = aggregatedCast.Adult,
@@ -529,7 +528,7 @@ public class PersonLogic
 
         await StoreCast(cast.ToArray(), model);
 
-        foreach (var aggregatedCast in aggregatedCasts)
+        foreach (AggregatedCast aggregatedCast in aggregatedCasts)
         {
             await StoreRoles(aggregatedCast.Roles);
         }
@@ -538,7 +537,7 @@ public class PersonLogic
     private async Task StoreAggregateCrew(AggregatedCrew[] aggregatedCrews, dynamic? model)
     {
         List<TMDBCrew> crew = [];
-        
+
         crew.AddRange(aggregatedCrews.Select(aggregatedCrew => new TMDBCrew
         {
             Department = aggregatedCrew.KnownForDepartment,
@@ -554,8 +553,8 @@ public class PersonLogic
         }));
 
         await StoreCrew(crew.ToArray(), model);
-        
-        foreach (var aggregatedCrew in aggregatedCrews)
+
+        foreach (AggregatedCrew aggregatedCrew in aggregatedCrews)
         {
             await StoreJobs(aggregatedCrew.Jobs);
         }
@@ -568,7 +567,8 @@ public class PersonLogic
 
         try
         {
-            await Databases.MediaContext.Roles
+            await using MediaContext mediaContext = new MediaContext();
+            await mediaContext.Roles
                 .UpsertRange(roles.Where(r => r.Character is not null && r.CreditId is not null))
                 .On(p => new { p.CreditId })
                 .WhenMatched((rs, ri) => new Role()
@@ -592,7 +592,8 @@ public class PersonLogic
 
         try
         {
-            await Databases.MediaContext.Jobs.UpsertRange(jobs)
+            await using MediaContext mediaContext = new MediaContext();
+            await mediaContext.Jobs.UpsertRange(jobs)
                 .On(p => new { p.CreditId })
                 .WhenMatched((js, ji) => new Job()
                 {
@@ -607,27 +608,44 @@ public class PersonLogic
             Logger.MovieDb(e, LogLevel.Error);
         }
     }
-    
+
     private async Task DispatchJobs()
     {
-        lock (_personAppends)
+        foreach (PersonAppends? person in _personAppends)
         {
-            foreach (var person in _personAppends)
+            if (person is null) continue;
+            
+            try
             {
-                if (person is null) continue;
-                
-                ColorPaletteJob colorPaletteJob = new ColorPaletteJob(id:person.Id, model:"person");
-                JobDispatcher.Dispatch(colorPaletteJob, "data").Wait();
-                
-                ImagesJob imagesJob = new ImagesJob(id:person.Id, type:"person");
-                JobDispatcher.Dispatch(imagesJob, "queue", 2).Wait();
-                
-                foreach (var image in person.Images.Profiles)
+                var colorPaletteJob = new ColorPaletteJob(id: person.Id, model: "person");
+                JobDispatcher.Dispatch(colorPaletteJob, "data", 2);
+            }
+            catch (Exception e)
+            {
+                Logger.MovieDb(e, LogLevel.Error);
+            }
+
+            try
+            {
+                await new PersonImagesJob(id: person.Id).Handle();
+            }
+            catch (Exception e)
+            {
+                Logger.MovieDb(e, LogLevel.Error);
+            }
+
+            foreach (Profile image in person.Images.Profiles)
+            {
+                if (string.IsNullOrEmpty(image.FilePath)) continue;
+
+                try
                 {
-                    if (string.IsNullOrEmpty(image.FilePath)) continue;
-                    
-                    ColorPaletteJob colorPaletteJob2 = new ColorPaletteJob(filePath:image.FilePath, model:"image");
-                    JobDispatcher.Dispatch(colorPaletteJob2, "data").Wait();
+                    var colorPaletteJob =  new ColorPaletteJob(filePath: image.FilePath, model: "person", image.Iso6391);
+                    JobDispatcher.Dispatch(colorPaletteJob, "data", 2);
+                }
+                catch (Exception e)
+                {
+                    Logger.MovieDb(e, LogLevel.Error);
                 }
             }
         }
@@ -638,20 +656,23 @@ public class PersonLogic
     public static async Task StoreImages(int id)
     {
         PersonClient personClient = new(id);
-        PersonAppends? personAppend = personClient.WithAllAppends().Result;
+        PersonAppends? personAppend = await personClient.WithAllAppends();
         
-        var profiles = personAppend?.Images?.Profiles.ToList()
-            .ConvertAll<Image>(profile => new Image(image: profile, person:personAppend, type:"poster")) ?? [];
-        
+        if (personAppend is null) return;
+
+        List<Image> images = personAppend.Images.Profiles.ToList()
+            .ConvertAll<Image>(profile => new Image(image: profile, person: personAppend, type: "poster"));
+
         await using MediaContext mediaContext = new();
-        await mediaContext.Images.UpsertRange(profiles)
-            .On(v => new { v.FilePath, v.MovieId })
+        await mediaContext.Images.UpsertRange(images)
+            .On(v => new { v.FilePath, v.PersonId })
             .WhenMatched((ts, ti) => new Image
             {
                 AspectRatio = ti.AspectRatio,
                 FilePath = ti.FilePath,
                 Height = ti.Height,
                 Iso6391 = ti.Iso6391,
+                Site = ti.Site,
                 VoteAverage = ti.VoteAverage,
                 VoteCount = ti.VoteCount,
                 Width = ti.Width,
@@ -660,56 +681,55 @@ public class PersonLogic
             })
             .RunAsync();
         
-        foreach (var image in profiles)
+        foreach (Image image in images)
         {
             if (string.IsNullOrEmpty(image.FilePath)) continue;
-            ColorPaletteJob colorPaletteJob = new ColorPaletteJob(filePath:image.FilePath, model:"image");
-            JobDispatcher.Dispatch(colorPaletteJob, "data").Wait();
-        }
 
-        Logger.MovieDb($@"Collection {personAppend?.Name}: Images stored");
+            try
+            {
+                var colorPaletteJob =  new ColorPaletteJob(filePath: image.FilePath, model: "image", image.Iso6391);
+                JobDispatcher.Dispatch(colorPaletteJob, "data", 2);
+            }
+            catch (Exception e)
+            {
+                Logger.MovieDb(e, LogLevel.Error);
+            }
+        }
+        
+        Logger.MovieDb($@"Person {personAppend.Name}: Images stored");
         await Task.CompletedTask;
     }
 
     public static async Task GetPalette(int id)
     {
         await using MediaContext mediaContext = new MediaContext();
-
-        var person = await mediaContext.People
+        Person? person = await mediaContext.People
             .FirstOrDefaultAsync(e => e.Id == id);
-
-        if(person is null) return;
-
-        lock (person)
+        
+        if (person is { _colorPalette: "", Profile: not null })
         {
-            if (person is { _colorPalette: "", Profile: not null })
-            {
-                var palette = ImageLogic.GenerateColorPalette(profilePath: person.Profile).Result;
-                person._colorPalette = palette;
-                mediaContext.SaveChanges();
-            }
-            
+            string palette = await ImageLogic.GenerateColorPalette(profilePath: person.Profile);
+            person._colorPalette = palette;
+            await mediaContext.SaveChangesAsync();
         }
     }
-    
-    private async Task StoreTranslations(List<PersonAppends?> personAppends)
+
+    private async Task StoreTranslations(ConcurrentStack<PersonAppends?> personAppends)
     {
         try
         {
-            List<Translation> translations = [];
+            ConcurrentStack<Translation> translations = [];
 
             Parallel.ForEach(personAppends, person =>
             {
                 if (person is null) return;
                 
-                lock (translations)
-                {
-                    translations.AddRange(person.Translations.Translations.ToList()
-                        .ConvertAll<Translation>(x => new Translation(x, person)));
-                }
+                translations.PushRange(person.Translations.Translations.ToList()
+                    .ConvertAll<Translation>(x => new Translation(x, person)).ToArray());
             });
-        
-            await Databases.MediaContext.Translations
+
+            await using MediaContext mediaContext = new MediaContext();
+            await mediaContext.Translations
                 .UpsertRange(translations.Where(translation => translation.Title != null || translation.Overview != ""))
                 .On(t => new { t.Iso31661, t.Iso6391, t.PersonId })
                 .WhenMatched((ts, ti) => new Translation
@@ -737,13 +757,10 @@ public class PersonLogic
             throw;
         }
     }
-    
+
     public void Dispose()
     {
-        lock (_personAppends)
-        {
-            _personAppends.Clear();
-        }
+        _personAppends.Clear();
 
         GC.Collect();
         GC.WaitForFullGCComplete();

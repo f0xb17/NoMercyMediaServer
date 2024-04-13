@@ -9,13 +9,17 @@ public class TrayIcon
 {
     private static readonly string IconStream = Path.Combine(Directory.GetCurrentDirectory(), "Assets/icon.ico");
 
-    private static readonly Icon Icon = new(IconStream);
+#pragma warning disable CA1416
+    private static readonly Icon Icon = new(fileName: IconStream);
+#pragma warning restore CA1416
 
+#pragma warning disable CA1416
     private readonly TrayIconWithContextMenu _trayIcon = new()
     {
         Icon = Icon.Handle,
         ToolTip = "NoMercy MediaServer C#",
     };
+#pragma warning restore CA1416
 
     [SupportedOSPlatform("windows10.0.18362")]
     private TrayIcon()
@@ -49,7 +53,9 @@ public class TrayIcon
 
     private void Shutdown()
     {
+#pragma warning disable CA1416
         _trayIcon.Dispose();
+#pragma warning restore CA1416
         Environment.Exit(0);
     }
 

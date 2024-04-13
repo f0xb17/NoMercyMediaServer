@@ -1,8 +1,6 @@
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
-using LogLevel = NoMercy.Helpers.LogLevel;
 
 // ReSharper disable All
 
@@ -19,15 +17,13 @@ public class JobQueue
         _maxAttempts = maxAttempts;
     }
 
-    public Task Enqueue(QueueJob queueJob)
+    public void Enqueue(QueueJob queueJob)
     {
         lock (_context)
         {
             _context.QueueJobs.Add(queueJob);
 
-            _context.SaveChanges();
-            
-            return Task.CompletedTask;
+            _context.SaveChangesAsync();
         }
     }
 
@@ -61,8 +57,15 @@ public class JobQueue
             
             job.ReservedAt = DateTime.UtcNow;
             job.Attempts++;
-            
-            _context.SaveChanges();
+
+            try
+            {
+                _context.SaveChanges();
+            }
+            catch (Exception _)
+            {
+                ReserveJob(name, currentJobId);
+            }
 
             return job;
         }

@@ -6,7 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 
@@ -16,59 +18,94 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 [Authorize, Route("api/v{Version:apiVersion}")]
 public class HomeController: Controller
 {
+    [NonAction]
+    private Guid GetUserId()
+    {
+        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+    }
+    
     [HttpGet]
-    public async Task<HomeResponseDto> Index()
+    public async Task<IActionResult> Index()
     {        
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
 
         await using MediaContext mediaContext = new();
-        var genres = await mediaContext.Genres
-            .AsNoTracking()
-            
-            .OrderBy(genre => genre.Name)
-            
-            .Where(genre => genre.GenreTvShows
-                .Any(g => g.Tv.Library.LibraryUsers
-                    .FirstOrDefault(u => u.UserId == userId) != null))
-            
-            .Include(genre => genre.GenreMovies
-                .Where(genreTv => genreTv.Movie.VideoFiles
-                    .Any(videoFile => videoFile.Folder != null) == true
-                )
-            )
-                .ThenInclude(genreMovie => genreMovie.Movie)
-                    .ThenInclude(movie => movie.VideoFiles)
-            
-            .Include(genre => genre.GenreTvShows
-                .Where(genreTv => genreTv.Tv.Episodes
-                    .Any(episode => episode.VideoFiles
-                        .Any(videoFile => videoFile.Folder != null)
-                    ) == true
-                )
-            )
-                .ThenInclude(genreTv => genreTv.Tv)
-                    .ThenInclude(tv => tv.Episodes)
-                        .ThenInclude(tv => tv.VideoFiles)
-            
-            .ToListAsync();
-            
-        HomeResponseDto result = new HomeResponseDto
+        List<GenreRowDto<GenreRowItemDto>> genres = [];
+        
+        List<int> movieIds = [];
+        List<int> tvIds = [];
+        
+        await foreach(Genre genre in HomeResponseDto.GetHome(mediaContext, userId, HttpContext.Request.Headers.AcceptLanguage[0]))
         {
-            Data = genres.Select(genre => new GenreRowDto
+            var genreRowDto = new GenreRowDto<GenreRowItemDto>
             {
                 Title = genre.Name,
                 MoreLink = $"/genre/{genre.Id}",
-                Id = genre.Id,
-                Items = genre.GenreMovies
-                    .Select(movie => new GenreRowItemDto(movie))
-                    .Concat(genre.GenreTvShows
-                        .Select(tv => new GenreRowItemDto(tv)))
+                Id = genre.Id.ToString(),
+                
+                Source = genre.GenreMovies.Select(movie => new HomeSourceDto(movie.MovieId, "movie"))
+                    .Concat(genre.GenreTvShows.Select(tv => new HomeSourceDto(tv.TvId, "tv")))
                     .Randomize()
                     .Take(36)
-            })
+            };
+            
+            tvIds.AddRange(genreRowDto.Source
+                .Where(source => source?.MediaType == "tv")
+                .Select(source => source.Id));
+            
+            movieIds.AddRange(genreRowDto.Source
+                .Where(source => source?.MediaType == "movie")
+                .Select(source => source.Id));
+            
+            genres.Add(genreRowDto);
+        }
+
+        List<Tv> tvData = [];
+        await foreach (Tv tv in HomeResponseDto.GetHomeTvs(mediaContext, tvIds, HttpContext.Request.Headers.AcceptLanguage[0]))
+        {
+            tvData.Add(tv);
+        }
+
+        List<Movie> movieData = [];
+        await foreach (Movie movie in HomeResponseDto.GetHomeMovies(mediaContext, movieIds, HttpContext.Request.Headers.AcceptLanguage[0]))
+        {
+            movieData.Add(movie);
+        }
+
+        foreach (var genre in genres)
+        {
+            genre.Items = genre.Source
+                .Where(item => item is not null)
+                .Select(source =>
+                {
+                    switch (source?.MediaType)
+                    {
+                        case "tv":
+                        {
+                            Tv? tv = tvData.FirstOrDefault(tv => tv.Id == source.Id);
+                            return tv?.Id == null ? null : new GenreRowItemDto(tv);
+                        }
+                        case "movie":
+                        {
+                            Movie? movie = movieData.FirstOrDefault(movie => movie.Id == source.Id);
+                            return movie?.Id == null ? null : new GenreRowItemDto(movie);
+                        }
+                        default:
+                        {
+                            return null;
+                        }
+                    }
+                })
+                .Where(item => item is not null)
+                .ToList();
+        }
+        
+        HomeResponseDto<GenreRowItemDto> result = new HomeResponseDto<GenreRowItemDto>
+        {
+            Data = genres
         };
         
-        return result;
+        return Ok(result);
     }
     
     [HttpGet]
@@ -87,7 +124,7 @@ public class HomeController: Controller
     [Route("screensaver")]
     public async Task<ScreensaverDto> Screensaver()
     {       
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
 
         await using MediaContext mediaContext = new();
         var data = await mediaContext.Images
@@ -129,7 +166,7 @@ public class HomeController: Controller
     [Route("/api/v{Version:apiVersion}/dashboard/permissions")]
     public async Task<PermissionsResponseDto> UserPermissions()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         
         await using MediaContext mediaContext = new();
         User? user = await mediaContext.Users

@@ -1,12 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using NoMercy.Providers.MusicBrainz.Models;
 using NoMercy.Providers.TMDB.Models.Collections;
 using NoMercy.Providers.TMDB.Models.Episode;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.People;
 using NoMercy.Providers.TMDB.Models.Season;
-using NoMercy.Providers.TMDB.Models.Shared;
 using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Database.Models
@@ -29,27 +31,17 @@ namespace NoMercy.Database.Models
         [JsonProperty("id")]
         public int Id { get; set; }
 
-        [JsonProperty("file_path")] public string? FilePath { get; set; }
-
         [JsonProperty("aspect_ratio")] public double AspectRatio { get; set; }
-
-        [JsonProperty("height")] public int? Height { get; set; }
-
-        [JsonProperty("iso_639_1")] public string? Iso6391 { get; set; }
-
+        [JsonProperty("file_path")] public string FilePath { get; set; }
         [JsonProperty("file_type")] public string? Name { get; set; }
-
+        [JsonProperty("height")] public int? Height { get; set; }
+        [JsonProperty("iso_639_1")] public string? Iso6391 { get; set; }
         [JsonProperty("site")] public string? Site { get; set; }
-
         [JsonProperty("size")] public int? Size { get; set; }
-
         [JsonProperty("type")] public string? Type { get; set; }
-
-        [JsonProperty("width")] public int? Width { get; set; }
-
         [JsonProperty("vote_average")] public double? VoteAverage { get; set; }
-
         [JsonProperty("vote_count")] public int? VoteCount { get; set; }
+        [JsonProperty("width")] public int? Width { get; set; }
 
         [JsonProperty("cast_credit_id")] public string? CastCreditId { get; set; }
         public virtual Cast? Cast { get; set; }
@@ -88,7 +80,7 @@ namespace NoMercy.Database.Models
         {
         }
 
-        public Image(NoMercy.Providers.TMDB.Models.Shared.Image image, TvShowAppends? show, string type)
+        public Image(NoMercy.Providers.TMDB.Models.Shared.Image image, TvShowAppends show, string type)
         {
             AspectRatio = image.AspectRatio;
             Height = image.Height;
@@ -99,9 +91,10 @@ namespace NoMercy.Database.Models
             VoteCount = image.VoteCount;
             TvId = show.Id;
             Type = type;
+            Site = "https://image.tmdb.org/t/p/";
         }
 
-        public Image(NoMercy.Providers.TMDB.Models.Shared.Image image, SeasonAppends? season, string type)
+        public Image(NoMercy.Providers.TMDB.Models.Shared.Image image, SeasonAppends season, string type)
         {
             AspectRatio = image.AspectRatio;
             Height = image.Height;
@@ -112,9 +105,10 @@ namespace NoMercy.Database.Models
             VoteCount = image.VoteCount;
             SeasonId = season.Id;
             Type = type;
+            Site = "https://image.tmdb.org/t/p/";
         }
 
-        public Image(NoMercy.Providers.TMDB.Models.Shared.Image image, EpisodeAppends? episode, string type)
+        public Image(NoMercy.Providers.TMDB.Models.Shared.Image image, EpisodeAppends episode, string type)
         {
             AspectRatio = image.AspectRatio;
             Height = image.Height;
@@ -125,9 +119,10 @@ namespace NoMercy.Database.Models
             VoteCount = image.VoteCount;
             EpisodeId = episode.Id;
             Type = type;
+            Site = "https://image.tmdb.org/t/p/";
         }
 
-        public Image(NoMercy.Providers.TMDB.Models.Shared.Image image, MovieAppends? movie, string type)
+        public Image(NoMercy.Providers.TMDB.Models.Shared.Image image, MovieAppends movie, string type)
         {
             AspectRatio = image.AspectRatio;
             Height = image.Height;
@@ -138,9 +133,10 @@ namespace NoMercy.Database.Models
             VoteCount = image.VoteCount;
             MovieId = movie.Id;
             Type = type;
+            Site = "https://image.tmdb.org/t/p/";
         }
 
-        public Image(Providers.TMDB.Models.Shared.Image image, CollectionAppends? collection, string type)
+        public Image(Providers.TMDB.Models.Shared.Image image, CollectionAppends collection, string type)
         {
             AspectRatio = image.AspectRatio;
             FilePath = image.FilePath;
@@ -151,8 +147,10 @@ namespace NoMercy.Database.Models
             Width = image.Width;
             CollectionId = collection.Id;
             Type = type;
+            Site = "https://image.tmdb.org/t/p/";
         }
-        public Image(Providers.TMDB.Models.Shared.Profile image, PersonAppends? person, string type)
+        
+        public Image(Providers.TMDB.Models.Shared.Profile image, PersonAppends person, string type)
         {
             AspectRatio = image.AspectRatio;
             FilePath = image.FilePath;
@@ -163,6 +161,47 @@ namespace NoMercy.Database.Models
             Width = image.Width;
             PersonId = person.Id;
             Type = type;
+            Site = "https://image.tmdb.org/t/p/";
         }
+
+        public Image(Providers.FanArt.Models.Image image, Providers.MusicBrainz.Models.Artist artist, string type)
+        {
+            AspectRatio = 1;
+            FilePath = image.Url.ToString()
+                .Replace("http://", "https://")
+                .Replace("https://assets.fanart.tv", "");
+            VoteCount = image.Likes;
+            ArtistId = artist.Id;
+            Name = artist.Name;
+            Type = type;
+            Site = "https://assets.fanart.tv";
+        }
+
+        public Image(Providers.FanArt.Models.Image input, Providers.MusicBrainz.Models.Release release, string type)
+        {
+            AspectRatio = 1;
+            FilePath = input.Url.ToString()
+                .Replace("http://", "https://")
+                .Replace("https://assets.fanart.tv", "");
+            VoteCount = input.Likes;
+            AlbumId = release.Id;
+            Name = release.Title;
+            Type = type;
+            Site = "https://assets.fanart.tv";
+        }
+
+        public Image(Providers.FanArt.Models.Image input, ReleaseGroup releaseReleaseGroup, string type)
+        {
+            AspectRatio = 1;
+            FilePath = input.Url.ToString()
+                .Replace("http://", "https://")
+                .Replace("https://assets.fanart.tv", "");
+            VoteCount = input.Likes;
+            AlbumId = releaseReleaseGroup.Id;
+            Name = releaseReleaseGroup.Title;
+            Type = type;
+            Site = "https://assets.fanart.tv";
+        }
+
     }
 }

@@ -11,7 +11,7 @@ public static class Register
     private static string GetDeviceName()
     {
         MediaContext mediaContext = new();
-        Configuration? device = mediaContext.Configuration?.FirstOrDefault(device => device.Key == "server_name");
+        Configuration? device = mediaContext.Configuration.FirstOrDefault(device => device.Key == "server_name");
         return device?.Value ?? Environment.MachineName;
     }
     

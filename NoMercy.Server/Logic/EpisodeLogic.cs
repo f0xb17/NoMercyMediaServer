@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
@@ -13,31 +14,27 @@ using LogLevel = NoMercy.Helpers.LogLevel;
 
 namespace NoMercy.Server.Logic;
 
-public class EpisodeLogic(TvShowAppends show, SeasonAppends season, MediaContext mediaContext)
+public class EpisodeLogic(TvShow show, SeasonDetails season)
 {
-    private readonly List<EpisodeAppends?> _episodeAppends = [];
-    
+    private readonly ConcurrentStack<EpisodeAppends> _episodeAppends = [];
+
     public async Task FetchEpisodes()
-    { 
-        await Parallel.ForEachAsync(season.Episodes, (episode, _) =>
+    {
+        await Parallel.ForEachAsync(season.Episodes, async (episode, _) =>
         {
             try
             {
-                using EpisodeClient episodeClient = new(show.Id, season.SeasonNumber, episode.EpisodeNumber);
-                using Task<EpisodeAppends> episodeTask = episodeClient.WithAllAppends();
-                lock (_episodeAppends)
-                {
-                    _episodeAppends.Add(episodeTask.Result);
-                }
+                using EpisodeClient episodeClient = new(show.Id, episode.SeasonNumber, episode.EpisodeNumber);
+                EpisodeAppends? episodeTask = await episodeClient.WithAllAppends();
+                if (episodeTask is null) return;
+                _episodeAppends.Push(episodeTask);
             }
             catch (Exception e)
             {
                 Logger.MovieDb(e, LogLevel.Error);
             }
-            
-            return default;
         });
-        
+
         await Store();
 
         await StoreTranslations();
@@ -49,77 +46,64 @@ public class EpisodeLogic(TvShowAppends show, SeasonAppends season, MediaContext
     {
         try
         {
+            Episode[] episodes = _episodeAppends.ToList()
+                .ConvertAll<Episode>(x => new Episode(x, show.Id, season.Id))
+                .ToArray();
 
-            lock (_episodeAppends)
-            {
-                Episode[] episodes = _episodeAppends
-                    .ConvertAll<Episode>(x => new Episode(x, show.Id, season.Id))
-                    .ToArray();
-                
-                mediaContext.Episodes.UpsertRange(episodes)
-                    .On(e => new { e.Id })
-                    .WhenMatched((es, ei) => new Episode
-                    {
-                        Id = ei.Id,
-                        Title = ei.Title,
-                        AirDate = ei.AirDate,
-                        EpisodeNumber = ei.EpisodeNumber,
-                        Overview = ei.Overview,
-                        ProductionCode = ei.ProductionCode,
-                        SeasonNumber = ei.SeasonNumber,
-                        Still = ei.Still,
-                        TvId = ei.TvId,
-                        SeasonId = ei.SeasonId,
-                        _colorPalette = ei._colorPalette,
-                    })
-                    .Run();
+            using MediaContext mediaContext = new MediaContext();
+            mediaContext.Episodes.UpsertRange(episodes)
+                .On(e => new { e.Id })
+                .WhenMatched((es, ei) => new Episode
+                {
+                    Id = ei.Id,
+                    Title = ei.Title,
+                    AirDate = ei.AirDate,
+                    EpisodeNumber = ei.EpisodeNumber,
+                    Overview = ei.Overview,
+                    ProductionCode = ei.ProductionCode,
+                    SeasonNumber = ei.SeasonNumber,
+                    Still = ei.Still,
+                    TvId = ei.TvId,
+                    SeasonId = ei.SeasonId,
+                    _colorPalette = ei._colorPalette,
+                })
+                .Run();
 
-                Logger.MovieDb($@"TvShow {show.Name}: Season {season.SeasonNumber}: Stored {season.Episodes.Length} episode{(season.Episodes.Length > 1 ? "s" : "")}"); 
-                
-            }
+            Logger.MovieDb(
+                $@"TvShow {show.Name}: Season {season.SeasonNumber}: Stored {season.Episodes.Length} episode{(season.Episodes.Length > 1 ? "s" : "")}");
         }
         catch (Exception e)
         {
             Logger.MovieDb(e, LogLevel.Error);
-            throw;
         }
-        
+
         return Task.CompletedTask;
     }
-    
-    private Task DispatchJobs()
-    {
-        lock (_episodeAppends)
-        {
-            foreach (var episode in _episodeAppends)
-            {
-                if (episode is null) continue;
 
-                try
-                {
-                    ColorPaletteJob colorPaletteJob = new ColorPaletteJob(id:episode.Id, model:"episode");
-                    JobDispatcher.Dispatch(colorPaletteJob, "data").Wait();
-                }
-                catch (Exception e)
-                {
-                    Logger.MovieDb(e, LogLevel.Error);
-                    throw;
-                }
-                    
-                try
-                {
-                    ImagesJob imagesJob = new ImagesJob(id:episode.Id, type:"episode", seasonNumber:season.SeasonNumber, episodeNumber:episode.EpisodeNumber);
-                    JobDispatcher.Dispatch(imagesJob, "queue", 2).Wait();
-                }
-                catch (Exception e)
-                {
-                    Logger.MovieDb(e, LogLevel.Error);
-                    throw;
-                }
+    private async Task DispatchJobs()
+    {
+        foreach (EpisodeAppends episode in _episodeAppends)
+        {
+            try
+            {
+                await new ColorPaletteJob(id: episode.Id, model: "episode").Handle();
+            }
+            catch (Exception e)
+            {
+                Logger.MovieDb(e, LogLevel.Error);
+            }
+
+            try
+            {
+                EpisodeImagesJob imagesJob = new EpisodeImagesJob(id: episode.Id,
+                    seasonNumber: episode.SeasonNumber, episodeNumber: episode.EpisodeNumber);
+                JobDispatcher.Dispatch(imagesJob, "data", 2);
+            }
+            catch (Exception e)
+            {
+                Logger.MovieDb(e, LogLevel.Error);
             }
         }
-        
-        return Task.CompletedTask;
     }
 
     public static async Task GetPalette(int id)
@@ -127,47 +111,40 @@ public class EpisodeLogic(TvShowAppends show, SeasonAppends season, MediaContext
         try
         {
             await using MediaContext mediaContext = new MediaContext();
-            var episode = await mediaContext.Episodes
+            Episode? episode = await mediaContext.Episodes
                 .FirstOrDefaultAsync(e => e.Id == id);
-            
-            if(episode is null) return;
 
-            lock (episode)
+            if (episode is { _colorPalette: "", Still: not null })
             {
-                if (episode is { _colorPalette: "", Still: not null })
-                {
-                    var palette = ImageLogic.GenerateColorPalette(stillPath: episode.Still).Result;
-                    episode._colorPalette = palette;
-                    mediaContext.SaveChanges();
-                }
-                
+                string palette = await ImageLogic.GenerateColorPalette(stillPath: episode.Still);
+                episode._colorPalette = palette;
+                await mediaContext.SaveChangesAsync();
             }
         }
         catch (Exception e)
         {
             Logger.MovieDb(e, LogLevel.Error);
-            throw;
         }
     }
 
-    public static async Task StoreImages(int show, int season, int id)
+    public static async Task StoreImages(int show, int season, int episodeNumber)
     {
         try
         {
-
             await using MediaContext mediaContext = new MediaContext();
-            
+
             Tv? tv = await mediaContext.Tvs
                 .FirstOrDefaultAsync(t => t.Id == show);
-            
-            if(tv is null) return;
-            
-            EpisodeClient episodeClient = new(show, season, id);
-            EpisodeAppends? episode = episodeClient.WithAllAppends().Result;
 
-            var images = episode.Images.Stills.ToList()
-                .ConvertAll<Image>(image => new Image(image:image, episode:episode, type:"still")) ?? [];
-            
+            if (tv is null) return;
+
+            EpisodeClient episodeClient = new(show, season, episodeNumber);
+            EpisodeAppends? episode = await episodeClient.WithAllAppends();
+            if (episode is null) return;
+
+            List<Image> images = episode.Images.Stills.ToList()
+                .ConvertAll<Image>(image => new Image(image: image, episode: episode, type: "still"));
+
             await mediaContext.Images.UpsertRange(images)
                 .On(v => new { v.FilePath, v.EpisodeId })
                 .WhenMatched((ts, ti) => new Image
@@ -176,6 +153,7 @@ public class EpisodeLogic(TvShowAppends show, SeasonAppends season, MediaContext
                     FilePath = ti.FilePath,
                     Height = ti.Height,
                     Iso6391 = ti.Iso6391,
+                    Site = ti.Site,
                     VoteAverage = ti.VoteAverage,
                     VoteCount = ti.VoteCount,
                     Width = ti.Width,
@@ -184,81 +162,79 @@ public class EpisodeLogic(TvShowAppends show, SeasonAppends season, MediaContext
                 })
                 .RunAsync();
 
-            foreach (var image in images)
+            foreach (Image image in images)
             {
                 if (string.IsNullOrEmpty(image.FilePath)) continue;
-                ColorPaletteJob colorPaletteJob = new ColorPaletteJob(filePath:image.FilePath, model:"image");
-                JobDispatcher.Dispatch(colorPaletteJob, "data").Wait();
+
+                try
+                {
+                    await new ColorPaletteJob(filePath: image.FilePath, model: "image", image.Iso6391).Handle();
+                }
+                catch (Exception e)
+                {
+                    Logger.MovieDb(e, LogLevel.Error);
+                }
             }
-            
-            Logger.MovieDb($@"TvShow {tv.Title}, Season {episode.SeasonNumber}, Episode {episode.EpisodeNumber}: Images stored");
+
+            Logger.MovieDb(
+                $@"TvShow {tv.Title}, Season {episode.SeasonNumber}, Episode {episode.EpisodeNumber}: Images stored");
             await Task.CompletedTask;
         }
         catch (Exception e)
         {
             Logger.MovieDb(e, LogLevel.Error);
-            throw;
         }
-
     }
 
     private Task StoreTranslations()
     {
-        lock (_episodeAppends)
+        foreach (EpisodeAppends episode in _episodeAppends)
         {
-            foreach (var episode in _episodeAppends)
+            try
             {
-                if (episode is null) continue;
+                Translation[] translations = episode.Translations.Translations.ToList()
+                    .ConvertAll<Translation>(x => new Translation(x, episode)).ToArray();
 
-                try
-                {
-                    var translations = episode.Translations.Translations.ToList()
-                        .ConvertAll<Translation>(x => new Translation(x, episode)).ToArray() ?? [];
+                using MediaContext mediaContext = new MediaContext();
+                mediaContext.Translations
+                    .UpsertRange(translations.Where(translation =>
+                        translation.Title != null || translation.Overview != ""))
+                    .On(t => new { t.Iso31661, t.Iso6391, t.EpisodeId })
+                    .WhenMatched((ts, ti) => new Translation
+                    {
+                        Iso31661 = ti.Iso31661,
+                        Iso6391 = ti.Iso6391,
+                        Name = ti.Name,
+                        EnglishName = ti.EnglishName,
+                        Title = ti.Title,
+                        Overview = ti.Overview,
+                        Homepage = ti.Homepage,
+                        Biography = ti.Biography,
+                        TvId = ti.TvId,
+                        SeasonId = ti.SeasonId,
+                        EpisodeId = ti.EpisodeId,
+                        MovieId = ti.MovieId,
+                        CollectionId = ti.CollectionId,
+                        PersonId = ti.PersonId,
+                    })
+                    .Run();
 
-                    mediaContext.Translations
-                        .UpsertRange(translations.Where(translation =>
-                            translation.Title != null || translation.Overview != ""))
-                        .On(t => new { t.Iso31661, t.Iso6391, t.EpisodeId })
-                        .WhenMatched((ts, ti) => new Translation
-                        {
-                            Iso31661 = ti.Iso31661,
-                            Iso6391 = ti.Iso6391,
-                            Name = ti.Name,
-                            EnglishName = ti.EnglishName,
-                            Title = ti.Title,
-                            Overview = ti.Overview,
-                            Homepage = ti.Homepage,
-                            Biography = ti.Biography,
-                            TvId = ti.TvId,
-                            SeasonId = ti.SeasonId,
-                            EpisodeId = ti.EpisodeId,
-                            MovieId = ti.MovieId,
-                            CollectionId = ti.CollectionId,
-                            PersonId = ti.PersonId,
-                        })
-                        .Run();
-
-                    Logger.MovieDb(
-                        $@"TvShow {show?.Name}, Season {season.SeasonNumber}, Episode {episode.EpisodeNumber}: Translations stored");
-
-                }
-                catch (Exception e)
-                {
-                    Logger.MovieDb(e, LogLevel.Error);
-                    throw;
-                }
+                Logger.MovieDb(
+                    $@"TvShow {show?.Name}, Season {season.SeasonNumber}, Episode {episode.EpisodeNumber}: Translations stored");
+            }
+            catch (Exception e)
+            {
+                Logger.MovieDb(e, LogLevel.Error);
             }
         }
-        
+
         return Task.CompletedTask;
     }
 
     public void Dispose()
     {
-        lock (_episodeAppends)
-        {
-            _episodeAppends.Clear();
-        }
+        _episodeAppends.Clear();
+
         GC.Collect();
         GC.WaitForFullGCComplete();
     }

@@ -1,12 +1,10 @@
-﻿using System.Net;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
@@ -14,40 +12,46 @@ using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Socket;
 using NoMercy.Server.app.Http.Middleware;
 using NoMercy.Server.system;
 
 namespace NoMercy.Server
 {
-    public class Startup(IConfiguration configuration)
+    public class Startup(IConfiguration _)
     {
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMemoryCache();
             services.AddLogging();
+            // services.AddSingleton<AniDbBaseClient>();
             services.AddSingleton<JobQueue>();
+            services.AddScoped<Networking>();
+            
             services.AddControllers().AddJsonOptions(jsonOptions =>
             {
                 jsonOptions.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-                jsonOptions.JsonSerializerOptions.IgnoreNullValues = true;
+                jsonOptions.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
             });
+            
+            services.AddDbContext<QueueContext>(optionsAction =>
+            {
+                optionsAction.UseSqlite($"Data Source={AppFiles.QueueDatabase}");
+            });
+            services.AddTransient<QueueContext>();
+            
+            services.AddDbContext<MediaContext>(optionsAction =>
+            {
+                optionsAction.UseSqlite($"Data Source={AppFiles.MediaDatabase} Pooling=True",
+                    o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+            });
+            services.AddTransient<MediaContext>();
 
             services.AddControllers().AddNewtonsoftJson(options =>
                 options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore
             );
-
-            services.Configure<RequestLocalizationOptions>(options =>
-            {
-                options.RequestCultureProviders.Insert(0, new CustomRequestCultureProvider(context =>
-                {                    
-                    var userLangs = context.Request.Headers["Accept-Language"].ToString();
-                    var firstLang = userLangs.Split(',').FirstOrDefault();
-                    var defaultLang = string.IsNullOrEmpty(firstLang) ? "en" : firstLang;
-                    return Task.FromResult(new ProviderCultureResult(defaultLang, defaultLang))!;
-                }));
-            });
-
+            
             services.ConfigureHttpJsonOptions(config =>
             {
                 config.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -207,8 +211,6 @@ namespace NoMercy.Server
 
         public static void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.UseDeveloperExceptionPage();
-            
             app.UseRouting();
             app.UseCors("AllowNoMercyOrigins");
 
@@ -216,18 +218,18 @@ namespace NoMercy.Server
             app.UseResponseCompression();
             app.UseRequestLocalization();
             app.UseResponseCaching();
-
+            
             app.UseMiddleware<LocalizationMiddleware>();
+            app.UseMiddleware<TokenParamAuthMiddleware>();
             
             app.UseAuthentication();
-            
-            app.UseMiddleware<TokenParamAuthMiddleware>();
             
             app.UseAuthorization();
             
             app.UseMiddleware<AccessLogMiddleware>();
             // if (env.IsDevelopment())
             // {
+            app.UseDeveloperExceptionPage();
             app.UseSwagger();
             app.UseSwaggerUI(options =>
             {
@@ -245,7 +247,7 @@ namespace NoMercy.Server
             
             app.UseWebSockets().UseEndpoints(endpoints =>
             {
-                endpoints.MapHub<PingPongHub>("/socket", options =>
+                endpoints.MapHub<VideoHub>("/socket", options =>
                 {
                     options.Transports = HttpTransportType.WebSockets;
                     options.CloseOnAuthenticationExpiration = true;
@@ -266,13 +268,6 @@ namespace NoMercy.Server
                     RequestPath = new PathString($"/{folder.Id}"),
                     ServeUnknownFileTypes = true,
                     HttpsCompression = HttpsCompressionMode.Compress,
-                    OnPrepareResponse = ctx =>
-                    {
-                        if (ctx.Context.User.Identity?.IsAuthenticated is false)
-                        {
-                            ctx.Context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                        }
-                    }
                 });
 
                 if (!env.IsDevelopment()) continue;

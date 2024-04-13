@@ -1,4 +1,4 @@
-﻿// ReSharper disable InconsistentNaming
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database.Models;
@@ -8,16 +8,17 @@ namespace NoMercy.Database;
 
 public class QueueContext : DbContext
 {
+    public QueueContext(DbContextOptions<QueueContext> options) : base(options)
+    {
+    }
 
+    public QueueContext()
+    {
+    }
+    
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
-        options.UseSqlite($"Data Source={AppFiles.QueueDatabase};Pooling=True", sqliteOptionsAction =>
-        {
-            sqliteOptionsAction.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery);
-        });
-        
-        options.EnableDetailedErrors();
-        options.EnableSensitiveDataLogging();
+        options.UseSqlite($"Data Source={AppFiles.QueueDatabase}; Pooling=True; Cache=Shared");
     }
     
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

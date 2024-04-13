@@ -1,5 +1,9 @@
-using System.Collections.Concurrent;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+using System.Collections.Concurrent;
+using System.Drawing;
+using NoMercy.Helpers;
+using LogLevel = NoMercy.Helpers.LogLevel;
 
 namespace NoMercy.Providers.Helpers;
 
@@ -33,9 +37,11 @@ public class Queue(QueueOptions options)
     private State _state = State.Idle;
     private QueueOptions Options { get; } = options;
     private SemaphoreSlim Semaphore { get; } = new(options.Concurrent, options.Concurrent);
+    
+    private readonly Random _r = new();
 
-    public event EventHandler<QueueEventArgs> Resolve = null!;
-    public event EventHandler<QueueEventArgs> Reject = null!;
+    public event EventHandler<QueueEventArgs> Resolve;
+    public event EventHandler<QueueEventArgs> Reject;
     public event EventHandler? Start;
     public event EventHandler? Stop;
     public event EventHandler? End;
@@ -74,7 +80,7 @@ public class Queue(QueueOptions options)
             {
                 await Dequeue();
             }
-            catch (Exception e)
+            catch (Exception _)
             {
                 //
             }
@@ -83,18 +89,18 @@ public class Queue(QueueOptions options)
 
     private Task Execute()
     {
-        var tasks = new ConcurrentDictionary<string, Func<Task>>(_tasks)
+        var tasks = new ConcurrentDictionary<string, Func<Task>?>(_tasks ?? [])
             .Where(_ => _currentlyHandled < Options.Concurrent).ToList();
         
-        foreach (KeyValuePair<string, Func<Task>> task in tasks)
+        foreach (KeyValuePair<string, Func<Task>?> task in tasks ?? [])
         {
             _currentlyHandled++;
-            lock (_tasks)
-                _tasks.Remove(task.Key);
+            lock (_tasks ?? [])
+                _tasks?.Remove(task.Key);
                 
             try
             {
-                var result = task.Value.Invoke();
+                var result = task.Value?.Invoke();
                 Resolve?.Invoke(this, new QueueEventArgs { Result = result });
             }
             catch (Exception ex)
@@ -121,13 +127,19 @@ public class Queue(QueueOptions options)
         });
     }
 
-    public async Task<T> Enqueue<T>(Func<Task<T>> task, string? url)
+    public async Task<T> Enqueue<T>(Func<Task<T>> task, string? url, bool? priority = false)
     {
         await Semaphore.WaitAsync();
         
         var tcs = new TaskCompletionSource<T>();
 
         string uniqueId = Ulid.NewUlid().ToString();
+        
+        if (priority is true)
+        {
+            uniqueId = _r.Next(0, int.MaxValue).ToString();
+        }
+        
         lock(_tasks)
             _tasks.Add(uniqueId, async () =>
             {
@@ -139,9 +151,9 @@ public class Queue(QueueOptions options)
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(@"Url failed: {0} {1}", url, ex.Message);
                     Reject?.Invoke(this, new QueueEventArgs { Error = ex });
                     tcs.SetException(ex);
+                    Logger.App($"Url failed: {url} {ex.Message}", LogLevel.Error);
                 }
                 finally
                 {
@@ -155,7 +167,7 @@ public class Queue(QueueOptions options)
 
         if (Options.Start && _state != State.Stopped) StartQueue();
 
-        return tcs.Task.Result;
+        return await tcs.Task;
     }
 
     private void Clear()
@@ -164,7 +176,16 @@ public class Queue(QueueOptions options)
             _tasks.Clear();
     }
 
-    private int Size => _tasks.Count;
+    private int Size
+    {
+        get
+        {
+            lock (_tasks)
+            {
+                return _tasks?.Count ?? 0;
+            }
+        }
+    }
 
     private bool IsEmpty => Size == 0;
 

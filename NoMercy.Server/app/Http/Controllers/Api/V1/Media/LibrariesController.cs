@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
+using NoMercy.Database.Models;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 
@@ -14,130 +17,84 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 [Authorize, Route("api/v{Version:apiVersion}/libraries")]
 public class LibrariesController : Controller
 {
+    [NonAction]
+    private Guid GetUserId()
+    {
+        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+    }
+
     [HttpGet]
-    public async Task<LibrariesResponseDto> Libraries()
+    public async Task<LibrariesResponseDto> GetLibraries()
     {       
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        List<LibrariesResponseItemDto> libraries = [];
+        Guid userId = GetUserId();
 
         await using MediaContext mediaContext = new();
-        var libraries = await mediaContext.Libraries
-            .AsNoTracking()
-            
-            .Where(library => library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null
-            )
-            
-            .Include(library => library.FolderLibraries)
-                .ThenInclude(folderLibrary => folderLibrary.Folder)
-                    .ThenInclude(folder => folder.EncoderProfileFolder)
-                        .ThenInclude(library => library.EncoderProfile)
-            
-            .Include(library => library.LanguageLibraries)
-                .ThenInclude(languageLibrary => languageLibrary.Language)
-            
-            .OrderBy(library => library.Order)
-            .ToListAsync();
+        await foreach (Library? library in LibrariesResponseDto.GetLibraries(mediaContext, userId, 
+                           HttpContext.Request.Headers.AcceptLanguage[0] ?? string.Empty))
+        {
+            if (library is null) continue;
+            libraries.Add(new LibrariesResponseItemDto(library));
+        }
 
         return new LibrariesResponseDto
         {
-            Data = libraries
-                .Select(library => new LibrariesResponseItemDto(library))
+            Data = libraries.OrderBy(library => library.Order)
         };
     }
     
     [HttpGet]
     [Route("{libraryId}")]
-    public async Task<LibraryResponseDto> Library(Ulid libraryId, [FromQuery] PageRequestDto requestDto)
+    public async Task<IActionResult> GetLibrary(Ulid libraryId, [FromQuery] PageRequestDto request)
     {        
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
 
         await using MediaContext mediaContext = new();
-        var library = await mediaContext.Libraries
-            .AsNoTracking()
-            
-            .Where(library => library.Id == libraryId)
-            .Where(library => library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null
-            )
-            
-            .Take(requestDto.Take)
-            .Skip(requestDto.Page * requestDto.Take)
-            
-            .Include(library => library.LibraryMovies
-                .Where(libraryMovie => libraryMovie.Movie.VideoFiles
-                    .Any(videoFile => videoFile.Folder != null) == true
-                )
-            )
-                .ThenInclude(libraryMovie => libraryMovie.Movie)
-                    .ThenInclude(movie => movie.VideoFiles
-                        .Where(videoFile => videoFile.Folder != null)
-                    )
-            
-            .Include(library => library.LibraryMovies)
-                .ThenInclude(libraryMovie => libraryMovie.Movie.Media)
-            
-            .Include(library => library.LibraryMovies)
-                .ThenInclude(libraryMovie => libraryMovie.Movie.Images)
-            
-            .Include(library => library.LibraryMovies)
-                .ThenInclude(libraryMovie => libraryMovie.Movie.GenreMovies)
-                    .ThenInclude(genreMovie => genreMovie.Genre)
-            
-            .Include(library => library.LibraryMovies)
-                .ThenInclude(libraryMovie => libraryMovie.Movie.Translations
-                    .Where(translation => translation.Iso6391 == HttpContext.Request.Headers.AcceptLanguage[0]))
-            
-            .Include(library => library.LibraryMovies)
-                .ThenInclude(libraryMovie => libraryMovie.Movie.CertificationMovies)
-                    .ThenInclude(certificationMovie => certificationMovie.Certification)
-            
-            .Include(library => library.LibraryTvs
-                .Where(libraryTv => libraryTv.Tv.Episodes
-                    .Any(episode => episode.VideoFiles
-                        .Any(videoFile => videoFile.Folder != null) == true
-                    ) == true
-                )
-            )
-                .ThenInclude(libraryTv => libraryTv.Tv)
-                    .ThenInclude(tv => tv.Episodes)
-                        .ThenInclude(episode => episode.VideoFiles
-                            .Where(videoFile => videoFile.Folder != null)
-                        )
-            
-            .Include(library => library.LibraryTvs)
-                .ThenInclude(libraryTv => libraryTv.Tv.Media)
-            
-            .Include(library => library.LibraryTvs)
-                .ThenInclude(libraryTv => libraryTv.Tv.Images)
-            
-            .Include(library => library.LibraryTvs)
-                .ThenInclude(libraryTv => libraryTv.Tv.GenreTvs)
-                    .ThenInclude(genreTv => genreTv.Genre)
-            
-            .Include(library => library.LibraryTvs)
-                .ThenInclude(libraryTv => libraryTv.Tv.Translations
-                    .Where(translation => translation.Iso6391 == HttpContext.Request.Headers.AcceptLanguage[0]))
-            
-            .Include(library => library.LibraryTvs)
-                .ThenInclude(libraryTv => libraryTv.Tv.CertificationTvs)
-                    .ThenInclude(certificationTv => certificationTv.Certification)
-            
-            .FirstAsync();
-        
-        return new LibraryResponseDto
+        var library = await LibraryResponseDto.GetLibrary(mediaContext, userId, libraryId, 
+            HttpContext.Request.Headers.AcceptLanguage[0] ?? string.Empty, request.Take, request.Page);
+
+        if (request.Version != "lolomo")
         {
-            Data = library.LibraryMovies
+            return Ok(new LibraryResponseDto
+            {
+                Data = library.LibraryMovies
                     .Select(movie => new LibraryResponseItemDto(movie))
-                    
                     .Concat(library.LibraryTvs
                         .Select(tv => new LibraryResponseItemDto(tv)))
                     
                     .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort),
+
+                NextId = (library.LibraryMovies.Count + library.LibraryTvs.Count) < request.Take
+                    ? null
+                    : (library.LibraryMovies.Count + library.LibraryTvs.Count) + (request.Page * request.Take)
+            });
+        }
+        
+        string[] numbers = ["*", "#", "'", "\"", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
+        string[] letters = ["#", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+
+        return Ok(new LoloMoResponseDto<LibraryResponseItemDto>
+        {
+            Data = letters.Select(genre => new LoloMoRowDto<LibraryResponseItemDto>
+            {
+                Title = genre,
+                Id = genre,
             
-            NextId = (library.LibraryMovies.Count + library.LibraryTvs.Count) < requestDto.Take
-                ? null 
-                : (library.LibraryMovies.Count + library.LibraryTvs.Count) + (requestDto.Page * requestDto.Take)
-        };
+                Items = library.LibraryMovies
+                    .Where(libraryMovie => genre == "#" 
+                        ? numbers.Any(p=> libraryMovie.Movie.Title.StartsWith(p))
+                        : libraryMovie.Movie.Title.StartsWith(genre))
+                    .Select(movie => new LibraryResponseItemDto(movie))
+                    
+                    .Concat(library.LibraryTvs
+                        .Where(libraryTv => genre == "#" 
+                            ? numbers.Any(p=> libraryTv.Tv.Title.StartsWith(p))
+                            : libraryTv.Tv.Title.StartsWith(genre))
+                        .Select(tv => new LibraryResponseItemDto(tv)))
+                    
+                    .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort)
+            })
+        });
     }
 
 }

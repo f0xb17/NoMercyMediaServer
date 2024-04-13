@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -8,31 +9,33 @@ namespace NoMercy.Database.Models
     [PrimaryKey(nameof(Id))]
     public class Album: ColorPaletteTimeStamps
     {
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        [JsonProperty("id")] public Guid Id { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [JsonProperty("id")] 
+        public Guid Id { get; set; }
         
-        [StringLength(255)]
-        [JsonProperty("name")] public required string Name { get; set; }
-        
-        [StringLength(255)]
+        [JsonProperty("name")] public string Name { get; set; }
         [JsonProperty("description")] public string? Description { get; set; }
-        
-        [StringLength(255)]
-        [JsonProperty("folder")] public required string Folder { get; set; }
-        
-        [StringLength(255)] 
         [JsonProperty("cover")] public string? Cover { get; set; }
+        [JsonProperty("country")] public string? Country { get; set; }
+        [JsonProperty("year")] public int Year { get; set; }
+        [JsonProperty("tracks")] public int Tracks { get; set; }
         
-        [StringLength(2)]
-        [JsonProperty("country")] public required string Country { get; set; }
+        [JsonProperty("folder")] public string? Folder { get; set; } 
+        [JsonProperty("host_folder")] public string? HostFolder { get; set; }
         
-        [StringLength(4)]
-        [JsonProperty("year")] public required int Year { get; set; }
-        
-        [JsonProperty("genre")] public required int Tracks { get; set; }
-        
-        public required Ulid LibraryId { get; set; }
+        [JsonProperty("library_id")] public Ulid? LibraryId { get; set; }
         public virtual Library Library { get; set; }
-
+        
+        [JsonProperty("folder_id")] public Ulid? FolderId { get; set; }
+        public virtual Folder LibraryFolder { get; set; }
+        
+        [JsonProperty("album_track")]
+        public virtual ICollection<AlbumTrack> AlbumTrack { get; set; }
+        
+        [JsonProperty("album_artist")]
+        public virtual ICollection<AlbumArtist> AlbumArtist { get; set; }
+        
+        [JsonProperty("album_user")]
+        public virtual ICollection<AlbumUser> AlbumUser { get; set; }
     }
 }

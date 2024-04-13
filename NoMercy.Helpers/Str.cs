@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text;
+
 namespace NoMercy.Helpers;
 
 public static class Str
@@ -26,5 +29,30 @@ public static class Str
     public static List<T> SortByMatchPercentage<T>(IEnumerable<T> array, Func<T, string> keySelector, string match)
     {
         return array.OrderBy(item => MatchPercentage(match, keySelector(item))).ToList();
+    }
+    
+    public static string RemoveAccents(this string s)
+    {
+        Encoding destEncoding = Encoding.GetEncoding("iso-8859-8");
+
+        return destEncoding.GetString(
+            Encoding.Convert(Encoding.UTF8, destEncoding, Encoding.UTF8.GetBytes(s)));
+    }
+
+    public static string RemoveDiacritics(this string text)
+    {
+        string formD = text.Normalize(NormalizationForm.FormD);
+        StringBuilder sb = new StringBuilder();
+
+        foreach (char ch in formD)
+        {
+            UnicodeCategory uc = CharUnicodeInfo.GetUnicodeCategory(ch);
+            if (uc != UnicodeCategory.NonSpacingMark)
+            {
+                sb.Append(ch);
+            }
+        }
+
+        return sb.ToString().Normalize(NormalizationForm.FormC);
     }
 }

@@ -11,7 +11,9 @@ public class ColorPaletteJob : IShouldQueue
     private readonly string? _filePath;
     private readonly string? _type;
     private readonly string _model;
+    private readonly string? _language;
 
+    
     public ColorPaletteJob(long id, string model, string type)
     {
         _id = (int)id;
@@ -25,6 +27,13 @@ public class ColorPaletteJob : IShouldQueue
         _model = model;
     }
 
+    public ColorPaletteJob(string filePath, string model, string? language)
+    {
+        _filePath = filePath;
+        _model = model;
+        _language = language;
+    }
+    
     public ColorPaletteJob(string filePath, string model)
     {
         _filePath = filePath;
@@ -39,7 +48,11 @@ public class ColorPaletteJob : IShouldQueue
                 await Task.CompletedTask;
                 return;
             case "image":
-                await ImageLogic.GetPalette(_filePath);
+                
+                bool shouldDownload = _language is null || _language is "en" || _language is "" || 
+                                      _language == System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
+                
+                await ImageLogic.GetPalette(_filePath, shouldDownload);
                 break;
             case "collection":
                 await CollectionLogic.GetPalette(_id);
@@ -59,21 +72,36 @@ public class ColorPaletteJob : IShouldQueue
             case "movie":
                 await MovieLogic.GetPalette(_id);
                 break;
-            case "recommendation" when _type == "movie":
-                await MovieLogic.GetRecommendationPalette(_id);
+            case "recommendation":
+                switch (_type)
+                {
+                    case "movie":
+                        await MovieLogic.GetRecommendationPalette(_id);
+                        break;
+                    case "tv":
+                        await TvShowLogic.GetRecommendationPalette(_id);
+                        break;
+                    default:
+                        Logger.Queue(@"Invalid model Type: " + _model + @" id: " +_id + @" type: " + _type, LogLevel.Error);
+                        break;
+                }
                 break;
-            case "recommendation" when _type == "tv":
-                await TvShowLogic.GetRecommendationPalette(_id);
-                break;
-            case "similar" when _type == "movie":
-                await MovieLogic.GetSimilarPalette(_id);
-                break;
-            case "similar" when _type == "tv":
-                await TvShowLogic.GetSimilarPalette(_id);
+            case "similar":
+                switch (_type)
+                {
+                    case "movie":
+                        await MovieLogic.GetSimilarPalette(_id);
+                        break;
+                    case "tv":
+                        await TvShowLogic.GetSimilarPalette(_id);
+                        break;
+                    default:
+                        Logger.Queue(@"Invalid model Type: " + _model + @" id: " +_id + @" type: " + _type, LogLevel.Error); 
+                        break;
+                }
                 break;
             default:
-                Logger.Queue(@"Invalid model Type" + _model + @" " +_id, LogLevel.Error);
-            
+                Logger.Queue(@"Invalid model Type: " + _model + @" id: " +_id + @" type: " + _type, LogLevel.Error);
                 break;
         }
     }

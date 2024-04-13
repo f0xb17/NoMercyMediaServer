@@ -3,7 +3,7 @@ namespace NoMercy.Helpers;
 
 public static class Mutators
 {
-    private static Random rand = new();  
+    private static Random _rand = new();  
 
     // public static void Shuffle<T>(this IList<T> list)  
     // {  

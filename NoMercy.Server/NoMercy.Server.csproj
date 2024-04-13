@@ -25,9 +25,10 @@
         <PackageReference Include="ksemenenko.ColorThief" Version="1.1.1.4"/>
         <PackageReference Include="Microsoft.AspNet.SignalR.Core" Version="2.4.3" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.2" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.4" />
         <PackageReference Include="Microsoft.Extensions.Diagnostics.ResourceMonitoring" Version="8.2.0" />
         <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="7.2.0"/>
+        <PackageReference Include="MimeMapping" Version="3.0.1" />
         <PackageReference Include="Mono.Nat" Version="3.0.4"/>
         <PackageReference Include="MovieFileLibrary" Version="2.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
@@ -65,5 +66,10 @@
       <Folder Include="app\Http\Listeners\" />
       <Folder Include="app\Http\Resources\" />
       <Folder Include="app\Providers\" />
+    </ItemGroup>
+    <ItemGroup>
+      <Reference Include="AniDB">
+        <HintPath>..\NoMercy.Providers\AniDb\core\AniDB.dll</HintPath>
+      </Reference>
     </ItemGroup>
 </Project>

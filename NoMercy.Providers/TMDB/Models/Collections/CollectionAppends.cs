@@ -7,6 +7,5 @@ namespace NoMercy.Providers.TMDB.Models.Collections;
 public class CollectionAppends: CollectionDetails
 {
     [JsonProperty("images")] public CollectionImages Images { get; set; }
-
     [JsonProperty("translations")] public CombinedTranslations Translations { get; set; }
 }

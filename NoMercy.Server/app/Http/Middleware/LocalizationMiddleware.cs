@@ -1,9 +1,3 @@
-using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
-using NoMercy.Database;
-using NoMercy.Database.Models;
-using NoMercy.Helpers;
-
 namespace NoMercy.Server.app.Http.Middleware;
 
 public class LocalizationMiddleware
@@ -17,17 +11,19 @@ public class LocalizationMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var culture = new RequestLocalizationOptions().RequestCultureProviders.FirstOrDefault();
+        var userLanguages = context.Request.Headers["Accept-Language"].ToString();
         
-        if (culture is not null)
+        // if the language string does not match the format "{language}-{country}" we add the uppercase version of the language
+        if(!userLanguages.Contains("-"))
         {
-            var userLanguages = context.Request.Headers["Accept-Language"].ToString();
-            var firstLang = userLanguages.Split(',').FirstOrDefault()?.Split('-');
+            userLanguages = userLanguages + "-" + userLanguages.ToUpper();
+        }
+        
+        var firstLang = userLanguages.Split(',').FirstOrDefault()?.Split('-');
 
-            if (firstLang is not null && firstLang.Length > 0)
-            {
-                context.Request.Headers.AcceptLanguage = firstLang;
-            }
+        if (firstLang is not null && firstLang.Length > 0)
+        {
+            context.Request.Headers.AcceptLanguage = firstLang;
         }
        
         await _next(context);

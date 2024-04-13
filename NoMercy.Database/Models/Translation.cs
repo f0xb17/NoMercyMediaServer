@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Providers.TMDB.Models.Collections;
@@ -26,7 +28,7 @@ namespace NoMercy.Database.Models
 
         [JsonProperty("iso_3166_1")] public string Iso31661 { get; set; }
         [JsonProperty("iso_639_1")] public string Iso6391 { get; set; }
-        [JsonProperty("name")] public string Name { get; set; }
+        [JsonProperty("name")] public string? Name { get; set; }
         [JsonProperty("english_name")] public string EnglishName { get; set; }
         [JsonProperty("title")] public string? Title { get; set; }
         [JsonProperty("overview")] public string? Overview { get; set; }
@@ -59,36 +61,36 @@ namespace NoMercy.Database.Models
         {
             Iso31661 = translation.Iso31661;
             Iso6391 = translation.Iso6391;
-            Name = translation.Name;
+            Name = translation.Name == "" ? null : translation.Name;
+            Title = translation.Data.Title == "" ? null : translation.Data.Title;
+            Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
             EnglishName = translation.EnglishName;
-            Title = translation.Data?.Title;
-            Overview = translation.Data?.Overview;
-            Homepage = translation.Data?.Homepage?.ToString();
-            Biography = translation.Data?.Biography;
+            Homepage = translation.Data.Homepage?.ToString();
+            Biography = translation.Data.Biography;
             TvId = show.Id;
         }
 
-        public Translation(CombinedTranslation translation, SeasonAppends? season)
+        public Translation(CombinedTranslation translation, SeasonAppends season)
         {
             Iso31661 = translation.Iso31661;
             Iso6391 = translation.Iso6391;
-            Name = translation.Name;
+            Name = translation.Name == "" ? null : translation.Name;
+            Title = translation.Data.Title == "" ? null : translation.Data.Title;
+            Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
             EnglishName = translation.EnglishName;
-            Title = translation.Data?.Title;
-            Overview = translation.Data?.Overview;
-            Homepage = translation.Data?.Homepage?.ToString();
+            Homepage = translation.Data.Homepage?.ToString();
             SeasonId = season.Id;
         }
 
-        public Translation(CombinedTranslation translation, EpisodeAppends? episode)
+        public Translation(CombinedTranslation translation, EpisodeAppends episode)
         {
             Iso31661 = translation.Iso31661;
             Iso6391 = translation.Iso6391;
-            Name = translation.Name;
+            Name = translation.Name == "" ? null : translation.Name;
+            Title = translation.Data.Title == "" ? null : translation.Data.Title;
+            Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
             EnglishName = translation.EnglishName;
-            Title = translation.Data?.Title;
-            Overview = translation.Data?.Overview;
-            Homepage = translation.Data?.Homepage?.ToString();
+            Homepage = translation.Data.Homepage?.ToString();
             EpisodeId = episode.Id;
         }
 
@@ -96,11 +98,11 @@ namespace NoMercy.Database.Models
         {
             Iso31661 = translation.Iso31661;
             Iso6391 = translation.Iso6391;
-            Name = translation.Name;
+            Name = translation.Name == "" ? null : translation.Name;
+            Title = translation.Data.Title == "" ? null : translation.Data.Title;
+            Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
             EnglishName = translation.EnglishName;
-            Title = translation.Data?.Title;
-            Overview = translation.Data?.Overview;
-            Homepage = translation.Data?.Homepage?.ToString();
+            Homepage = translation.Data.Homepage?.ToString();
             MovieId = movie.Id;
         }
 
@@ -108,11 +110,11 @@ namespace NoMercy.Database.Models
         {
             Iso31661 = translation.Iso31661;
             Iso6391 = translation.Iso6391;
-            Name = translation.Name;
+            Name = translation.Name == "" ? null : translation.Name;
+            Title = translation.Data.Title == "" ? null : translation.Data.Title;
+            Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
             EnglishName = translation.EnglishName;
-            Title = translation.Data?.Title;
-            Overview = translation.Data?.Overview;
-            Homepage = translation.Data?.Homepage?.ToString();
+            Homepage = translation.Data.Homepage?.ToString();
             CollectionId = collection.Id;
         }
 
@@ -120,12 +122,12 @@ namespace NoMercy.Database.Models
         {
             Iso31661 = translation.Iso31661;
             Iso6391 = translation.Iso6391;
-            Name = translation.Name;
+            Name = translation.Name == "" ? null : translation.Name;
+            Title = translation.Data.Title == "" ? null : translation.Data.Title;
+            Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
             EnglishName = translation.EnglishName;
-            Title = translation.Data?.Title;
-            Overview = translation.Data?.Overview;
-            Homepage = translation.Data?.Homepage?.ToString();
-            Biography = translation.Data?.Biography;
+            Homepage = translation.Data.Homepage?.ToString();
+            Biography = translation.Data.Biography;
             PersonId = person.Id;
         }
 
@@ -134,20 +136,20 @@ namespace NoMercy.Database.Models
             Iso31661 = translation.Iso31661;
             Iso6391 = translation.Iso6391;
             Name = translation.Name;
+            Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
             EnglishName = translation.EnglishName;
-            Overview = translation.Data?.Overview;
-            PersonId = person.Id;
+            PersonId = person?.Id;
         }
 
         public Translation(CombinedTranslation translation, CollectionAppends collection)
         {
             Iso31661 = translation.Iso31661;
             Iso6391 = translation.Iso6391;
-            Name = translation.Name;
+            Name = translation.Name == "" ? null : translation.Name;
+            Title = translation.Data.Title == "" ? null : translation.Data.Title;
+            Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
             EnglishName = translation.EnglishName;
-            Title = translation.Data?.Title;
-            Overview = translation.Data?.Overview;
-            Homepage = translation.Data?.Homepage?.ToString();
+            Homepage = translation.Data.Homepage?.ToString();
             CollectionId = collection.Id;
         }
     }

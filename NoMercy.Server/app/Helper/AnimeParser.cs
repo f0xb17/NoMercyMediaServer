@@ -27,15 +27,15 @@ public class AnimeParser
     {
         var match = NameRegex.Match(filename.Trim());
         if (!match.Success)
-            return null;
+            return new AnimeInfo { FileName = filename };
 
         var info = new AnimeInfo
         {
             FileName = filename,
             Group = match.Groups[1].Value,
             Name = match.Groups[2].Value.Replace("_", " "),
-            Season = match.Groups[3].Success ? int.Parse(match.Groups[3].Value) : (int?)null,
-            Episode = match.Groups[4].Success ? int.Parse(match.Groups[4].Value) : (int?)null,
+            Season = match.Groups[3].Success ? int.Parse(match.Groups[3].Value) : null,
+            Episode = match.Groups[4].Success ? int.Parse(match.Groups[4].Value) : null,
             Title = match.Groups[5].Success ? match.Groups[5].Value : null,
             ExtraInfo = match.Groups[6].Success ? match.Groups[6].Value : null,
             Checksum = match.Groups[7].Success ? match.Groups[7].Value : null,

@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -31,9 +33,21 @@ namespace NoMercy.Database.Models
         
         [JsonProperty("collection_user")] 
         public virtual ICollection<CollectionUser> CollectionUser { get; set; }
+    
+        [JsonProperty("special_user")] 
+        public virtual ICollection<SpecialUser> SpecialUser { get; set; }
         
         [JsonProperty("notification_user")] 
         public virtual ICollection<NotificationUser> NotificationUser { get; set; }
+        
+        [JsonProperty("album_user")]
+        public virtual ICollection<AlbumUser> AlbumUser { get; set; }
+        
+        [JsonProperty("artist_user")]
+        public virtual ICollection<ArtistUser> ArtistUser { get; set; }
+        
+        [JsonProperty("track_user")]
+        public virtual ICollection<TrackUser> TrackUser { get; set; }
 
         public User()
         {

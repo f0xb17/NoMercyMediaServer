@@ -18,14 +18,16 @@ public class SeasonClient : BaseClient, IDisposable
         return new EpisodeClient(Id, _seasonNumber, episodeNumber);
     }
 
-    public Task<SeasonDetails> Details()
+    public Task<SeasonDetails?> Details()
     {
         return Get<SeasonDetails>("tv/" + Id + "/season/" + _seasonNumber);
     }
 
-    public Task<SeasonAppends> WithAppends(string[] appendices)
+    public Task<SeasonAppends?> WithAppends(string[] appendices)
     {
         var queryParams = new Dictionary<string, string>
+
+
         {
             ["append_to_response"] = string.Join(",", appendices)
         };
@@ -33,7 +35,7 @@ public class SeasonClient : BaseClient, IDisposable
         return Get<SeasonAppends>("tv/" + Id + "/season/" + _seasonNumber, queryParams);
     }
 
-    public Task<SeasonAppends> WithAllAppends()
+    public Task<SeasonAppends?> WithAllAppends()
     {
         return WithAppends([
             "aggregate_credits",
@@ -45,21 +47,23 @@ public class SeasonClient : BaseClient, IDisposable
         ]);
     }
 
-    //public Task<AccountStates> AccountStates()
+    //public Task<AccountStates?> AccountStates()
     //{
     //    strreturn Get<Details>(("tv/" + Id + "/season/" + SeasonNumber + "/account_states");
     //    
     //}
 
-    public Task<SeasonAggregatedCredits> AggregatedCredits()
+    public Task<SeasonAggregatedCredits?> AggregatedCredits()
     {
         return Get<SeasonAggregatedCredits>("tv/" + Id + "/season/" + _seasonNumber + "/aggregate_credits");
         
     }
 
-    public Task<SeasonChanges> Changes(string startDate, string endDate)
+    public Task<SeasonChanges?> Changes(string startDate, string endDate)
     {
         var queryParams = new Dictionary<string, string>
+
+
         {
             ["start_date"] = startDate,
             ["end_date"] = endDate
@@ -68,27 +72,27 @@ public class SeasonClient : BaseClient, IDisposable
         return Get<SeasonChanges>("tv/" + Id + "/season/" + _seasonNumber + "/changes", queryParams);
     }
 
-    public Task<Credits> Credits()
+    public Task<Credits?> Credits()
     {
         return Get<Credits>("tv/" + Id + "/season/" + _seasonNumber + "/credits");
     }
 
-    public Task<ExternalIds> ExternalIds()
+    public Task<ExternalIds?> ExternalIds()
     {
         return Get<ExternalIds>("tv/" + Id + "/season/" + _seasonNumber + "/external_ids");
     }
 
-    public Task<Images> Images()
+    public Task<Images?> Images()
     {
         return Get<Images>("tv/" + Id + "/season/" + _seasonNumber + "/images");
     }
 
-    public Task<SharedTranslations> Translations()
+    public Task<SharedTranslations?> Translations()
     {
         return Get<SharedTranslations>("tv/" + Id + "/season/" + _seasonNumber + "/translations");
     }
 
-    public Task<Videos> Videos()
+    public Task<Videos?> Videos()
     {
         return Get<Videos>("tv/" + Id + "/season/" + _seasonNumber + "/videos");
     }

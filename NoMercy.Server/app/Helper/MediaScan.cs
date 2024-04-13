@@ -1,20 +1,27 @@
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using FFMpegCore;
-using FFMpegCore.Builders.MetaData;
 using MovieFileLibrary;
 using Newtonsoft.Json;
-using NoMercy.Database;
 using NoMercy.Helpers;
-
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Server.app.Helper;
 
-public class MovieFolder
+public class MovieFileExtend
 {
-    public string Title { get; set; }
-    public string Year { get; set; }
+    public List<Guid> ArtistIds { get; set; }
+    public Guid? AcousticId { get; set; }
+    public Guid? Id { get; set; }
+    public string? Title { get; set; }
+    public string? Year { get; set; }
+    public bool IsSeries { get; set; }
+    public int? Season { get; set; }
+    public int? Episode { get; set; }
+    public bool IsSuccess { get; set; }
     public string FilePath { get; set; }
+    public string FileExtension { get; set; }
 }
 
 public class MediaFolder
@@ -25,15 +32,9 @@ public class MediaFolder
     public DateTime Modified { get; set; }
     public DateTime Accessed { get; set; }
     public string Type { get; set; }
-    
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public List<MediaFile>? Files { get; set; }
-    
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public List<MediaFolder>? SubFolders { get; set; }
-
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public MovieFolder? Parsed { get; set; }
+    public ConcurrentBag<MediaFile>? Files { get; set; }
+    public ConcurrentBag<MediaFolder>? SubFolders { get; set; }
+    public MovieFileExtend? Parsed { get; set; }
 }
 
 public class MediaFile
@@ -46,11 +47,7 @@ public class MediaFile
     public DateTime Modified { get; set; }
     public DateTime Accessed { get; set; }
     public string Type { get; set; }
-
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public MovieFile? Parsed { get; set; }
-    
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public MovieFileExtend? Parsed { get; set; }
     public IMediaAnalysis? FFprobe { get; set; }
     
 }
@@ -82,19 +79,20 @@ public class MediaScan
         return this;
     }
     
-    public Task<List<MediaFolder>?> Process(string rootFolder, int depth = 0)
+    public Task<ConcurrentBag<MediaFolder>> Process(string rootFolder, int depth = 0)
     {
         return !_fileListingEnabled 
-            ? Task.Run(() => ScanFoldersOnly(rootFolder, depth)) 
+            ? Task.Run(() => ScanFoldersOnly(rootFolder, depth))
             : Task.Run(() => ScanFolder(rootFolder, depth));
     }
 
-    private List<MediaFolder>? ScanFolder(string folderPath, int depth)
+    private ConcurrentBag<MediaFolder> ScanFolder(string folderPath, int depth)
     {
-        var folders = new List<MediaFolder>();
+        ConcurrentBag<MediaFolder> folders = [];
+        
         if (depth < 0) return folders;
         
-        List<MediaFile> files = GetFiles(folderPath);
+        ConcurrentBag<MediaFile> files = GetFiles(folderPath);
         
         MovieFile movieFile1 = _movieDetector.GetInfo(folderPath);
         movieFile1.Year ??= new Regex(@"(1(8|9)|20)\d{2}(?!p|i|(1(8|9)|20)\d{2}|\]|\W(1(8|9)|20)\d{2})").Match(folderPath)
@@ -108,9 +106,9 @@ public class MediaScan
             Modified = Directory.GetLastWriteTime(folderPath),
             Accessed = Directory.GetLastAccessTime(folderPath),
             Type = "folder",
-            Parsed = new MovieFolder
+            Parsed = new MovieFileExtend
             {
-                Title = movieFile1.Title ?? "",
+                Title = movieFile1.Title,
                 Year = movieFile1.Year,
                 FilePath = movieFile1.FilePath,
             },
@@ -119,76 +117,36 @@ public class MediaScan
                 ? files
                 : null,
         });
-        
-        var directories = Directory.GetDirectories(folderPath).OrderBy(f => f);
-        
-        foreach (var directory in directories)
+
+        try
         {
-            var folderName = Path.GetFileName(directory);
-            
-            if (_regexFilterEnabled && _folderNameRegex.IsMatch(folderName) || depth == 0)
+            var directories = Directory.GetDirectories(folderPath).OrderBy(f => f);
+
+            Parallel.ForEach(directories, (directory, _) =>
             {
-                files.Add(new MediaFile
+                var folderName = Path.GetFileName(directory);
+
+                if (_regexFilterEnabled && _folderNameRegex.IsMatch(folderName) || depth == 0)
                 {
-                    Name = folderName,
-                    Path = directory,
-                    Created = Directory.GetCreationTime(directory),
-                    Modified = Directory.GetLastWriteTime(directory),
-                    Accessed = Directory.GetLastAccessTime(directory),
-                    Type = "folder",
-                });
-                
-                continue;
-            }
-            
-            List<MediaFile> files2 = depth - 1 > 0 ? GetFiles(folderPath) : [];
+                    files.Add(new MediaFile
+                    {
+                        Name = folderName,
+                        Path = directory,
+                        Created = Directory.GetCreationTime(directory),
+                        Modified = Directory.GetLastWriteTime(directory),
+                        Accessed = Directory.GetLastAccessTime(directory),
+                        Type = "folder",
+                    });
+                    
+                    return;
+                }
 
-            MovieFile movieFile = _movieDetector.GetInfo(directory);
-            movieFile.Year ??= new Regex(@"(1(8|9)|20)\d{2}(?!p|i|(1(8|9)|20)\d{2}|\]|\W(1(8|9)|20)\d{2})").Match(directory).Value;
-            
-            folders.Add(new MediaFolder
-            {
-                Name = folderName,
-                Path = directory,
-                Created = Directory.GetCreationTime(directory),
-                Modified = Directory.GetLastWriteTime(directory),
-                Accessed = Directory.GetLastAccessTime(directory),
-                Type = "folder",
-                Parsed = new MovieFolder
-                {
-                    Title = movieFile.Title ?? "",
-                    Year = movieFile.Year,
-                    FilePath = movieFile.FilePath,
-                },
-                
-                Files = files2.Count > 0
-                    ? files2 
-                    : null,
-                
-                SubFolders = depth - 1 > 0 
-                    ? ScanFolder(directory, depth - 1) 
-                    : null,
-            });
-        }
-        
-        return folders
-            .Where(f => f.Name is not "")
-            .ToList();
-    }
+                ConcurrentBag<MediaFile> files2 = depth - 1 > 0 ? GetFiles(directory) : [];
 
-    private List<MediaFolder>? ScanFoldersOnly(string folderPath, int depth)
-    {
-        var folders = new List<MediaFolder>();
-        if (depth < 0) return folders;
+                MovieFile movieFile = _movieDetector.GetInfo(directory);
+                movieFile.Year ??= new Regex(@"(1(8|9)|20)\d{2}(?!p|i|(1(8|9)|20)\d{2}|\]|\W(1(8|9)|20)\d{2})")
+                    .Match(directory).Value;
 
-        var directories = Directory.GetDirectories(folderPath).OrderBy(f => f);
-        
-        foreach (var directory in directories)
-        {
-            var folderName = Path.GetFileName(directory);
-            
-            if (_regexFilterEnabled && _folderNameRegex.IsMatch(folderName))
-            {
                 folders.Add(new MediaFolder
                 {
                     Name = folderName,
@@ -197,98 +155,186 @@ public class MediaScan
                     Modified = Directory.GetLastWriteTime(directory),
                     Accessed = Directory.GetLastAccessTime(directory),
                     Type = "folder",
+                    Parsed = new MovieFileExtend
+                    {
+                        Title = movieFile.Title,
+                        Year = movieFile.Year,
+                        FilePath = movieFile.FilePath,
+                    },
+
+                    Files = files2.Count > 0
+                        ? files2
+                        : null,
+
+                    SubFolders = depth - 1 > 0
+                        ? ScanFolder(directory, depth - 1)
+                        : null,
                 });
-                
-                continue;
-            }
-            
-            MovieFile movieFile = _movieDetector.GetInfo(directory);
-            if (movieFile.Year is null)
-            {
-                movieFile.Year = new Regex(@"(1(8|9)|20)\d{2}(?!p|i|(1(8|9)|20)\d{2}|\]|\W(1(8|9)|20)\d{2})").Match(directory).Value;
-            }
-            
-            folders.Add(new MediaFolder
-            {
-                Name = folderName,
-                Path = directory,
-                Created = Directory.GetCreationTime(directory),
-                Modified = Directory.GetLastWriteTime(directory),
-                Accessed = Directory.GetLastAccessTime(directory),
-                Type = "folder",
-                    
-                Parsed = new MovieFolder
-                {
-                    Title = movieFile.Title ?? "",
-                    Year = movieFile.Year,
-                    FilePath = movieFile.FilePath,
-                },
-                
-                SubFolders = depth - 1 > 0
-                    ? ScanFoldersOnly(directory, depth - 1)
-                    : null,
             });
+            
+            ConcurrentBag<MediaFolder> response = new ConcurrentBag<MediaFolder>(folders
+                .Where(f => f.Name is not "")
+                .OrderByDescending(f => f.Name));
+            
+            return response;
         }
-        
-        return folders
-            .Where(f => f.Name is not "")
-            .ToList();
+        catch (Exception _)
+        {
+            return [];
+        }
+    }
+
+    private ConcurrentBag<MediaFolder> ScanFoldersOnly(string folderPath, int depth)
+    {
+        if (depth < 0) return [];
+
+        try
+        {
+            ConcurrentBag<MediaFolder> folders = [];
+            
+            var directories = Directory.GetDirectories(folderPath).OrderBy(f => f);
+
+            Parallel.ForEach(directories, (directory, _) =>
+            {
+                Logger.App($"Scanning {directory}");
+
+                var folderName = Path.GetFileName(directory);
+
+                if (_regexFilterEnabled && _folderNameRegex.IsMatch(folderName))
+                {
+                    folders.Add(new MediaFolder
+                    {
+                        Name = folderName,
+                        Path = directory,
+                        Created = Directory.GetCreationTime(directory),
+                        Modified = Directory.GetLastWriteTime(directory),
+                        Accessed = Directory.GetLastAccessTime(directory),
+                        Type = "folder",
+                    });
+                    
+                    return;
+                }
+
+                MovieFile movieFile = _movieDetector.GetInfo(directory);
+
+                movieFile.Year ??= new Regex(@"(1(8|9)|20)\d{2}(?!p|i|(1(8|9)|20)\d{2}|\]|\W(1(8|9)|20)\d{2})")
+                    .Match(directory).Value;
+
+                folders.Add(new MediaFolder
+                {
+                    Name = folderName,
+                    Path = directory,
+                    Created = Directory.GetCreationTime(directory),
+                    Modified = Directory.GetLastWriteTime(directory),
+                    Accessed = Directory.GetLastAccessTime(directory),
+                    Type = "folder",
+
+                    Parsed = new MovieFileExtend
+                    {
+                        Title = movieFile.Title,
+                        Year = movieFile.Year,
+                        FilePath = movieFile.FilePath,
+                    },
+
+                    SubFolders = depth - 1 > 0
+                        ? ScanFoldersOnly(directory, depth - 1)
+                        : null,
+                });
+            });
+            
+            ConcurrentBag<MediaFolder> response = new ConcurrentBag<MediaFolder>(folders
+                .Where(f => f.Name is not "")
+                .OrderByDescending(f => f.Name));
+            
+            return response;
+        }
+        catch (Exception e)
+        {
+            return [];
+        }
     }
     
-    private List<MediaFile> GetFiles(string folderPath)
+    private ConcurrentBag<MediaFile> GetFiles(string folderPath)
     {
-        var files = new List<MediaFile>();
-        foreach (var file in Directory.GetFiles(folderPath))
+        try
         {
-            var extension = Path.GetExtension(file).ToLower();
-            
-            var isVideoFile = extension == ".mp4" 
-                              || extension == ".avi" 
-                              || extension == ".mkv" 
-                              || extension == ".m3u8";
-            
-            MovieFile? movieFile = isVideoFile ? _movieDetector.GetInfo(file) : null;
-            AnimeInfo? animeInfo = AnimeParser.ParseAnimeFilename(file);
-            
-            if (movieFile is not null)
-            {
-                movieFile.Year ??= new Regex(@"(1(8|9)|20)\d{2}(?!p|i|(1(8|9)|20)\d{2}|\]|\W(1(8|9)|20)\d{2})").Match(file).Value;
-                movieFile.Title ??= animeInfo?.Name;
-                movieFile.Season ??= animeInfo?.Season;
-                movieFile.Episode ??= animeInfo?.Episode;
-            }
+            ConcurrentBag<MediaFile> files = [];
 
-            IMediaAnalysis? ffprobe = null;
-            try
+            Parallel.ForEach(Directory.GetFiles(folderPath), (file, _) =>
             {
-                ffprobe = isVideoFile
-                    ? FFProbe.Analyse(file)
-                    : null;
-            }
-            catch (Exception e)
-            {
-               //
-            }
+                var extension = Path.GetExtension(file).ToLower();
 
-            files.Add(new MediaFile
-            {
-                Name = Path.GetFileName(file),
-                Path = file,
-                Extension = extension,
-                Size = (int)new FileInfo(file).Length,
-                Created = File.GetCreationTime(file),
-                Modified = File.GetLastWriteTime(file),
-                Accessed = File.GetLastAccessTime(file),
-                Type = "file",
-                
-                Parsed = movieFile,
-                FFprobe = ffprobe
+                bool isVideoFile = extension is ".mp4" or ".avi" or ".mkv" or ".m3u8";
+                bool isAudioFile = extension is ".mp3" or ".flac" or ".wav" or ".m4a";
+                bool isSubtitleFile = extension is ".srt" or ".vtt" or ".ass" or ".sub";
+
+                if (!isVideoFile && !isAudioFile && !isSubtitleFile) return;
+
+                MovieFile? movieFile = isVideoFile || isAudioFile ? _movieDetector.GetInfo(file) : null;
+                AnimeInfo animeInfo = AnimeParser.ParseAnimeFilename(file);
+
+                if (movieFile is not null)
+                {
+                    movieFile.Year ??= new Regex(@"(1(8|9)|20)\d{2}(?!p|i|(1(8|9)|20)\d{2}|\]|\W(1(8|9)|20)\d{2})")
+                        .Match(file).Value;
+                    movieFile.Title ??= animeInfo.Name;
+                    movieFile.Season ??= animeInfo.Season;
+                    movieFile.Episode ??= animeInfo.Episode;
+                }
+
+                MovieFileExtend movieFileExtend = new MovieFileExtend
+                {
+                    FilePath = movieFile?.FilePath ?? file,
+                    Episode = movieFile?.Episode,
+                    Year = movieFile?.Year,
+                    Season = movieFile?.Season,
+                    Title = movieFile?.Title,
+                    IsSeries = movieFile?.IsSeries ?? false,
+                    IsSuccess = movieFile?.IsSuccess ?? false,
+                };
+
+                IMediaAnalysis? ffprobe;
+                try
+                {
+                    ffprobe = isVideoFile
+                        ? FFProbe.Analyse(file)
+                        : null;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+
+                MediaFile res = new MediaFile
+                {
+                    Name = Path.GetFileName(file),
+                    Path = file,
+                    Extension = extension,
+                    Size = (int)new FileInfo(file).Length,
+                    Created = File.GetCreationTime(file),
+                    Modified = File.GetLastWriteTime(file),
+                    Accessed = File.GetLastAccessTime(file),
+                    Type = "file",
+
+                    Parsed = movieFileExtend,
+                    FFprobe = ffprobe
+                };
+
+                files.Add(res);
             });
+            
+            ConcurrentBag<MediaFile> response = new ConcurrentBag<MediaFile>(files
+                .Where(f => f.Name is not "")
+                .OrderByDescending(f => f.Name));
+
+            return response;
+
         }
-        
-        return files
-            .Where(f => f.Name is not "")
-            .ToList();
+        catch (Exception _)
+        {
+            return [];
+        }
     }
 
      public void Dispose()

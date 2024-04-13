@@ -51,7 +51,7 @@ public abstract class ConsoleMessages
             $@"{_()}  {N()[8]} {O()[8]} {M()[8]} {E()[8]}  {R()[8]} {C()[8]} {Y()[8]}  {M()[8]} {E()[8]}  {D()[8]}  {I()[8]}  {A()[8]}  {S()[8]} {E()[8]}  {R()[8]}  {V()[8]} {E()[8]}  {R()[8]}  {_()}");
         Console.WriteLine(
             $@"{_()}  {N()[9]} {O()[9]} {M()[9]} {E()[9]}  {R()[9]} {C()[9]} {Y()[9]}  {M()[9]} {E()[9]}  {D()[9]}  {I()[9]}  {A()[9]}  {S()[9]} {E()[9]}  {R()[9]}  {V()[9]} {E()[9]}  {R()[9]}  {_()}");
-        Console.WriteLine($@"{_()}                                                                   {Y()[10]}   " +                                     CreateQuote(Quote, 6) + $"{_()}");
+        Console.WriteLine($@"{_()}                                                                   {Y()[10]}   " +                                     CreateQuote(Quote, 6) + $@"{_()}");
         Console.WriteLine($@"{("╚" + Repeat("═", 186) +                                                                                                  "╝").Pastel(Colors[0])}");
         
         return Task.CompletedTask;

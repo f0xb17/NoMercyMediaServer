@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 
@@ -15,6 +16,12 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 [Authorize, Route("api/v{Version:apiVersion}/userData")]
 public class UserDataController : Controller
 {
+    [NonAction]
+    private Guid GetUserId()
+    {
+        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+    }
+
     [HttpGet]
     public IActionResult Index()
     {
@@ -25,14 +32,31 @@ public class UserDataController : Controller
     [Route("continue")]
     public async Task<ContinueWatchingDto> ContinueWatching()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
 
         await using MediaContext mediaContext = new();
         var continueWatching = await mediaContext.UserData
             .AsNoTracking()
+            
             .Where(user => user.UserId == userId)
+            
             .Include(userData => userData.Movie)
+                .ThenInclude(movie => movie.Media
+                    .Where(media => media.Site == "Youtube")
+                )
+            
             .Include(userData => userData.Tv)
+                .ThenInclude(tv => tv.Media
+                    .Where(media => media.Site == "Youtube")
+                )
+            
+            .Include(userData => userData.Collection)
+                .ThenInclude(collection => collection.CollectionMovies)
+                    .ThenInclude(collectionMovie => collectionMovie.Movie)
+                        .ThenInclude(movie => movie.Media
+                            .Where(media => media.Site == "Youtube")
+                        )
+            
             .Include(userData => userData.Special)
             .OrderByDescending(userData => userData.UpdatedAt)
             .ToListAsync();
@@ -41,6 +65,7 @@ public class UserDataController : Controller
             .DistinctBy(userData => new
             {
                 userData.MovieId,
+                userData.CollectionId,
                 userData.TvId,
                 userData.SpecialId
             });
@@ -56,7 +81,7 @@ public class UserDataController : Controller
     [Route("continue")]
     public async Task<StatusResponseDto<string>> RemoveContinue(UserRequest body)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
 
         await using MediaContext mediaContext = new();
 
@@ -65,17 +90,22 @@ public class UserDataController : Controller
             "movie" => await mediaContext.UserData
                 .AsNoTracking()
                 .Where(data => data.UserId == userId)
-                .Where(data => data.MovieId == body.Id)
+                .Where(data => data.MovieId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             "tv" => await mediaContext.UserData
                 .AsNoTracking()
                 .Where(data => data.UserId == userId)
-                .Where(data => data.TvId == body.Id)
+                .Where(data => data.TvId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             "special" => await mediaContext.UserData
                 .AsNoTracking()
                 .Where(data => data.UserId == userId)
-                .Where(data => data.SpecialId == body.Id.ToString())
+                .Where(data => data.SpecialId == Ulid.Parse(body.Id))
+                .FirstOrDefaultAsync(),
+            "collection" => await mediaContext.UserData
+                .AsNoTracking()
+                .Where(data => data.UserId == userId)
+                .Where(data => data.CollectionId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             _ => null
         };
@@ -103,7 +133,7 @@ public class UserDataController : Controller
     [Route("watched")]
     public async Task<StatusResponseDto<string>> Watched([FromBody] UserRequest body)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
 
         await using MediaContext mediaContext = new();
 
@@ -112,17 +142,22 @@ public class UserDataController : Controller
             "movie" => await mediaContext.UserData
                 .AsNoTracking()
                 .Where(data => data.UserId == userId)
-                .Where(data => data.MovieId == body.Id)
+                .Where(data => data.MovieId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             "tv" => await mediaContext.UserData
                 .AsNoTracking()
                 .Where(data => data.UserId == userId)
-                .Where(data => data.TvId == body.Id)
+                .Where(data => data.TvId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             "special" => await mediaContext.UserData
                 .AsNoTracking()
                 .Where(data => data.UserId == userId)
-                .Where(data => data.SpecialId == body.Id.ToString())
+                .Where(data => data.SpecialId == Ulid.Parse(body.Id))
+                .FirstOrDefaultAsync(),
+            "collection" => await mediaContext.UserData
+                .AsNoTracking()
+                .Where(data => data.UserId == userId)
+                .Where(data => data.CollectionId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             _ => null
         };
@@ -135,8 +170,6 @@ public class UserDataController : Controller
                 Message = "Item not found"
             };
         }
-
-        userData.Played = true;
 
         await mediaContext.SaveChangesAsync();
 
@@ -151,7 +184,7 @@ public class UserDataController : Controller
     [Route("favorites")]
     public async Task<StatusResponseDto<string>> Favorites([FromBody] UserRequest body)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
 
         await using MediaContext mediaContext = new();
 
@@ -160,17 +193,22 @@ public class UserDataController : Controller
             "movie" => await mediaContext.UserData
                 .AsNoTracking()
                 .Where(data => data.UserId == userId)
-                .Where(data => data.MovieId == body.Id)
+                .Where(data => data.MovieId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             "tv" => await mediaContext.UserData
                 .AsNoTracking()
                 .Where(data => data.UserId == userId)
-                .Where(data => data.TvId == body.Id)
+                .Where(data => data.TvId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             "special" => await mediaContext.UserData
                 .AsNoTracking()
                 .Where(data => data.UserId == userId)
-                .Where(data => data.SpecialId == body.Id.ToString())
+                .Where(data => data.SpecialId == Ulid.Parse(body.Id))
+                .FirstOrDefaultAsync(),
+            "collection" => await mediaContext.UserData
+                .AsNoTracking()
+                .Where(data => data.UserId == userId)
+                .Where(data => data.CollectionId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             _ => null
         };
@@ -184,8 +222,6 @@ public class UserDataController : Controller
             };
         }
 
-        userData.IsFavorite = true;
-
         await mediaContext.SaveChangesAsync();
 
         return new StatusResponseDto<string>
@@ -198,6 +234,6 @@ public class UserDataController : Controller
 
 public class UserRequest
 {
-    [JsonProperty("id")] public int Id { get; set; }
+    [JsonProperty("id")] public string Id { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
 }

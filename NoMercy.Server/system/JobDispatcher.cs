@@ -3,8 +3,6 @@ using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.Server.app.Helper;
-using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace NoMercy.Server.system;
 
@@ -15,13 +13,11 @@ public interface IShouldQueue
 
 public static class JobDispatcher
 {
-    private static readonly JobQueue Queue = new(Databases.QueueContext);
+    private static readonly JobQueue Queue = new(new QueueContext());
     
-    public static Task Dispatch(IShouldQueue job, string onQueue = "default", int priority = 0, int attempt = -1)
+    public static void Dispatch(IShouldQueue job, string onQueue = "default", int priority = 0, int attempt = -1)
     {
-        attempt += 1;
-        
-        foreach (var constructor in job.GetType().GetConstructors())
+        foreach (var constructor in job.GetType().GetConstructors().OrderByDescending(ctor => ctor.GetParameters().Length))
         {
             var constructorParameters = constructor.GetParameters();
             var constructorArguments = new object?[constructorParameters.Length];
@@ -39,7 +35,7 @@ public static class JobDispatcher
                 constructorArguments[i] = field.GetValue(job);
             }
             
-            if(constructorArguments.Length > 0  && (constructorArguments[0] == null || constructorArguments[0] is 0))
+            if(constructorArguments.Length > 0  && (constructorArguments[0] is null || constructorArguments[0] is 0 || constructorArguments.Contains(null)))
             {
                 continue;
             }
@@ -53,34 +49,29 @@ public static class JobDispatcher
                 { "jobMethod", nameof(IShouldQueue.Handle)},
                 { "jobParams", JsonConvert.SerializeObject(constructorArguments) }
             };
+            
+            string payloadString = JsonConvert.SerializeObject(payload);
+            
+            using QueueContext context = new();
+            bool exists = context.QueueJobs.Any(queueJob => queueJob.Payload == payloadString);
+            if (exists) return;
 
             var jobData = new QueueJob()
             {
                 Queue = onQueue,
-                Payload = JsonConvert.SerializeObject(payload),
+                Payload = payloadString,
                 AvailableAt = DateTime.UtcNow,
                 Priority = priority
             };
 
             try
             {
-                Queue.Enqueue(jobData).Wait();
+                Queue.Enqueue(jobData);
             }
             catch(Exception e)
             {
-                // if (attempt < 10)
-                // {
-                //     Task.Delay(500).Wait();
-                //     Dispatch(job, onQueue, priority, attempt).Wait();
-                // }
-                // else
-                // {
-                    Logger.Queue(e, Helpers.LogLevel.Error);
-                // }
+                Logger.Queue(e, Helpers.LogLevel.Error);
             }
         }
-        
-        return Task.CompletedTask;
     }
-
 }

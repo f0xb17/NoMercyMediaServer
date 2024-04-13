@@ -11,10 +11,16 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Music;
 [Authorize, Route("api/v{Version:apiVersion}/music/playlists", Order = 3)]
 public class PlaylistsController: Controller
 {
+    [NonAction]
+    private Guid GetUserId()
+    {
+        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+    }
+
     [HttpGet]
     public IActionResult Index()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
     
@@ -22,14 +28,14 @@ public class PlaylistsController: Controller
     [Route("{id:guid}")]
     public IActionResult Show(Guid id)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
     
     [HttpPost]
     public IActionResult Create()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
     
@@ -37,7 +43,7 @@ public class PlaylistsController: Controller
     [Route("{id:guid}")]
     public IActionResult Edit(Guid id)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
     
@@ -45,7 +51,7 @@ public class PlaylistsController: Controller
     [Route("{id:guid}")]
     public IActionResult Destroy(Guid id)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
 }

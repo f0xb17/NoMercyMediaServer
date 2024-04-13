@@ -13,6 +13,18 @@ public static class JsonHelper
         Formatting = Formatting.Indented,
         PreserveReferencesHandling = PreserveReferencesHandling.Objects,
         ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+        
+        NullValueHandling = NullValueHandling.Ignore,
+        DefaultValueHandling = DefaultValueHandling.Ignore,
+        MissingMemberHandling = MissingMemberHandling.Ignore,
+
+        TypeNameHandling = TypeNameHandling.None,
+        
+        Error = (_, ev) =>
+        {
+            ev.ErrorContext.Handled = true;
+        },
+        
         Converters =
         {
             new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal },

@@ -34,6 +34,9 @@ namespace NoMercy.Database.Models
         
         [JsonProperty("collection_user")] 
         public virtual ICollection<CollectionUser> CollectionUser { get; set; }
+    
+        [JsonProperty("user_data")] 
+        public virtual ICollection<UserData> UserData { get; set; }
 
         public Collection()
         {

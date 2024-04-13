@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Providers.TMDB.Models.Episode;
@@ -72,18 +74,18 @@ namespace NoMercy.Database.Models
         {
         }
 
-        public Episode(EpisodeAppends? e, int tvId, int seasonId)
+        public Episode(EpisodeAppends e, int tvId, int seasonId)
         {
             Id = e.Id;
             Title = e.Name;
             AirDate = e.AirDate;
             EpisodeNumber = e.EpisodeNumber;
-            ImdbId = e.ExternalIds?.ImdbId;
+            ImdbId = e.ExternalIds.ImdbId;
             Overview = e.Overview;
             ProductionCode = e.ProductionCode;
             SeasonNumber = e.SeasonNumber;
             Still = e.StillPath;
-            TvdbId = e.ExternalIds?.TvdbId;
+            TvdbId = e.ExternalIds.TvdbId;
             VoteAverage = e.VoteAverage;
             VoteCount = e.VoteCount;
 

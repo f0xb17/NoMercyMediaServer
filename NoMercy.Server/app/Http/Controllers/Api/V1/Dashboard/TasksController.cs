@@ -14,10 +14,16 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [Authorize, Route("api/v{Version:apiVersion}/dashboard/tasks", Order = 10)]
 public class TasksController : Controller
 {
+    [NonAction]
+    private Guid GetUserId()
+    {
+        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+    }
+
     [HttpGet]
     public TaskDto[] Index()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return
         [
             new TaskDto
@@ -35,21 +41,21 @@ public class TasksController : Controller
     [HttpPost]
     public IActionResult Store()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
 
     [HttpPatch]
     public IActionResult Update()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
 
     [HttpDelete]
     public IActionResult Destroy()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
 
@@ -57,7 +63,7 @@ public class TasksController : Controller
     [Route("pause")]
     public IActionResult PauseTask()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
 
@@ -65,7 +71,7 @@ public class TasksController : Controller
     [Route("resume")]
     public IActionResult ResumeTask()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
 
@@ -73,7 +79,7 @@ public class TasksController : Controller
     [Route("runners")]
     public IActionResult RunningTaskWorkers()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
 
@@ -81,7 +87,7 @@ public class TasksController : Controller
     [Route("queue")]
     public IActionResult EncoderQueue()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
 }

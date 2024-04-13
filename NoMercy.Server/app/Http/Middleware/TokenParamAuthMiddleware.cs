@@ -3,7 +3,6 @@ using System.Security.Claims;
 using Microsoft.Extensions.Primitives;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
 
 namespace NoMercy.Server.app.Http.Middleware;
 
@@ -11,7 +10,8 @@ public class TokenParamAuthMiddleware
 {
     private readonly RequestDelegate _next;
     private static readonly MediaContext MediaContext = new();
-    private readonly List<User> _users = MediaContext.Users.ToList();
+    public static readonly List<User> Users = MediaContext.Users.ToList();
+    public static readonly List<Ulid> FolderIds = MediaContext.Folders.Select(x => x.Id).ToList();
 
     public TokenParamAuthMiddleware(RequestDelegate next)
     {
@@ -20,14 +20,9 @@ public class TokenParamAuthMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        MediaContext mediaContext = new();
-        List<Ulid> exemptions = mediaContext.Folders
-            .Select(x => x.Id)
-            .ToList();
-            
         string url = context.Request.Path;
         
-        if (!exemptions.Any(x => url.StartsWith("/" + x)))
+        if (!FolderIds.Any(x => url.StartsWith("/" + x)) || context.Request.Headers.Authorization.ToString().Contains("Bearer"))
         {
             await _next(context);
             return;
@@ -35,18 +30,17 @@ public class TokenParamAuthMiddleware
         
         string? claim = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
         
-        if(claim is null)
+        if(string.IsNullOrEmpty(claim))
         {
             var jwt = context.Request.Query
-                .FirstOrDefault(q => q.Key == "token" || q.Key == "access_token").Value.ToString();
+                .FirstOrDefault(q => q.Key is "token" or "access_token").Value.ToString();
             
             if (string.IsNullOrEmpty(jwt))
             {
-                context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;                
+                return;
             }
-            
             context.Request.Headers.Authorization = new StringValues("Bearer " + jwt);
-        
         }
         else
         {
@@ -54,11 +48,11 @@ public class TokenParamAuthMiddleware
             
             if (userId == Guid.Empty)
             {
-                context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                context.Response.StatusCode = (int)HttpStatusCode.Forbidden;                
                 return;
             }
             
-            User? user = _users.FirstOrDefault(x => x.Id == userId);
+            User? user = Users.FirstOrDefault(x => x.Id == userId);
             
             if (user is null)
             {

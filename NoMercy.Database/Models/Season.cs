@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Providers.TMDB.Models.Season;
@@ -44,7 +46,7 @@ namespace NoMercy.Database.Models
         {
         }
 
-        public Season(SeasonAppends? s, int tvId)
+        public Season(SeasonAppends s, int tvId)
         {
             Id = s.Id;
             Title = s.Name;

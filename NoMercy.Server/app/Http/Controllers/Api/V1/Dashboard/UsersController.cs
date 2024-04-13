@@ -1,3 +1,5 @@
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
 using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -6,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
@@ -17,10 +18,16 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [Authorize, Route("api/v{Version:apiVersion}/dashboard/users", Order = 10)]
 public class UsersController : Controller
 {
+    [NonAction]
+    private Guid GetUserId()
+    {
+        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+    }
+
     [HttpGet]
     public IActionResult Index()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         
         return Ok();
     }
@@ -28,7 +35,7 @@ public class UsersController : Controller
     [HttpPost]
     public async Task<StatusResponseDto<string>> Store([FromBody] User request)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         
         await using MediaContext mediaContext = new();
         var user = await mediaContext.Users
@@ -65,7 +72,7 @@ public class UsersController : Controller
     [HttpPatch("{id:guid}")]
     public async Task<StatusResponseDto<string>> Update(Guid id)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         
         await using MediaContext mediaContext = new();
         var user = await mediaContext.Users
@@ -93,7 +100,7 @@ public class UsersController : Controller
     [HttpDelete("{id:guid}")]
     public async Task<StatusResponseDto<string>> Destroy(Guid id)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         
         await using MediaContext mediaContext = new();
         var user = await mediaContext.Users
@@ -133,7 +140,7 @@ public class UsersController : Controller
         
         return new PermissionsResponseDto
         {
-            Data = permissions?.Select(user => new PermissionsResponseItemDto(user)) ?? []
+            Data = permissions.Select(user => new PermissionsResponseItemDto(user)) ?? []
         };
     }
 
@@ -141,7 +148,7 @@ public class UsersController : Controller
     [Route("permissions/{id:guid}")]
     public async Task<StatusResponseDto<string>> UpdateUserPermissions(Guid id)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         
         await using MediaContext mediaContext = new();
         var user = await mediaContext.Users
@@ -223,17 +230,17 @@ public class PermissionsResponseItemDto: User
         CreatedAt = user.CreatedAt;
         UpdatedAt = user.UpdatedAt;
         
-        LibraryUser = user.LibraryUser?
+        LibraryUser = user.LibraryUser
             .Select(libraryUser => new LibraryUserDto
             {
                 LibraryId = libraryUser.LibraryId,
                 UserId = libraryUser.UserId
             })
-            .ToArray() ?? [];
+            .ToArray();
         
-        Libraries = user.LibraryUser?
+        Libraries = user.LibraryUser
             .Select(libraryUser => libraryUser.Library.Id)
-            .ToArray() ?? [];
+            .ToArray();
     
     }
 }

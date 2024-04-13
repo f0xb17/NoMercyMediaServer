@@ -1,3 +1,4 @@
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Helpers.Monitoring
 {
@@ -15,7 +16,7 @@ namespace NoMercy.Helpers.Monitoring
                     Name = d.Name,
                     Type = d.DriveType,
                 };
-                if (d.IsReady == true)
+                if (d.IsReady)
                 {
                     resourceMonitorDto.TotalStorage = $"Total size of drive: {d.TotalSize / 1024 / 1024 / 1024} GB";
                     resourceMonitorDto.AvailableStorage =

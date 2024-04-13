@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Security.Authentication;
 using System.Security.Cryptography;
@@ -104,7 +105,7 @@ public static class Certificate
         await File.WriteAllTextAsync(AppFiles.CertFile, @$"{data.certificate}\n{data.issuer_certificate}");
         
         Logger.Certificate(@"SSL Certificate renewed");
-
+        
         await Task.CompletedTask;
     }
 }

@@ -15,12 +15,12 @@ public class EpisodeClient : BaseClient
         _episodeNumber = episodeNumber;
     }
 
-    public Task<EpisodeDetails> Details()
+    public Task<EpisodeDetails?> Details()
     {
         return Get<EpisodeDetails>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber);
     }
 
-    private Task<EpisodeAppends> WithAppends(string[] appendices)
+    private Task<EpisodeAppends?> WithAppends(string[] appendices)
     {
         var queryParams = new Dictionary<string, string>
         {
@@ -30,7 +30,7 @@ public class EpisodeClient : BaseClient
         return Get<EpisodeAppends>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber, queryParams);
     }
 
-    public Task<EpisodeAppends> WithAllAppends()
+    public Task<EpisodeAppends?> WithAllAppends()
     {
         return WithAppends([
             "changes",
@@ -42,7 +42,7 @@ public class EpisodeClient : BaseClient
         ]);
     }
 
-    public Task<EpisodeChanges> Changes(string startDate, string endDate)
+    public Task<EpisodeChanges?> Changes(string startDate, string endDate)
     {
         var queryParams = new Dictionary<string, string>
         {
@@ -53,27 +53,27 @@ public class EpisodeClient : BaseClient
         return Get<EpisodeChanges>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/changes", queryParams);
     }
 
-    public Task<Credits> Credits()
+    public Task<Credits?> Credits()
     {
         return Get<Credits>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/credits");
     }
 
-    public Task<ExternalIds> ExternalIds()
+    public Task<ExternalIds?> ExternalIds()
     {
         return Get<ExternalIds>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/external_ids");
     }
 
-    public Task<Images> Images()
+    public Task<Images?> Images()
     {
         return Get<Images>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/images");
     }
 
-    public Task<SharedTranslations> Translations()
+    public Task<SharedTranslations?> Translations()
     {
         return Get<SharedTranslations>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/translations");
     }
 
-    public Task<Videos> Videos()
+    public Task<Videos?> Videos()
     {
         return Get<Videos>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/videos");
     }

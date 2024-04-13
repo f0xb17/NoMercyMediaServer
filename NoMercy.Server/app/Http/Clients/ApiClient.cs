@@ -1,14 +1,14 @@
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
 using NoMercy.Server.app.Helper;
-
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Server.app.Http.Clients;
 
 public class ApiClient
 {
-    public static HttpClient Client { get; set; } = null!;
+    public static HttpClient Client { get; set; }
     
     public ApiClient()
     {

@@ -19,7 +19,7 @@ public static class SystemInfo
     public static readonly DateTime BootTime = GetBootTime();
     public static readonly DateTime StartTime = DateTime.UtcNow;
     public static readonly string ExecSuffix = Platform == "windows" ? ".exe" : "";
-    public static int ServerPort { get; set; } = 7626;
+    public static ushort ServerPort { get; set; } = 7626;
     
     private static Guid GetDeviceId()
     {

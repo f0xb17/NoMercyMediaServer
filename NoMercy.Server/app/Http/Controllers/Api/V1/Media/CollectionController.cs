@@ -5,7 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Providers.TMDB.Client;
+using NoMercy.Providers.TMDB.Models.Collections;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Music.DTO;
+using NoMercy.Server.app.Jobs;
+using NoMercy.Server.system;
+using Collection = NoMercy.Database.Models.Collection;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 
@@ -15,134 +22,99 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 [Authorize, Route("api/v{Version:apiVersion}/collection")] // match themoviedb.org API
 public class CollectionsController : Controller
 {
+    [NonAction]
+    private Guid GetUserId()
+    {
+        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+    }
+
     [HttpGet]
-    public async Task<CollectionsResponseDto> Collections()
+    public async Task<IActionResult> Collections([FromQuery] PageRequestDto request)
     {        
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        List<Collection> collections = [];
+        Guid userId = GetUserId();
 
         await using MediaContext mediaContext = new();
-        var libraries = await mediaContext.Collections
-            .AsNoTracking()
-            
-            .Where(collection => collection.Library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null)
-            
-            .Where(collection => collection.CollectionMovies
-                .Any(movie => movie.Movie.VideoFiles.Any()))
-            
-            .Include(collection => collection.Library)
-                .ThenInclude(library => library.FolderLibraries)
-                    .ThenInclude(folderLibrary => folderLibrary.Folder)
-            
-            .Include(collection => collection.Images)
-            .Include(collection => collection.Translations
-                .Where(translation => translation.Iso6391 == HttpContext.Request.Headers.AcceptLanguage[0]))
-            
-            .Include(collection => collection.CollectionMovies)
-                .ThenInclude(movie => movie.Movie)
-                    .ThenInclude(movie => movie.VideoFiles)
-            
-            .OrderBy(collection => collection.TitleSort)
-            
-            .ToListAsync();
-
-        return new CollectionsResponseDto
+        await foreach (Collection? collection in CollectionsResponseDto.GetCollections(mediaContext, userId, 
+                           HttpContext.Request.Headers.AcceptLanguage[0] ?? string.Empty))
         {
-            Data = libraries.Select(library => new CollectionsResponseItemDto(library))
-        };
+            if (collection is null) continue;
+            collections.Add(collection);
+        }
+        
+        if (request.Version != "lolomo")
+        {
+            return Ok(new CollectionsResponseDto
+            {
+                Data = collections.Select(collection => new CollectionsResponseItemDto(collection))
+                    .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort)
+            });
+        }
+        
+        string[] numbers = ["*", "#", "'", "\"", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
+        string[] letters = ["#", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", 
+            "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+
+        return Ok(new LoloMoResponseDto<LibraryResponseItemDto>
+        {
+            Data = letters.Select(genre => new LoloMoRowDto<LibraryResponseItemDto>
+            {
+                Title = genre,
+                Id = genre,
+            
+                Items = collections.Where(collection => genre == "#" 
+                            ? numbers.Any(p=> collection.Title.StartsWith(p))
+                            : collection.Title.StartsWith(genre))
+                    .Select(collection => new LibraryResponseItemDto(collection))
+                    .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort)
+            })
+        });
     }
     
     [HttpGet]
     [Route("{id:int}")]
-    public async Task<CollectionResponseDto> Collection(int id)
+    public async Task<IActionResult> GetCollection(int id)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
 
         await using MediaContext mediaContext = new();
-        var collection = await mediaContext.Collections
-            .AsNoTracking()
-            
-            .Where(collection => collection.Id == id)
-            
-            .Where(collection => collection.Library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null)
-            
-            .Include(collection => collection.CollectionUser)
-            
-            .Include(collection => collection.Library)
-                .ThenInclude(library => library.LibraryUsers)
-            
-            .Include(collection => collection.CollectionMovies)
-                .ThenInclude(movie => movie.Movie)
-                    .ThenInclude(movie => movie.Translations
-                        .Where(translation => translation.Iso6391 == HttpContext.Request.Headers.AcceptLanguage[0]))
-            
-            .Include(collection => collection.CollectionMovies)
-                .ThenInclude(movie => movie.Movie)
-                    .ThenInclude(movie => movie.VideoFiles)
-            
-            .Include(collection => collection.CollectionMovies)
-                .ThenInclude(movie => movie.Movie)
-                    .ThenInclude(movie => movie.MovieUser)
-            
-            .Include(collection => collection.CollectionMovies)
-                .ThenInclude(movie => movie.Movie)
-                    .ThenInclude(movie => movie.CertificationMovies)
-                        .ThenInclude(certificationMovie => certificationMovie.Certification)
-            
-            .Include(collection => collection.CollectionMovies)
-                .ThenInclude(movie => movie.Movie)
-                    .ThenInclude(movie => movie.GenreMovies)
-                        .ThenInclude(genreMovie => genreMovie.Genre)
-            
-            .Include(collection => collection.CollectionMovies)
-                .ThenInclude(movie => movie.Movie)
-                    .ThenInclude(movie => movie.Cast.Where(cast => cast.Role.Character != null))
-                        .ThenInclude(genreMovie => genreMovie.Person)
-            .Include(collection => collection.CollectionMovies)
-                .ThenInclude(movie => movie.Movie)
-                    .ThenInclude(movie => movie.Cast.Where(cast => cast.Role.Character != null))
-                        .ThenInclude(genreMovie => genreMovie.Role)
-            
-            // .Include(collection => collection.CollectionMovies)
-            //     .ThenInclude(movie => movie.Movie)
-            //         .ThenInclude(movie => movie.Crew.Where(cast => cast.Job != null && cast.Job.Task != null))
-            //             .ThenInclude(genreMovie => genreMovie.Person)
-            //
-            // .Include(collection => collection.CollectionMovies)
-            //     .ThenInclude(movie => movie.Movie)
-            //         .ThenInclude(movie => movie.Crew.Where(cast => cast.Job != null && cast.Job.Task != null))
-            //             .ThenInclude(genreMovie => genreMovie.Job)
-            
-            .Include(collection => collection.CollectionMovies)
-                .ThenInclude(movie => movie.Movie)
-                    .ThenInclude(movie => movie.Images)
-            
-            .Include(collection => collection.Translations
-                .Where(translation => translation.Iso6391 == HttpContext.Request.Headers.AcceptLanguage[0]))
-            
-            .Include(collection => collection.Images
-                .Where(image => 
-                    (image.Type == "logo" && image.Iso6391 == "en")
-                    || ((image.Type == "backdrop" || image.Type == "poster") && (image.Iso6391 == "en" || image.Iso6391 == null))
-                )
-            )
-
-            .FirstOrDefaultAsync();
+        var collection = await CollectionResponseDto.GetCollection(mediaContext, userId, id, 
+            HttpContext.Request.Headers.AcceptLanguage[0] ?? string.Empty, 
+            HttpContext.Request.Headers.AcceptLanguage[1] ?? string.Empty);
         
-        return new CollectionResponseDto
+        if (collection is not null && collection.CollectionMovies.Count > 0 && collection.Images.Count > 0)
         {
-            Data = collection is not null 
-                ? new CollectionResponseItemDto(collection, HttpContext.Request.Headers.AcceptLanguage[1] ?? "US")
-                : null
-        };
+            return Ok(new CollectionResponseDto
+            {
+                Data = new CollectionResponseItemDto(collection, HttpContext.Request.Headers.AcceptLanguage[1])
+            });
+        }
+        
+        CollectionClient collectionsClient = new(id);
+        CollectionAppends? collectionAppends = await collectionsClient.WithAllAppends(true);
+        
+        if (collectionAppends is null)
+        {
+            return NotFound(new CollectionResponseDto
+            {
+                Data = null
+            });
+        }
+        
+        AddCollectionJob addJob = new(collectionAppends.Id);
+        JobDispatcher.Dispatch(addJob, "queue", 10);
+
+        return Ok(new CollectionResponseDto
+        {
+            Data = new CollectionResponseItemDto(collectionAppends)
+        });
     }
     
     [HttpGet]
     [Route("{id:int}/available")]
-    public async Task<AvailableResponseDto> Available(int id)
+    public async Task<IActionResult> Available(int id)
     {        
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
 
         await using MediaContext mediaContext = new();
         var collection = await mediaContext.Collections
@@ -164,26 +136,26 @@ public class CollectionsController : Controller
             
             .FirstOrDefaultAsync();
         
-        return new AvailableResponseDto
+        return Ok(new AvailableResponseDto
         {
             Available = collection is not null && collection.CollectionMovies
                 .Select(movie => movie.Movie.VideoFiles)
                 .Any()
-        };
+        });
     }
     
     [HttpGet]
     [Route("{id:int}/watch")]
-    public async Task<PlaylistResponseDto[]> Watch(int id)
+    public async Task<IActionResult> Watch(int id)
     {        
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         
         await using MediaContext mediaContext = new();
         var collection = await mediaContext.Collections
             .AsNoTracking()
             .Where(collection => collection.Id == id)
             
-            .Include(collection => collection.CollectionMovies)
+            .Include(collection => collection.CollectionMovies.OrderBy(collectionMovie => collectionMovie.Movie.ReleaseDate))
                 .ThenInclude(collectionMovie => collectionMovie.Movie)
                     .ThenInclude(movie => movie.Library.LibraryUsers)
             
@@ -218,18 +190,18 @@ public class CollectionsController : Controller
             
             .FirstOrDefaultAsync();
 
-        return collection is not null
+        return Ok(collection is not null
             ? collection.CollectionMovies
-                .Select((movie, index) => new PlaylistResponseDto(movie.Movie, index + 1))
+                .Select((movie, index) => new PlaylistResponseDto(movie.Movie, index + 1, collection))
                 .ToArray()
-            : [];
+            : []);
     }
     
     [HttpPost]
     [Route("{id:int}/like")]
-    public async Task<StatusResponseDto<string>> Like(int id, [FromBody] LikeRequestDto request)
+    public async Task<IActionResult> Like(int id, [FromBody] LikeRequestDto request)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         
         await using MediaContext mediaContext = new();
         var collection = await mediaContext.Collections
@@ -240,14 +212,14 @@ public class CollectionsController : Controller
 
         if (collection is null)
         {
-            return new StatusResponseDto<string>
+            return Ok(new StatusResponseDto<string>
             {
                 Status = "error",
                 Message = "Collection not found"
-            };
+            });
         }
         
-        if(request.Like)
+        if(request.Value)
         {
             await mediaContext.CollectionUser.Upsert(new CollectionUser(collection.Id, userId))
                 .On(m => new { m.CollectionId, m.UserId })
@@ -272,15 +244,15 @@ public class CollectionsController : Controller
             await mediaContext.SaveChangesAsync();
         }
         
-        return new StatusResponseDto<string>
+        return Ok(new StatusResponseDto<string>
         {
             Status = "ok",
             Message = "{0} {1}",
             Args = new object[]
             {
                 collection.Title,
-                request.Like ? "liked" : "unliked"
+                request.Value ? "liked" : "unliked"
             }
-        };
+        });
     }
 }

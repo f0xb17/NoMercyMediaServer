@@ -395,67 +395,38 @@ public class Certification
 public class CertificationList
 {
     [JsonProperty("AU")] public CertificationItem[] Au { get; set; } = [];
-
     [JsonProperty("BG")] public CertificationItem[] Bg { get; set; } = [];
-
     [JsonProperty("BR")] public CertificationItem[] Br { get; set; } = [];
-
     [JsonProperty("CA-QC")] public CertificationItem[] Caqc { get; set; } = [];
-
     [JsonProperty("CA")] public CertificationItem[] Ca { get; set; } = [];
-
     [JsonProperty("DE")] public CertificationItem[] De { get; set; } = [];
-
     [JsonProperty("ES")] public CertificationItem[] Es { get; set; } = [];
-
     [JsonProperty("FI")] public CertificationItem[] Fi { get; set; } = [];
-
     [JsonProperty("FR")] public CertificationItem[] Fr { get; set; } = [];
-
     [JsonProperty("GB")] public CertificationItem[] Gb { get; set; } = [];
-
     [JsonProperty("HU")] public CertificationItem[] Hu { get; set; } = [];
-
     [JsonProperty("IN")] public CertificationItem[] In { get; set; } = [];
-
     [JsonProperty("KR")] public CertificationItem[] Kr { get; set; } = [];
-
     [JsonProperty("LT")] public CertificationItem[] Lt { get; set; } = [];
-
     [JsonProperty("NL")] public CertificationItem[] Nl { get; set; } = [];
-
     [JsonProperty("NZ")] public CertificationItem[] Nz { get; set; } = [];
-
     [JsonProperty("PH")] public CertificationItem[] Ph { get; set; } = [];
-
     [JsonProperty("RU")] public CertificationItem[] Ru { get; set; } = [];
-
     [JsonProperty("SK")] public CertificationItem[] Sk { get; set; } = [];
-
     [JsonProperty("US")] public CertificationItem[] Us { get; set; } = [];
-
     [JsonProperty("DK")] public CertificationItem[] Dk { get; set; } = [];
-
     [JsonProperty("IT")] public CertificationItem[] It { get; set; } = [];
-
     [JsonProperty("MY")] public CertificationItem[] My { get; set; } = [];
-
     [JsonProperty("NO")] public CertificationItem[] No { get; set; } = [];
-
     [JsonProperty("SE")] public CertificationItem[] Se { get; set; } = [];
-
     [JsonProperty("TH")] public CertificationItem[] Th { get; set; } = [];
-
     [JsonProperty("PT")] public CertificationItem[] Pt { get; set; } = [];
 }
 
 public class CertificationItem
 {
     [JsonProperty("certification")] public string Certification { get; set; } = string.Empty;
-
     [JsonProperty("meaning")] public string Meaning { get; set; } = string.Empty;
-
     [JsonProperty("order")] public int Order { get; set; }
-
     public string Iso31661 { get; set; } = string.Empty;
 }

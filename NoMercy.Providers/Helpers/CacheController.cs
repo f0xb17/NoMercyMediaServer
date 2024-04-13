@@ -5,7 +5,7 @@ namespace NoMercy.Providers.Helpers;
 
 public static class CacheController
 {
-    private static string GenerateFileName(string url)
+    public static string GenerateFileName(string url)
     {
         return CreateMd5(url);
     }
@@ -31,14 +31,14 @@ public static class CacheController
                 return false;
             }
 
-            T? data = null;
+            T? data;
             try
             {
                 string d = File.ReadAllTextAsync(fullname).Result;
                 data = JsonHelper.FromJson<T>(d);
                 
             }
-            catch (Exception e)
+            catch (Exception _)
             {
                 value = default;
                 return false;
@@ -63,10 +63,16 @@ public static class CacheController
     
     public static async Task Write(string url, string data)
     {
-        // Console.WriteLine(@"Writing to cache for {0}", url);
-
         string fullname = Path.Combine(AppFiles.ApiCachePath, GenerateFileName(url));
+
+        try
+        {
+            await File.WriteAllTextAsync(fullname, data);
+        }
+        catch (Exception _)
+        {
+            await Write(url, data);
+        }
         
-        await File.WriteAllTextAsync(fullname, data);
     }
 }

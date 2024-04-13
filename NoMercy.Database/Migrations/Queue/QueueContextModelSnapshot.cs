@@ -4,11 +4,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NoMercy.Database;
-using NoMercy.Queue;
 
 #nullable disable
 
-namespace NoMercy.Queue.Migrations.Queue
+namespace NoMercy.Database.Migrations.Queue
 {
     [DbContext(typeof(QueueContext))]
     partial class QueueContextModelSnapshot : ModelSnapshot
@@ -18,7 +17,7 @@ namespace NoMercy.Queue.Migrations.Queue
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.1");
 
-            modelBuilder.Entity("NoMercy.Queue.Models.FailedJob", b =>
+            modelBuilder.Entity("NoMercy.Database.Models.FailedJob", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -55,7 +54,7 @@ namespace NoMercy.Queue.Migrations.Queue
                     b.ToTable("FailedJobs");
                 });
 
-            modelBuilder.Entity("NoMercy.Queue.Models.QueueJob", b =>
+            modelBuilder.Entity("NoMercy.Database.Models.QueueJob", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()

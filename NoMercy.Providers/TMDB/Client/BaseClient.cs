@@ -18,6 +18,7 @@ namespace NoMercy.Providers.TMDB.Client
             _client.DefaultRequestHeaders.Accept.Clear();
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiInfo.TmdbToken}");
+            _client.Timeout = TimeSpan.FromMinutes(5);
         }
 
         protected BaseClient(int id)
@@ -29,6 +30,7 @@ namespace NoMercy.Providers.TMDB.Client
             _client.DefaultRequestHeaders.Accept.Clear();
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiInfo.TmdbToken}");
+            _client.Timeout = TimeSpan.FromMinutes(5);
             Id = id;
         }
 
@@ -50,20 +52,20 @@ namespace NoMercy.Providers.TMDB.Client
 
         public int Id { get; private set; }
 
-        protected async Task<T> Get<T>(string url, Dictionary<string, string> query = null) where T : class
+        protected async Task<T?> Get<T>(string url, Dictionary<string, string>? query = null, bool? priority = false) where T : class
         {
             query ??= new Dictionary<string, string>();
 
-            var newUrl = QueryHelpers.AddQueryString(url, query);
+            var newUrl = QueryHelpers.AddQueryString(url, query!);
 
             if (CacheController.Read(newUrl, out T? result))
             {
                 return result;
             }
 
-            Logger.MovieDb(newUrl);
+            Logger.MovieDb(newUrl, LogLevel.Debug);
 
-            var response = await GetQueue().Enqueue(() => _client.GetStringAsync(newUrl), newUrl);
+            var response = await GetQueue().Enqueue(() => _client.GetStringAsync(newUrl), newUrl, priority);
 
             await CacheController.Write(newUrl, response);
 
@@ -72,7 +74,7 @@ namespace NoMercy.Providers.TMDB.Client
             return data;
         }
 
-        protected async Task<List<T>> Paginated<T>(string url, int limit) where T : class
+        protected async Task<List<T>?> Paginated<T>(string url, int limit) where T : class
         {
             List<T> list = new List<T>();
 

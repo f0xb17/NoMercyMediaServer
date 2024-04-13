@@ -9,35 +9,35 @@ public class CollectionClient : BaseClient
     {
     }
 
-    public Task<CollectionDetails> Details()
+    public Task<CollectionDetails?> Details()
     {
         return Get<CollectionDetails>("collection/" + Id);
     }
 
-    private Task<CollectionAppends> WithAppends(string[] appendices)
+    private Task<CollectionAppends?> WithAppends(string[] appendices, bool? priority = false)
     {
-        var @prarams = new Dictionary<string, string>
+        var queryParams = new Dictionary<string, string>
         {
             ["append_to_response"] = string.Join(",", appendices)
         };
         
-        return Get<CollectionAppends>("collection/" + Id, @prarams);
+        return Get<CollectionAppends>("collection/" + Id, queryParams, priority);
     }
 
-    public Task<CollectionAppends> WithAllAppends()
+    public Task<CollectionAppends?> WithAllAppends(bool? priority = false)
     {
         return WithAppends([
             "images",
             "translations"
-        ]);
+        ], priority);
     }
 
-    public Task<CollectionImages> Images()
+    public Task<CollectionImages?> Images()
     {
         return Get<CollectionImages>("collection/" + Id + "/images");
     }
 
-    public Task<CollectionsTranslations> Translations()
+    public Task<CollectionsTranslations?> Translations()
     {
         return Get<CollectionsTranslations>("collection/" + Id + "/translations");
     }

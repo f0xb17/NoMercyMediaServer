@@ -12,11 +12,9 @@ public class MovieCertifications
 public class MovieCertification
 {
     [JsonProperty("certification")]
-    public string Rating { get; set; }
-
+    public string? Rating { get; set; }
     [JsonProperty("meaning")]
     public string Meaning { get; set; }
-
     [JsonProperty("order")]
     public int Order { get; set; }
 }

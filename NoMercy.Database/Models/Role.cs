@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
@@ -15,6 +17,7 @@ namespace NoMercy.Database.Models
 
         [JsonProperty("character")] public string? Character { get; set; }
         [JsonProperty("episode_count")] public int EpisodeCount { get; set; }
+        [JsonProperty("order")] public int? Order { get; set; }
 
         [JsonProperty("credit_id")] public string? CreditId { get; set; }
         public virtual Cast? Cast { get; set; }
@@ -30,6 +33,7 @@ namespace NoMercy.Database.Models
         {
             Character = role.Character;
             EpisodeCount = role.EpisodeCount;
+            Order = role.Order;
             CreditId = role.CreditId;
         }
 
@@ -37,6 +41,7 @@ namespace NoMercy.Database.Models
         {
             Character = cast.Character;
             CreditId = cast.CreditId;
+            Order = cast.Order;
             EpisodeCount = 0;
         }
 
@@ -44,6 +49,7 @@ namespace NoMercy.Database.Models
         {
             Character = guest.CharacterName;
             CreditId = guest.CreditId;
+            Order = guest.Order;
             EpisodeCount = 0;
         }
     }

@@ -1,9 +1,8 @@
-using Newtonsoft.Json;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-
+using Newtonsoft.Json;
 namespace NoMercy.Providers.Other;
 
-public static class KitsuIO
+public static class KitsuIo
 {
     public static async Task<bool> IsAnime(string title, int year)
     {
@@ -12,22 +11,40 @@ public static class KitsuIO
         var client = new HttpClient();
         var response = await client.GetAsync($"https://kitsu.io/api/edge/anime?filter[text]={title}&filter[year]={year}");
         var content = await response.Content.ReadAsStringAsync();
-        var anime = JsonConvert.DeserializeObject<KitsuAnime>(content);
         
-        foreach (var data in anime?.Data ?? [])
+        try
         {
-            if (data.Attributes.Titles.En?.ToLower() == title.ToLower())
+            KitsuAnime? anime = JsonConvert.DeserializeObject<KitsuAnime>(content);
+            
+            foreach (var data in anime?.Data ?? [])
             {
-                isAnime = true;
+                if (data.Attributes.Titles.En?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
+                {
+                    isAnime = true;
+                }
+                else if (data.Attributes.Titles.EnJp?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
+                {
+                    isAnime = true;
+                }
+                else if (data.Attributes.Titles.JaJp?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
+                {
+                    isAnime = true;
+                }
+                else if (data.Attributes.Titles.ThTh?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
+                {
+                    isAnime = true;
+                }
+                else if (data.Attributes.AbbreviatedTitles.Any(abbreviatedTitle => abbreviatedTitle.Equals(abbreviatedTitle, StringComparison.CurrentCultureIgnoreCase)))
+                {
+                    isAnime = true;
+                }
+                
             }
-            else if (data.Attributes.Titles.EnJp?.ToLower() == title.ToLower())
-            {
-                isAnime = true;
-            }
-            else if (data.Attributes.Titles.JaJp?.ToLower() == title.ToLower())
-            {
-                isAnime = true;
-            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
         }
         
         return isAnime;
@@ -36,153 +53,104 @@ public static class KitsuIO
 
 public class KitsuAnime
 {
-    [JsonProperty("data")] public Datum[] Data { get; set; }
-
+    [JsonProperty("data")] public Data[] Data { get; set; }
     [JsonProperty("meta")] public KitsuIoMeta Meta { get; set; }
-
     [JsonProperty("links")] public KitsuIoLinks Links { get; set; }
 }
 
-public class Datum
+public class Data
 {
-    [JsonProperty("id")] public long Id { get; set; }
-
+    [JsonProperty("id")] public int Id { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
-
-    [JsonProperty("links")] public DatumLinks Links { get; set; }
-
+    [JsonProperty("links")] public Links Links { get; set; }
     [JsonProperty("attributes")] public Attributes Attributes { get; set; }
-
     [JsonProperty("relationships")] public Dictionary<string, Relationship> Relationships { get; set; }
 }
 
 public class Attributes
 {
-    [JsonProperty("created_at")] public DateTimeOffset CreatedAt { get; set; }
-
-    [JsonProperty("updated_at")] public DateTimeOffset UpdatedAt { get; set; }
-
+    [JsonProperty("createdAt")] public DateTime CreatedAt { get; set; }
+    [JsonProperty("updatedAt")] public DateTime UpdatedAt { get; set; }
     [JsonProperty("slug")] public string Slug { get; set; }
-
     [JsonProperty("synopsis")] public string Synopsis { get; set; }
-
     [JsonProperty("description")] public string Description { get; set; }
-
-    [JsonProperty("coverImageTopOffset")] public long CoverImageTopOffset { get; set; }
-
+    [JsonProperty("coverImageTopOffset")] public int CoverImageTopOffset { get; set; }
     [JsonProperty("titles")] public Titles Titles { get; set; }
-
     [JsonProperty("canonicalTitle")] public string CanonicalTitle { get; set; }
-
     [JsonProperty("abbreviatedTitles")] public string[] AbbreviatedTitles { get; set; }
-
-    [JsonProperty("averageRating")] public string AverageRating { get; set; }
-
-    [JsonProperty("ratingFrequencies")] public Dictionary<string, long> RatingFrequencies { get; set; }
-
-    [JsonProperty("userCount")] public long UserCount { get; set; }
-
-    [JsonProperty("favoritesCount")] public long FavoritesCount { get; set; }
-
-    [JsonProperty("startDate")] public DateTimeOffset StartDate { get; set; }
-
-    [JsonProperty("endDate")] public DateTimeOffset EndDate { get; set; }
-
-    [JsonProperty("nextRelease")] public object NextRelease { get; set; }
-
-    [JsonProperty("popularityRank")] public long PopularityRank { get; set; }
-
-    [JsonProperty("ratingRank")] public long RatingRank { get; set; }
-
-    [JsonProperty("ageRating")] public string AgeRating { get; set; }
-
+    [JsonProperty("averageRating")] public string? AverageRating { get; set; }
+    [JsonProperty("ratingFrequencies")] public Dictionary<string, int> RatingFrequencies { get; set; }
+    [JsonProperty("userCount")] public int UserCount { get; set; }
+    [JsonProperty("favoritesCount")] public int? FavoritesCount { get; set; }
+    [JsonProperty("startDate")] public DateTime? StartDate { get; set; }
+    [JsonProperty("endDate")] public DateTime? EndDate { get; set; }
+    [JsonProperty("nextRelease")] public object? NextRelease { get; set; }
+    [JsonProperty("popularityRank")] public int? PopularityRank { get; set; }
+    [JsonProperty("ratingRank")] public int? RatingRank { get; set; }
+    [JsonProperty("ageRating")] public string? AgeRating { get; set; }
     [JsonProperty("ageRatingGuide")] public string AgeRatingGuide { get; set; }
-
     [JsonProperty("subtype")] public string Subtype { get; set; }
-
     [JsonProperty("status")] public string Status { get; set; }
-
-    [JsonProperty("tba")] public string Tba { get; set; }
-
-    [JsonProperty("posterImage")] public PosterImage PosterImage { get; set; }
-
-    [JsonProperty("coverImage")] public CoverImage CoverImage { get; set; }
-
-    [JsonProperty("episodeCount")] public long EpisodeCount { get; set; }
-
-    [JsonProperty("episodeLength")] public long EpisodeLength { get; set; }
-
-    [JsonProperty("totalLength")] public long TotalLength { get; set; }
-
-    [JsonProperty("youtubeVideoId")] public string YoutubeVideoId { get; set; }
-
-    [JsonProperty("showType")] public string ShowType { get; set; }
-
+    [JsonProperty("tba")] public string? Tba { get; set; }
+    [JsonProperty("posterImage")] public PosterImage? PosterImage { get; set; }
+    [JsonProperty("coverImage")] public CoverImage? CoverImage { get; set; }
+    [JsonProperty("episodeCount")] public int? EpisodeCount { get; set; }
+    [JsonProperty("episodeLength")] public int? EpisodeLength { get; set; }
+    [JsonProperty("totalLength")] public int? TotalLength { get; set; }
+    [JsonProperty("youtubeVideoId")] public string? YoutubeVideoId { get; set; }
+    [JsonProperty("showType")] public string? ShowType { get; set; }
     [JsonProperty("nsfw")] public bool Nsfw { get; set; }
 }
 
 public class CoverImage
 {
-    [JsonProperty("tiny")] public Uri Tiny { get; set; }
-
-    [JsonProperty("large")] public Uri Large { get; set; }
-
-    [JsonProperty("small")] public Uri Small { get; set; }
-
-    [JsonProperty("original")] public Uri Original { get; set; }
-
-    [JsonProperty("meta")] public CoverImageMeta Meta { get; set; }
+    [JsonProperty("tiny")] public Uri? Tiny { get; set; }
+    [JsonProperty("large")] public Uri? Large { get; set; }
+    [JsonProperty("small")] public Uri? Small { get; set; }
+    [JsonProperty("original")] public Uri? Original { get; set; }
+    [JsonProperty("meta")] public CoverImageMeta? Meta { get; set; }
 }
 
 public class CoverImageMeta
 {
-    [JsonProperty("dimensions")] public Dimensions Dimensions { get; set; }
+    [JsonProperty("dimensions")] public Dimensions? Dimensions { get; set; }
 }
 
 public class Dimensions
 {
-    [JsonProperty("tiny")] public Large Tiny { get; set; }
-
-    [JsonProperty("large")] public Large Large { get; set; }
-
-    [JsonProperty("small")] public Large Small { get; set; }
+    [JsonProperty("tiny")] public Large? Tiny { get; set; }
+    [JsonProperty("large?")] public Large? Large { get; set; }
+    [JsonProperty("small")] public Large? Small { get; set; }
 
     [JsonProperty("medium", NullValueHandling = NullValueHandling.Ignore)]
-    public Large Medium { get; set; }
+    public Large? Medium { get; set; }
 }
 
 public class Large
 {
-    [JsonProperty("width")] public long Width { get; set; }
-
-    [JsonProperty("height")] public long Height { get; set; }
+    [JsonProperty("width")] public int? Width { get; set; }
+    [JsonProperty("height")] public int? Height { get; set; }
 }
 
 public class PosterImage
 {
-    [JsonProperty("tiny")] public Uri Tiny { get; set; }
-
-    [JsonProperty("large")] public Uri Large { get; set; }
-
-    [JsonProperty("small")] public Uri Small { get; set; }
-
-    [JsonProperty("medium")] public Uri Medium { get; set; }
-
-    [JsonProperty("original")] public Uri Original { get; set; }
-
-    [JsonProperty("meta")] public CoverImageMeta Meta { get; set; }
+    [JsonProperty("tiny")] public Uri? Tiny { get; set; }
+    [JsonProperty("large")] public Uri? Large { get; set; }
+    [JsonProperty("small")] public Uri? Small { get; set; }
+    [JsonProperty("medium")] public Uri? Medium { get; set; }
+    [JsonProperty("original")] public Uri? Original { get; set; }
+    [JsonProperty("meta")] public CoverImageMeta? Meta { get; set; }
 }
 
 public class Titles
 {
-    [JsonProperty("en")] public string En { get; set; }
-
-    [JsonProperty("en_jp")] public string EnJp { get; set; }
-
-    [JsonProperty("ja_jp")] public string JaJp { get; set; }
+    [JsonProperty("en")] public string? En { get; set; }
+    [JsonProperty("en_jp")] public string? EnJp { get; set; }
+    [JsonProperty("ja_jp")] public string? JaJp { get; set; }
+    [JsonProperty("th_th")] public string? ThTh { get; set; }
 }
 
-public class DatumLinks
+public class Links
 {
     [JsonProperty("self")] public Uri Self { get; set; }
 }
@@ -195,18 +163,16 @@ public class Relationship
 public class RelationshipLinks
 {
     [JsonProperty("self")] public Uri Self { get; set; }
-
     [JsonProperty("related")] public Uri Related { get; set; }
 }
 
 public class KitsuIoLinks
 {
     [JsonProperty("first")] public Uri First { get; set; }
-
     [JsonProperty("last")] public Uri Last { get; set; }
 }
 
 public class KitsuIoMeta
 {
-    [JsonProperty("count")] public long Count { get; set; }
+    [JsonProperty("count")] public int Count { get; set; }
 }

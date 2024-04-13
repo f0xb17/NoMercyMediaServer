@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -11,7 +12,6 @@ using NoMercy.Database.Models;
 using NoMercy.Helpers;
 using NoMercy.Helpers.Monitoring;
 using NoMercy.Server.app.Helper;
-using NoMercy.Server.app.Http.Clients;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.system;
 using LogLevel = NoMercy.Helpers.LogLevel;
@@ -32,11 +32,17 @@ public class ServerController : Controller
     {
         ApplicationLifetime = appLifetime;
     }
-
+    
+    [NonAction]
+    private Guid GetUserId()
+    {
+        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+    }
+    
     [HttpGet]
     public IActionResult Index()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
 
@@ -44,19 +50,21 @@ public class ServerController : Controller
     [Route("setup")]
     public async Task<StatusResponseDto<SetupResponseDto>> Setup()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
 
         await using MediaContext mediaContext = new();
         List<Library> libraries = await mediaContext.Libraries
-            .Where(library => library.LibraryUsers
-                .Any(libraryUser => libraryUser.UserId == userId)
-            )
+                
             .Include(library => library.FolderLibraries)
-            .ThenInclude(folderLibrary => folderLibrary.Folder)
-            .ThenInclude(folder => folder.EncoderProfileFolder)
-            .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
-            .Include(library => library.LibraryUsers)
-            .ThenInclude(libraryUser => libraryUser.User)
+                .ThenInclude(folderLibrary => folderLibrary.Folder)
+                    .ThenInclude(folder => folder.EncoderProfileFolder)
+                        .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
+            
+            .Include(library => library.LibraryUsers
+                    .Where(x => x.UserId == userId)
+                )
+                .ThenInclude(libraryUser => libraryUser.User)
+            
             .ToListAsync();
 
         int libraryCount = libraries.Count;
@@ -87,7 +95,7 @@ public class ServerController : Controller
     [Route("start")]
     public IActionResult StartServer()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         // ApplicationLifetime.StopApplication();
         return Content("Done");
     }
@@ -96,7 +104,7 @@ public class ServerController : Controller
     [Route("stop")]
     public IActionResult StopServer()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         // ApplicationLifetime.StopApplication();
         return Content("Done");
     }
@@ -105,7 +113,7 @@ public class ServerController : Controller
     [Route("restart")]
     public IActionResult RestartServer()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         // ApplicationLifetime.StopApplication();
         return Content("Done");
     }
@@ -114,7 +122,7 @@ public class ServerController : Controller
     [Route("shutdown")]
     public IActionResult Shutdown()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         ApplicationLifetime.StopApplication();
         return Content("Done");
     }
@@ -123,7 +131,7 @@ public class ServerController : Controller
     [Route("loglevel")]
     public IActionResult LogLevel(LogLevel level)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         Logger.SetLogLevel(level);
 
         return Content("Log level set to " + level);
@@ -133,7 +141,7 @@ public class ServerController : Controller
     [Route("directorytree")]
     public StatusResponseDto<List<DirectoryTreeDto>> DirectoryTree([FromBody] PathRequest request)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
 
         string? path = request.Path ?? request.Folder;
 
@@ -156,9 +164,7 @@ public class ServerController : Controller
 
             path = "/";
         }
-
-        Logger.App(path);
-
+        
         if (!Directory.Exists(path))
         {
             return new StatusResponseDto<List<DirectoryTreeDto>>
@@ -219,7 +225,7 @@ public class ServerController : Controller
     public static string GetDeviceName()
     {
         MediaContext mediaContext = new();
-        Configuration? device = mediaContext.Configuration?.FirstOrDefault(device => device.Key == "server_name");
+        Configuration? device = mediaContext.Configuration.FirstOrDefault(device => device.Key == "server_name");
         return device?.Value ?? Environment.MachineName;
     }
 
@@ -227,7 +233,7 @@ public class ServerController : Controller
     [Route("info")]
     public ServerInfoDto ServerInfo()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
 
         return new ServerInfoDto
         {
@@ -244,7 +250,7 @@ public class ServerController : Controller
     [Route("resources")]
     public ResourceInfoDto Resources()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
 
         double totalCpu = 0.0;
         double totalMemory = 0.0;
@@ -265,7 +271,7 @@ public class ServerController : Controller
     [Route("info")]
     public async Task<StatusResponseDto<string>> Update([FromBody] ServerUpdateRequest request)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         await using MediaContext mediaContext = new();
         var configuration = await mediaContext.Configuration
             .AsTracking()
@@ -307,11 +313,21 @@ public class ServerController : Controller
                 })
             };
 
-            var response = client
+            var response = await client
                 .SendAsync(httpRequestMessage)
-                .Result.Content.ReadAsStringAsync().Result;
+                .Result.Content.ReadAsStringAsync();
 
             var data = JsonConvert.DeserializeObject<StatusResponseDto<string>>(response);
+
+            if (data == null)
+            {
+                return new StatusResponseDto<string>()
+                {
+                    Status = "error",
+                    Message = "Server name could not be updated",
+                    Args = []
+                };
+            }
 
             return new StatusResponseDto<string>
             {
@@ -367,12 +383,11 @@ public class ServerController : Controller
 
     [HttpGet]
     [Route("/files/${depth:int}/${path:required}")]
-    public async Task<List<MediaFolder>?> Files(string path, int depth)
+    public async Task<ConcurrentBag<MediaFolder>?> Files(string path, int depth)
     {
-        Logger.App($@"Files: {path}");
         MediaScan mediaScan = new();
 
-        List<MediaFolder>? folders = await mediaScan
+        ConcurrentBag<MediaFolder> folders = await mediaScan
             .EnableFileListing()
             .Process(path, depth);
 

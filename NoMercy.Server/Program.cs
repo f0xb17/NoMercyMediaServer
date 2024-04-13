@@ -1,9 +1,13 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using CommandLine;
 using Microsoft.AspNetCore;
+using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Helpers;
+using NoMercy.Providers.AniDb.Clients;
 using NoMercy.Server.app.Helper;
+using NoMercy.Server.app.Jobs;
 using NoMercy.Server.Logic;
 using NoMercy.Server.system;
 using Networking = NoMercy.Server.app.Helper.Networking;
@@ -19,7 +23,7 @@ public static class Program
             var exception = (Exception)eventArgs.ExceptionObject;
             Logger.App("UnhandledException " + exception);
         };
-
+        
         return Parser.Default.ParseArguments<StartupOptions>(args)
             .MapResult(Start, ErrorParsingArguments);
 
@@ -46,8 +50,8 @@ public static class Program
             {
                 stopWatch.Stop();
 
-                Task.Delay(200).Wait();
-
+                Task.Delay(300).Wait();
+                
                 Logger.App($@"Internal Address: {Networking.InternalAddress}");
                 Logger.App($@"External Address: {Networking.ExternalAddress}");
 
@@ -56,7 +60,7 @@ public static class Program
                 Logger.App($@"Server started in {stopWatch.ElapsedMilliseconds}ms");
             });
         });
-
+        
         app.RunAsync().Wait();
         
         await Task.CompletedTask;
@@ -72,7 +76,7 @@ public static class Program
         await Task.CompletedTask;
     }
 
-    private static IWebHostBuilder CreateWebHostBuilder(this IWebHostBuilder builder)
+    private static IWebHostBuilder CreateWebHostBuilder(this IWebHostBuilder _)
     {
         ApiInfo.RequestInfo().Wait();
         List<Task> startupTasks =
@@ -81,30 +85,44 @@ public static class Program
             AppFiles.CreateAppFolders(),
             Networking.Discover(),
             Auth.Init(),
+            Seed.Init(),
             Register.Init(),
             Binaries.DownloadAll(),
-            Seed.Init(),
-            Task.Run(QueueRunner.Initialize),
+            new Task(() => QueueRunner.Initialize().Wait()),
+            // AniDbBaseClient.Init(),
             TrayIcon.Make()
         ];
         
-        RunStartup(startupTasks)
-            .ConfigureAwait(false);
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+        {
+            AniDbBaseClient.Dispose();   
+        };
+
+        RunStartup(startupTasks);
         
         return WebHost.CreateDefaultBuilder([])
             .ConfigureKestrel(Certificate.KestrelConfig)
             .UseUrls("https://0.0.0.0:" + SystemInfo.ServerPort)
-            .UseKestrel(options => options.AddServerHeader = false)
+            .UseKestrel(options =>
+            {
+                options.AddServerHeader = false;
+                options.Limits.MaxRequestBodySize = null; 
+                options.Limits.MaxRequestBufferSize = null;
+                options.Limits.MaxConcurrentConnections = null;
+                options.Limits.MaxConcurrentUpgradedConnections = null;
+            })
             .UseQuic()
             .UseSockets()
             .UseStartup<Startup>();
     }
 
-    private static async Task RunStartup(List<Task> startupTasks)
+    private static void RunStartup(List<Task> startupTasks)
     {
         foreach (var task in startupTasks)
         {
-            await task;
+            if (task.IsCompleted) continue;
+            task.ConfigureAwait(false);
+            task.Start();
         }
     }
 

@@ -1,5 +1,4 @@
 using Newtonsoft.Json;
-using NoMercy.Database.Models;
 using NoMercy.Helpers;
 using Exception = System.Exception;
 using LogLevel = NoMercy.Helpers.LogLevel;

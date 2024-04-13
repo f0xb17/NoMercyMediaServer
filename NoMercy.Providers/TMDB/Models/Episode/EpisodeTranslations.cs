@@ -10,7 +10,6 @@ public class EpisodeTranslations : SharedTranslations
 
 public class EpisodeTranslation : SharedTranslation
 {
-
     [JsonProperty("data")] public new EpisodeTranslationData Data { get; set; } = new();
 }
 

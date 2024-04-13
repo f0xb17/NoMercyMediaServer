@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
@@ -7,9 +9,9 @@ namespace NoMercy.Database.Models
     [PrimaryKey(nameof(Id))]
     public class Special : ColorPaletteTimeStamps
     {
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         [JsonProperty("id")]
-        public required string Id { get; set; }
+        public required Ulid Id { get; set; } = Ulid.NewUlid();
 
         [JsonProperty("backdrop")] public string? Backdrop { get; set; }
         [JsonProperty("description")] public string? Description { get; set; }
@@ -19,9 +21,12 @@ namespace NoMercy.Database.Models
         [JsonProperty("titleSort")] public string? TitleSort { get; set; }
         [JsonProperty("creator")] public string? Creator { get; set; }
         [JsonProperty("overview")] public string? Overview { get; set; }
+        
+        [JsonProperty("items")] 
+        public virtual ICollection<SpecialItem> Items { get; set; } = new HashSet<SpecialItem>();
+    
+        [JsonProperty("special_user")] 
+        public virtual ICollection<SpecialUser> SpecialUser { get; set; }
 
-        public Special()
-        {
-        }
     }
 }

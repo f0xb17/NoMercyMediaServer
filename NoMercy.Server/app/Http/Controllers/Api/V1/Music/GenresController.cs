@@ -11,10 +11,16 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Music;
 [Authorize, Route("api/v{Version:apiVersion}/music/genres", Order = 4)]
 public class GenresController: Controller
 {
+    [NonAction]
+    private Guid GetUserId()
+    {
+        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+    }
+
     [HttpGet]
     public IActionResult Index()
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
     
@@ -22,7 +28,7 @@ public class GenresController: Controller
     [Route("{id:guid}")]
     public IActionResult Show(Guid id)
     {
-        Guid userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = GetUserId();
         return Ok();
     }
 }
