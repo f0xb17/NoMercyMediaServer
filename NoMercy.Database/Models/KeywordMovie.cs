@@ -4,25 +4,24 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Providers.TMDB.Models.Movies;
 
-namespace NoMercy.Database.Models
+namespace NoMercy.Database.Models;
+
+[PrimaryKey(nameof(KeywordId), nameof(MovieId))]
+public class KeywordMovie
 {
-    [PrimaryKey(nameof(KeywordId), nameof(MovieId))]
-    public class KeywordMovie
+    [JsonProperty("keyword_id")] public int KeywordId { get; set; }
+    public Keyword Keyword { get; set; }
+
+    [JsonProperty("movie_id")] public int MovieId { get; set; }
+    public Movie Movie { get; set; }
+
+    public KeywordMovie()
     {
-        [JsonProperty("keyword_id")] public int KeywordId { get; set; }
-        public virtual Keyword Keyword { get; set; }
-        
-        [JsonProperty("movie_id")] public int MovieId { get; set; }
-        public virtual Movie Movie { get; set; }
+    }
 
-        public KeywordMovie()
-        {
-        }
-
-        public KeywordMovie(Providers.TMDB.Models.Shared.Keyword keyword, MovieAppends movie)
-        {
-            KeywordId = keyword.Id;
-            MovieId = movie.Id;
-        }
+    public KeywordMovie(Providers.TMDB.Models.Shared.TmdbKeyword tmdbKeyword, TmdbMovieAppends tmdbMovie)
+    {
+        KeywordId = tmdbKeyword.Id;
+        MovieId = tmdbMovie.Id;
     }
 }

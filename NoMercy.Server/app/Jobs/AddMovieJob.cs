@@ -8,58 +8,39 @@ using NoMercy.Server.system;
 
 namespace NoMercy.Server.app.Jobs;
 
+[Serializable]
 public class AddMovieJob : IShouldQueue
 {
-    private readonly int _id;
-    private readonly string? _libraryId;
-    
-    public AddMovieJob(long id)
+    public int Id { get; set; }
+    public Library? Library { get; set; }
+
+    public AddMovieJob()
     {
-        _id = (int)id;
+        //
     }
-    
-    public AddMovieJob(long id, string libraryId)
+
+    public AddMovieJob(int id, Library? library = null)
     {
-        _id = (int)id;
-        _libraryId = libraryId;
+        Id = id;
+        Library = library;
     }
 
     public async Task Handle()
     {
-        await using MediaContext context = new MediaContext();
-        
-        Library? library;
-        
-        if (_libraryId is null)
-        {
-            library = await context.Libraries
-                .Where(f => f.Type == "movie")
-                .Include(l => l.FolderLibraries)
-                .ThenInclude(fl => fl.Folder)
-                .FirstOrDefaultAsync();
-        } 
-        else {
-            library = await context.Libraries
-                .Where(f => f.Id == Ulid.Parse(_libraryId))
-                .Include(l => l.FolderLibraries)
-                .ThenInclude(fl => fl.Folder)
-                .FirstOrDefaultAsync();
-        }
-        
-        if (library is null) return;
-        
-        MovieLogic movie = new(_id, library);
+        await using MediaContext context = new();
+
+        if (Library is null) return;
+
+        await using MovieLogic movie = new(Id, Library);
         await movie.Process();
         if (movie.Movie != null)
         {
             Logger.MovieDb($@"Movie {movie.Movie.Title}: Processed");
-            
+
             Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
             {
-                QueryKey = [ "movie", movie.Movie.Id.ToString() ]
+                QueryKey = ["movie", movie.Movie.Id.ToString()]
             });
         }
-
-        movie.Dispose();
     }
 }

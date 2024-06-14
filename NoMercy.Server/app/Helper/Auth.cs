@@ -11,12 +11,12 @@ namespace NoMercy.Server.app.Helper;
 
 public static class Auth
 {
-    private const string BaseUrl = "https://auth-dev.nomercy.tv/realms/NoMercyTV";
-    private const string TokenUrl = $"{BaseUrl}/protocol/openid-connect/token";
+    private static string BaseUrl => Config.AuthBaseUrl;
+    private static readonly string TokenUrl = $"{BaseUrl}protocol/openid-connect/token";
 
     private static string? PublicKey { get; set; }
-    private static string? TokenClientId { get; set; } = "nomercy-server";
-    private static string? TokenClientSecret { get; set; } = "1lHWBazSTHfBpuIzjAI6xnNjmwUnryai";
+    private static string? TokenClientId => Config.TokenClientId;
+    private static string? TokenClientSecret => Config.TokenClientSecret;
 
     private static string? RefreshToken { get; set; }
     public static string? AccessToken { get; private set; }
@@ -30,50 +30,44 @@ public static class Auth
 
     public static Task Init()
     {
-        if (!File.Exists(AppFiles.TokenFile))
-        {
-            File.WriteAllText(AppFiles.TokenFile, "{}");
-        }
+        if (!File.Exists(AppFiles.TokenFile)) File.WriteAllText(AppFiles.TokenFile, "{}");
 
-        GetAuthKeys();
+        AuthKeys();
 
         AccessToken = GetAccessToken();
         RefreshToken = GetRefreshToken();
-        ExpiresIn = GetTokenExpiration();
-        NotBefore = GetTokenNotBefore();
+        ExpiresIn = TokenExpiration();
+        NotBefore = TokenNotBefore();
 
         if (AccessToken == null || RefreshToken == null || ExpiresIn == null)
         {
-            GetTokenByBrowser();
+            TokenByBrowser();
             return Task.CompletedTask;
         }
 
         var tokenHandler = new JwtSecurityTokenHandler();
         _jwtSecurityToken = tokenHandler.ReadJwtToken(AccessToken);
-        
-        int expiresInDays = _jwtSecurityToken.ValidTo.AddDays(-5).Subtract(DateTime.UtcNow).Days;
-        
-        bool expired = NotBefore == null && expiresInDays >= 0;
-        
-        if(!expired)
-            GetTokenByRefreshGrand();
+
+        var expiresInDays = _jwtSecurityToken.ValidTo.AddDays(-5).Subtract(DateTime.UtcNow).Days;
+
+        var expired = NotBefore == null && expiresInDays >= 0;
+
+        if (!expired)
+            TokenByRefreshGrand();
         else
-            GetTokenByBrowser();
-        
+            TokenByBrowser();
+
         if (AccessToken == null || RefreshToken == null || ExpiresIn == null)
             throw new Exception("Failed to get tokens");
-        
+
         return Task.CompletedTask;
     }
-    
-    private static void GetTokenByBrowser()
+
+    private static void TokenByBrowser()
     {
-        
-        Uri baseUrl = new Uri($"{BaseUrl}/protocol/openid-connect/auth");
-        string redirectUri = HttpUtility.UrlEncode($"http://localhost:{Networking.InternalServerPort}/sso-callback");
-        // string url = "https://auth-dev.nomercy.tv/realms/NoMercyTV/protocol/openid-connect/auth?redirect_uri=" +
-        //              redirectUri + "&client_id=nomercy-server&response_type=code&scope=openid%20offline_access%20email%20profile";
-        
+        var baseUrl = new Uri($"{BaseUrl}/protocol/openid-connect/auth");
+        var redirectUri = HttpUtility.UrlEncode($"http://localhost:{Networking.InternalServerPort}/sso-callback");
+
         IEnumerable<string> query = new Dictionary<string, string>
         {
             ["redirect_uri"] = redirectUri,
@@ -81,14 +75,14 @@ public static class Auth
             ["response_type"] = "code",
             ["scope"] = "openid offline_access email profile"
         }.Select(x => $"{x.Key}={x.Value}");
-        
-        string url = new Uri($"{baseUrl}?{string.Join("&", query)}").ToString();
+
+        var url = new Uri($"{baseUrl}?{string.Join("&", query)}").ToString();
 
         TempServer = Networking.TempServer();
         TempServer.StartAsync().Wait();
-        
+
         OpenBrowser(url);
-        
+
         CheckToken();
     }
 
@@ -107,14 +101,14 @@ public static class Auth
 
     private static void SetTokens(string response)
     {
-        dynamic data = JsonConvert.DeserializeObject(response) 
+        dynamic data = JsonConvert.DeserializeObject(response)
                        ?? throw new Exception("Failed to deserialize JSON");
-        
+
         if (data.access_token == null || data.refresh_token == null || data.expires_in == null)
         {
             File.Delete(AppFiles.TokenFile);
-            GetTokenByBrowser();
-            
+            TokenByBrowser();
+
             return;
         }
 
@@ -124,13 +118,14 @@ public static class Auth
         tmp.Close();
 
         Logger.Auth(@"Tokens refreshed");
-        
+
         AccessToken = data.access_token;
         RefreshToken = data.refresh_token;
         ExpiresIn = data.expires_in;
         NotBefore = data["not-before-policy"];
     }
-    private static dynamic GetTokenData()
+
+    private static dynamic TokenData()
     {
         return JsonConvert.DeserializeObject(File.ReadAllText(AppFiles.TokenFile))
                ?? throw new Exception("Failed to deserialize JSON");
@@ -138,139 +133,133 @@ public static class Auth
 
     private static string? GetAccessToken()
     {
-        dynamic data = GetTokenData();
+        var data = TokenData();
 
         return data.access_token;
     }
 
-    private static string? GetRefreshToken() {
-        dynamic data = GetTokenData();
+    private static string? GetRefreshToken()
+    {
+        var data = TokenData();
         return data.refresh_token;
     }
 
-    private static int? GetTokenExpiration() {
-        dynamic data = GetTokenData();
+    private static int? TokenExpiration()
+    {
+        var data = TokenData();
         return data.expires_in;
     }
-    
-    private static int? GetTokenNotBefore()
+
+    private static int? TokenNotBefore()
     {
-        dynamic data = GetTokenData();
+        var data = TokenData();
         return data["not-before-policy"];
     }
 
-    private static void GetAuthKeys()
+    private static void AuthKeys()
     {
         Logger.Auth(@"Getting auth keys");
-        
-        HttpClient client = new HttpClient();
+
+        HttpClient client = new();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        
-        string response = client.GetStringAsync(BaseUrl).Result;
-        
-        dynamic data = JsonConvert.DeserializeObject(response) 
+
+        var response = client.GetStringAsync(BaseUrl).Result;
+
+        dynamic data = JsonConvert.DeserializeObject(response)
                        ?? throw new Exception("Failed to deserialize JSON");
-        
+
         PublicKey = data.public_key;
     }
-    
-    private static void GetTokenByPasswordGrant(string username, string password)
+
+    private static void TokenByPasswordGrant(string username, string password)
     {
         if (TokenClientId == null || TokenClientSecret == null)
             throw new Exception("Auth keys not initialized");
-        
-        HttpClient client = new HttpClient();
+
+        HttpClient client = new();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        
-        var body = new List<KeyValuePair<string, string>>()
+
+        List<KeyValuePair<string, string>> body = new()
         {
-            new ("grant_type", "password"),
-            new ("client_id", TokenClientId),
-            new ("client_secret", TokenClientSecret),
-            new ("username", username),
-            new ("password", password),
+            new KeyValuePair<string, string>("grant_type", "password"),
+            new KeyValuePair<string, string>("client_id", TokenClientId),
+            new KeyValuePair<string, string>("client_secret", TokenClientSecret),
+            new KeyValuePair<string, string>("username", username),
+            new KeyValuePair<string, string>("password", password)
         };
-        
-        string response = client.PostAsync(TokenUrl, new FormUrlEncodedContent(body))
+
+        var response = client.PostAsync(TokenUrl, new FormUrlEncodedContent(body))
             .Result.Content.ReadAsStringAsync().Result;
-        
+
         SetTokens(response);
     }
-    private static void GetTokenByRefreshGrand()
+
+    private static void TokenByRefreshGrand()
     {
-        
         if (TokenClientId == null || TokenClientSecret == null || RefreshToken == null || _jwtSecurityToken == null)
             throw new Exception("Auth keys not initialized");
 
-        int expiresInDays = _jwtSecurityToken.ValidTo.AddDays(-5).Subtract(DateTime.UtcNow).Days;
-        if(expiresInDays >= 0)
+        var expiresInDays = _jwtSecurityToken.ValidTo.AddDays(-5).Subtract(DateTime.UtcNow).Days;
+        if (expiresInDays >= 0)
         {
             Logger.Auth($"Token is still valid for {expiresInDays} day{(expiresInDays == 1 ? "" : "s")}");
             return;
         }
-        
+
         Logger.Auth(@"Refreshing token");
-        
-        HttpClient client = new HttpClient();
+
+        HttpClient client = new();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        
-        var body = new List<KeyValuePair<string, string>>()
+
+        List<KeyValuePair<string, string>> body = new()
         {
-            new ("grant_type", "refresh_token"),
-            new ("client_id", TokenClientId),
-            new ("client_secret", TokenClientSecret),
-            new ("refresh_token", RefreshToken),
-            new ("scope", "openid offline_access email profile"),
+            new KeyValuePair<string, string>("grant_type", "refresh_token"),
+            new KeyValuePair<string, string>("client_id", TokenClientId),
+            new KeyValuePair<string, string>("client_secret", TokenClientSecret),
+            new KeyValuePair<string, string>("refresh_token", RefreshToken),
+            new KeyValuePair<string, string>("scope", "openid offline_access email profile")
         };
-        
-        string response = client.PostAsync(TokenUrl,new FormUrlEncodedContent(body))
+
+        var response = client.PostAsync(TokenUrl, new FormUrlEncodedContent(body))
             .Result.Content.ReadAsStringAsync().Result;
-        
+
         SetTokens(response);
     }
-    public static void GetTokenByAuthorizationCode(string code)
+
+    public static void TokenByAuthorizationCode(string code)
     {
         Logger.Auth(@"Getting token by authorization code");
         if (TokenClientId == null || TokenClientSecret == null)
             throw new Exception("Auth keys not initialized");
-        
-        HttpClient client = new HttpClient();
+
+        HttpClient client = new();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        
+
         var body = new List<KeyValuePair<string, string>>()
         {
-            new ("grant_type", "authorization_code"),
-            new ("client_id", TokenClientId),
-            new ("client_secret", TokenClientSecret),
-            new ("scope", "openid offline_access email profile"),
-            new ("redirect_uri", $"http://localhost:{Networking.InternalServerPort}/sso-callback"),
-            new ("code", code),
+            new("grant_type", "authorization_code"),
+            new("client_id", TokenClientId),
+            new("client_secret", TokenClientSecret),
+            new("scope", "openid offline_access email profile"),
+            new("redirect_uri", $"http://localhost:{Networking.InternalServerPort}/sso-callback"),
+            new("code", code)
         };
-        
-        string response = client.PostAsync(TokenUrl, new FormUrlEncodedContent(body))
+
+        var response = client.PostAsync(TokenUrl, new FormUrlEncodedContent(body))
             .Result.Content.ReadAsStringAsync().Result;
-        
+
         SetTokens(response);
     }
-    
+
     private static void OpenBrowser(string url)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); // Works ok on windows
-        }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            Process.Start("xdg-open", url);  // Works ok on linux
-        }
+            Process.Start("xdg-open", url); // Works ok on linux
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
             Process.Start("open", url); // Not tested
-        }
         else
-        {
             throw new Exception("Unsupported OS");
-        }
     }
-
 }

@@ -1,108 +1,146 @@
+using System.Globalization;
+using NoMercy.Database.Models;
 using NoMercy.Helpers;
 using NoMercy.Server.Logic;
+using NoMercy.Server.Logic.ImageLogic;
 using NoMercy.Server.system;
 using LogLevel = NoMercy.Helpers.LogLevel;
 
 namespace NoMercy.Server.app.Jobs;
 
-public class ColorPaletteJob : IShouldQueue
+[Serializable]
+public class ColorPaletteJob : IShouldQueue, IDisposable, IAsyncDisposable
 {
-    private readonly int _id;
-    private readonly string? _filePath;
-    private readonly string? _type;
-    private readonly string _model;
-    private readonly string? _language;
+    public int? Id { get; set; }
+    public string? FilePath { get; set; }
+    public string? Type { get; set; }
+    public string Model { get; set; }
+    public string? Language { get; set; }
 
-    
-    public ColorPaletteJob(long id, string model, string type)
+    public ColorPaletteJob()
     {
-        _id = (int)id;
-        _model = model;
-        _type = type;
     }
-    
+
     public ColorPaletteJob(long id, string model)
     {
-        _id = (int)id;
-        _model = model;
+        Id = (int)id;
+        Model = model;
     }
 
-    public ColorPaletteJob(string filePath, string model, string? language)
+    public ColorPaletteJob(long id, string type, string model)
     {
-        _filePath = filePath;
-        _model = model;
-        _language = language;
+        Id = (int)id;
+        Model = model;
+        Type = type;
     }
-    
-    public ColorPaletteJob(string filePath, string model)
+
+    public ColorPaletteJob(string? filePath, string model, string? language = null)
     {
-        _filePath = filePath;
-        _model = model;
+        FilePath = filePath;
+        Model = model;
+        Language = language;
     }
 
     public async Task Handle()
     {
-        switch (_model)
+        switch (Model)
         {
-            case "image" when _filePath == null:
+            case "image" when FilePath == null:
                 await Task.CompletedTask;
                 return;
             case "image":
-                
-                bool shouldDownload = _language is null || _language is "en" || _language is "" || 
-                                      _language == System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
-                
-                await ImageLogic.GetPalette(_filePath, shouldDownload);
-                break;
-            case "collection":
-                await CollectionLogic.GetPalette(_id);
-                break;
-            case "tv":
-                await TvShowLogic.GetPalette(_id);
-                break;
-            case "person":
-                await PersonLogic.GetPalette(_id);
-                break;
-            case "season":
-                await SeasonLogic.GetPalette(_id);
-                break;
-            case "episode":
-                await EpisodeLogic.GetPalette(_id);
-                break;
-            case "movie":
-                await MovieLogic.GetPalette(_id);
-                break;
-            case "recommendation":
-                switch (_type)
-                {
-                    case "movie":
-                        await MovieLogic.GetRecommendationPalette(_id);
-                        break;
-                    case "tv":
-                        await TvShowLogic.GetRecommendationPalette(_id);
-                        break;
-                    default:
-                        Logger.Queue(@"Invalid model Type: " + _model + @" id: " +_id + @" type: " + _type, LogLevel.Error);
-                        break;
-                }
-                break;
-            case "similar":
-                switch (_type)
-                {
-                    case "movie":
-                        await MovieLogic.GetSimilarPalette(_id);
-                        break;
-                    case "tv":
-                        await TvShowLogic.GetSimilarPalette(_id);
-                        break;
-                    default:
-                        Logger.Queue(@"Invalid model Type: " + _model + @" id: " +_id + @" type: " + _type, LogLevel.Error); 
-                        break;
-                }
-                break;
-            default:
-                Logger.Queue(@"Invalid model Type: " + _model + @" id: " +_id + @" type: " + _type, LogLevel.Error);
+                var shouldDownload = Language is null || Language is "en" || Language is "" ||
+                                     Language == CultureInfo.CurrentCulture
+                                         .TwoLetterISOLanguageName;
+
+                await MovieDbImage.ColorPalette("image", FilePath, shouldDownload);
                 break;
         }
+
+        if (!Id.HasValue) return;
+
+        switch (Model)
+        {
+            case "image" when FilePath == null:
+                await Task.CompletedTask;
+                return;
+            case "collection":
+                await CollectionLogic.Palette(Id.Value);
+                break;
+            case "tv":
+                await TvShowLogic.Palette(Id.Value);
+                break;
+            case "person":
+                await PersonLogic.Palette(Id.Value);
+                break;
+            case "season":
+                await SeasonLogic.Palette(Id.Value);
+                break;
+            case "episode":
+                await EpisodeLogic.Palette(Id.Value);
+                break;
+            case "movie":
+                await MovieLogic.Palette(Id.Value);
+                break;
+            case "recommendation":
+                switch (Type)
+                {
+                    case "movie":
+                        await MovieLogic.RecommendationPalette(Id.Value);
+                        break;
+                    case "tv":
+                        await TvShowLogic.RecommendationPalette(Id.Value);
+                        break;
+                    default:
+                        Logger.Queue(@"Invalid model Type: " + Model + @" id: " + Id + @" type: " + Type,
+                            LogLevel.Error);
+                        break;
+                }
+
+                break;
+            case "similar":
+                switch (Type)
+                {
+                    case "movie":
+                        await MovieLogic.SimilarPalette(Id.Value);
+                        break;
+                    case "tv":
+                        await TvShowLogic.SimilarPalette(Id.Value);
+                        break;
+                    default:
+                        Logger.Queue(@"Invalid model Type: " + Model + @" id: " + Id + @" type: " + Type,
+                            LogLevel.Error);
+                        break;
+                }
+
+                break;
+            default:
+                Logger.Queue(@"Invalid model Type: " + Model + @" id: " + Id + @" type: " + Type, LogLevel.Error);
+                break;
+        }
+    }
+
+    private static void ReleaseUnmanagedResources()
+    {
+        GC.Collect();
+        GC.WaitForFullGCComplete();
+        GC.WaitForPendingFinalizers();
+    }
+
+    public void Dispose()
+    {
+        ReleaseUnmanagedResources();
+        GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        ReleaseUnmanagedResources();
+        GC.SuppressFinalize(this);
+    }
+
+    ~ColorPaletteJob()
+    {
+        ReleaseUnmanagedResources();
     }
 }

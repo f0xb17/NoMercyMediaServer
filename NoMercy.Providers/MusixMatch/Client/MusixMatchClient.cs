@@ -1,27 +1,21 @@
-﻿using Newtonsoft.Json;
-using NoMercy.Helpers;
-using NoMercy.Providers.MusixMatch.Models;
+﻿using NoMercy.Providers.MusixMatch.Models;
 using static System.String;
 
 namespace NoMercy.Providers.MusixMatch.Client;
 
-public class MusixmatchClient : BaseClient
+public class MusixmatchClient : MusixMatchBaseClient
 {
-    public MusixmatchClient(Guid id) : base(id)
-    {
-    }
-
-    public Task<SubtitleGet?> SongSearch(TrackSearchParameters trackParameters, bool priority = false)
+    public Task<MusixMatchSubtitleGet?> SongSearch(MusixMatchTrackSearchParameters musixMatchTrackParameters, bool priority = false)
     {
         var additionalArguments = new Dictionary<string, string?>
         {
-            ["q_artist"] = trackParameters.Artist,
-            ["q_artists"] = Join(",", trackParameters.Artists ?? []),
-            ["q_track"] = trackParameters.Title,
+            ["q_artist"] = musixMatchTrackParameters.Artist,
+            ["q_artists"] = Join(",", musixMatchTrackParameters.Artists ?? []),
+            ["q_track"] = musixMatchTrackParameters.Title,
             // ["q_album"] = trackParameters.Album,
-            ["q_duration"] = trackParameters.Duration,
+            ["q_duration"] = musixMatchTrackParameters.Duration
         };
-        
-        return Get<SubtitleGet>("macro.subtitles.get", additionalArguments, priority);
+
+        return Get<MusixMatchSubtitleGet>("macro.subtitles.get", additionalArguments, priority);
     }
 }

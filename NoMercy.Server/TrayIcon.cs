@@ -10,14 +10,14 @@ public class TrayIcon
     private static readonly string IconStream = Path.Combine(Directory.GetCurrentDirectory(), "Assets/icon.ico");
 
 #pragma warning disable CA1416
-    private static readonly Icon Icon = new(fileName: IconStream);
+    private static readonly Icon Icon = new(IconStream);
 #pragma warning restore CA1416
 
 #pragma warning disable CA1416
     private readonly TrayIconWithContextMenu _trayIcon = new()
     {
         Icon = Icon.Handle,
-        ToolTip = "NoMercy MediaServer C#",
+        ToolTip = "NoMercy MediaServer C#"
     };
 #pragma warning restore CA1416
 
@@ -32,8 +32,8 @@ public class TrayIcon
                 new PopupMenuSeparator(),
                 new PopupMenuItem("Pause Server", (_, _) => Pause()),
                 new PopupMenuItem("Restart Server", (_, _) => Restart()),
-                new PopupMenuItem("Shutdown", (_, _) => Shutdown()),
-            },
+                new PopupMenuItem("Shutdown", (_, _) => Shutdown())
+            }
         };
 
         _trayIcon.Create();

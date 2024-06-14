@@ -20,47 +20,51 @@ public class TokenParamAuthMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        string url = context.Request.Path;
+        context.Request.Headers.Authorization = context.Request.Headers.Authorization.ToString().Split(",")[0];
         
-        if (!FolderIds.Any(x => url.StartsWith("/" + x)) || context.Request.Headers.Authorization.ToString().Contains("Bearer"))
+        string url = context.Request.Path;
+
+        if (!FolderIds.Any(x => url.StartsWith("/" + x)) ||
+            context.Request.Headers.Authorization.ToString().Contains("Bearer"))
         {
             await _next(context);
             return;
         }
-        
-        string? claim = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        
-        if(string.IsNullOrEmpty(claim))
+
+        var claim = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrEmpty(claim))
         {
             var jwt = context.Request.Query
                 .FirstOrDefault(q => q.Key is "token" or "access_token").Value.ToString();
-            
+
             if (string.IsNullOrEmpty(jwt))
             {
-                context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;                
+                context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 return;
             }
+
             context.Request.Headers.Authorization = new StringValues("Bearer " + jwt);
         }
         else
         {
-            Guid userId = Guid.Parse(claim);
-            
+            var userId = Guid.Parse(claim);
+
             if (userId == Guid.Empty)
             {
-                context.Response.StatusCode = (int)HttpStatusCode.Forbidden;                
+                context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
                 return;
             }
-            
-            User? user = Users.FirstOrDefault(x => x.Id == userId);
-            
+
+            var user = Users.FirstOrDefault(x => x.Id == userId);
+
             if (user is null)
             {
                 context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
                 return;
             }
         }
-        
+
         await _next(context);
     }
 }

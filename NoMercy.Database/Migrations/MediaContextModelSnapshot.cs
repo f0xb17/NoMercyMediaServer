@@ -15,7 +15,7 @@ namespace NoMercy.Database.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.1");
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.4");
 
             modelBuilder.Entity("NoMercy.Database.Models.ActivityLog", b =>
                 {
@@ -79,6 +79,10 @@ namespace NoMercy.Database.Migrations
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Description")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Disambiguation")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
@@ -173,19 +177,19 @@ namespace NoMercy.Database.Migrations
                     b.ToTable("AlbumMusicGenre");
                 });
 
-            modelBuilder.Entity("NoMercy.Database.Models.AlbumRelease", b =>
+            modelBuilder.Entity("NoMercy.Database.Models.AlbumReleaseGroup", b =>
                 {
                     b.Property<Guid>("AlbumId")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("ReleaseId")
+                    b.Property<Guid>("ReleaseGroupId")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("AlbumId", "ReleaseId");
+                    b.HasKey("AlbumId", "ReleaseGroupId");
 
-                    b.HasIndex("ReleaseId");
+                    b.HasIndex("ReleaseGroupId");
 
-                    b.ToTable("AlbumRelease");
+                    b.ToTable("AlbumReleaseGroup");
                 });
 
             modelBuilder.Entity("NoMercy.Database.Models.AlbumTrack", b =>
@@ -258,6 +262,10 @@ namespace NoMercy.Database.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Country")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Cover")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -269,6 +277,10 @@ namespace NoMercy.Database.Migrations
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Description")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Disambiguation")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
@@ -291,11 +303,18 @@ namespace NoMercy.Database.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TitleSort")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("UpdatedAt")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int?>("Year")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("_colorPalette")
                         .IsRequired()
@@ -342,19 +361,19 @@ namespace NoMercy.Database.Migrations
                     b.ToTable("ArtistMusicGenre");
                 });
 
-            modelBuilder.Entity("NoMercy.Database.Models.ArtistRelease", b =>
+            modelBuilder.Entity("NoMercy.Database.Models.ArtistReleaseGroup", b =>
                 {
                     b.Property<Guid>("ArtistId")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("ReleaseId")
+                    b.Property<Guid>("ReleaseGroupId")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("ArtistId", "ReleaseId");
+                    b.HasKey("ArtistId", "ReleaseGroupId");
 
-                    b.HasIndex("ReleaseId");
+                    b.HasIndex("ReleaseGroupId");
 
-                    b.ToTable("ArtistRelease");
+                    b.ToTable("ArtistReleaseGroup");
                 });
 
             modelBuilder.Entity("NoMercy.Database.Models.ArtistTrack", b =>
@@ -1109,7 +1128,6 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("FilePath")
-                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
@@ -1147,6 +1165,7 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Type")
+                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
@@ -1388,10 +1407,12 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
+                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Type")
+                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
@@ -1750,6 +1771,21 @@ namespace NoMercy.Database.Migrations
                     b.ToTable("MusicGenres");
                 });
 
+            modelBuilder.Entity("NoMercy.Database.Models.MusicGenreReleaseGroup", b =>
+                {
+                    b.Property<Guid>("GenreId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ReleaseGroupId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("GenreId", "ReleaseGroupId");
+
+                    b.HasIndex("ReleaseGroupId");
+
+                    b.ToTable("MusicGenreReleaseGroup");
+                });
+
             modelBuilder.Entity("NoMercy.Database.Models.MusicGenreTrack", b =>
                 {
                     b.Property<Guid>("GenreId")
@@ -2077,7 +2113,7 @@ namespace NoMercy.Database.Migrations
                     b.ToTable("Recommendations");
                 });
 
-            modelBuilder.Entity("NoMercy.Database.Models.Release", b =>
+            modelBuilder.Entity("NoMercy.Database.Models.ReleaseGroup", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("TEXT");
@@ -2093,6 +2129,10 @@ namespace NoMercy.Database.Migrations
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Description")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Disambiguation")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
@@ -2123,7 +2163,7 @@ namespace NoMercy.Database.Migrations
 
                     b.HasIndex("LibraryId");
 
-                    b.ToTable("Releases");
+                    b.ToTable("ReleaseGroups");
                 });
 
             modelBuilder.Entity("NoMercy.Database.Models.Role", b =>
@@ -2495,6 +2535,12 @@ namespace NoMercy.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<Guid?>("AlbumId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ArtistId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Biography")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -2508,8 +2554,11 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("EnglishName")
-                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
@@ -2526,7 +2575,6 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Iso6391")
-                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
@@ -2543,6 +2591,9 @@ namespace NoMercy.Database.Migrations
 
                     b.Property<int?>("PersonId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("ReleaseGroupId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("SeasonId")
                         .HasColumnType("INTEGER");
@@ -2561,6 +2612,15 @@ namespace NoMercy.Database.Migrations
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AlbumId", "Iso31661")
+                        .IsUnique();
+
+                    b.HasIndex("ArtistId", "Iso31661")
+                        .IsUnique();
+
+                    b.HasIndex("ReleaseGroupId", "Iso31661")
+                        .IsUnique();
 
                     b.HasIndex("CollectionId", "Iso6391", "Iso31661")
                         .IsUnique();
@@ -3022,7 +3082,7 @@ namespace NoMercy.Database.Migrations
             modelBuilder.Entity("NoMercy.Database.Models.AlbumMusicGenre", b =>
                 {
                     b.HasOne("NoMercy.Database.Models.Album", "Album")
-                        .WithMany()
+                        .WithMany("AlbumMusicGenre")
                         .HasForeignKey("AlbumId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -3038,23 +3098,23 @@ namespace NoMercy.Database.Migrations
                     b.Navigation("MusicGenre");
                 });
 
-            modelBuilder.Entity("NoMercy.Database.Models.AlbumRelease", b =>
+            modelBuilder.Entity("NoMercy.Database.Models.AlbumReleaseGroup", b =>
                 {
                     b.HasOne("NoMercy.Database.Models.Album", "Album")
-                        .WithMany()
+                        .WithMany("AlbumReleaseGroup")
                         .HasForeignKey("AlbumId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("NoMercy.Database.Models.Release", "Release")
-                        .WithMany("Albums")
-                        .HasForeignKey("ReleaseId")
+                    b.HasOne("NoMercy.Database.Models.ReleaseGroup", "ReleaseGroup")
+                        .WithMany("AlbumReleaseGroup")
+                        .HasForeignKey("ReleaseGroupId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Album");
 
-                    b.Navigation("Release");
+                    b.Navigation("ReleaseGroup");
                 });
 
             modelBuilder.Entity("NoMercy.Database.Models.AlbumTrack", b =>
@@ -3151,7 +3211,7 @@ namespace NoMercy.Database.Migrations
             modelBuilder.Entity("NoMercy.Database.Models.ArtistMusicGenre", b =>
                 {
                     b.HasOne("NoMercy.Database.Models.Artist", "Artist")
-                        .WithMany()
+                        .WithMany("ArtistMusicGenre")
                         .HasForeignKey("ArtistId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -3167,23 +3227,23 @@ namespace NoMercy.Database.Migrations
                     b.Navigation("MusicGenre");
                 });
 
-            modelBuilder.Entity("NoMercy.Database.Models.ArtistRelease", b =>
+            modelBuilder.Entity("NoMercy.Database.Models.ArtistReleaseGroup", b =>
                 {
                     b.HasOne("NoMercy.Database.Models.Artist", "Artist")
-                        .WithMany()
+                        .WithMany("ArtistReleaseGroup")
                         .HasForeignKey("ArtistId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("NoMercy.Database.Models.Release", "Release")
-                        .WithMany("Artists")
-                        .HasForeignKey("ReleaseId")
+                    b.HasOne("NoMercy.Database.Models.ReleaseGroup", "ReleaseGroup")
+                        .WithMany("ArtistReleaseGroup")
+                        .HasForeignKey("ReleaseGroupId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Artist");
 
-                    b.Navigation("Release");
+                    b.Navigation("ReleaseGroup");
                 });
 
             modelBuilder.Entity("NoMercy.Database.Models.ArtistTrack", b =>
@@ -3227,7 +3287,7 @@ namespace NoMercy.Database.Migrations
             modelBuilder.Entity("NoMercy.Database.Models.Cast", b =>
                 {
                     b.HasOne("NoMercy.Database.Models.Episode", "Episode")
-                        .WithMany("Casts")
+                        .WithMany("Cast")
                         .HasForeignKey("EpisodeId")
                         .OnDelete(DeleteBehavior.Cascade);
 
@@ -3248,7 +3308,7 @@ namespace NoMercy.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("NoMercy.Database.Models.Season", "Season")
-                        .WithMany("Casts")
+                        .WithMany("Cast")
                         .HasForeignKey("SeasonId")
                         .OnDelete(DeleteBehavior.Cascade);
 
@@ -3385,7 +3445,7 @@ namespace NoMercy.Database.Migrations
                         .IsRequired();
 
                     b.HasOne("NoMercy.Database.Models.Tv", "Tv")
-                        .WithMany()
+                        .WithMany("Creators")
                         .HasForeignKey("TvId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -3398,7 +3458,7 @@ namespace NoMercy.Database.Migrations
             modelBuilder.Entity("NoMercy.Database.Models.Crew", b =>
                 {
                     b.HasOne("NoMercy.Database.Models.Episode", "Episode")
-                        .WithMany("Crews")
+                        .WithMany("Crew")
                         .HasForeignKey("EpisodeId")
                         .OnDelete(DeleteBehavior.Cascade);
 
@@ -3418,7 +3478,7 @@ namespace NoMercy.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("NoMercy.Database.Models.Season", "Season")
-                        .WithMany("Crews")
+                        .WithMany("Crew")
                         .HasForeignKey("SeasonId")
                         .OnDelete(DeleteBehavior.Cascade);
 
@@ -3603,12 +3663,12 @@ namespace NoMercy.Database.Migrations
             modelBuilder.Entity("NoMercy.Database.Models.Image", b =>
                 {
                     b.HasOne("NoMercy.Database.Models.Album", "Album")
-                        .WithMany()
+                        .WithMany("Images")
                         .HasForeignKey("AlbumId")
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("NoMercy.Database.Models.Artist", "Artist")
-                        .WithMany()
+                        .WithMany("Images")
                         .HasForeignKey("ArtistId")
                         .OnDelete(DeleteBehavior.Cascade);
 
@@ -3888,6 +3948,25 @@ namespace NoMercy.Database.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("NoMercy.Database.Models.MusicGenreReleaseGroup", b =>
+                {
+                    b.HasOne("NoMercy.Database.Models.MusicGenre", "Genre")
+                        .WithMany()
+                        .HasForeignKey("GenreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("NoMercy.Database.Models.ReleaseGroup", "ReleaseGroup")
+                        .WithMany()
+                        .HasForeignKey("ReleaseGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Genre");
+
+                    b.Navigation("ReleaseGroup");
+                });
+
             modelBuilder.Entity("NoMercy.Database.Models.MusicGenreTrack", b =>
                 {
                     b.HasOne("NoMercy.Database.Models.MusicGenre", "Genre")
@@ -3959,7 +4038,7 @@ namespace NoMercy.Database.Migrations
             modelBuilder.Entity("NoMercy.Database.Models.PlaylistTrack", b =>
                 {
                     b.HasOne("NoMercy.Database.Models.Playlist", "Playlist")
-                        .WithMany("PlaylistTrack")
+                        .WithMany("Tracks")
                         .HasForeignKey("PlaylistId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -4017,7 +4096,7 @@ namespace NoMercy.Database.Migrations
                     b.Navigation("TvTo");
                 });
 
-            modelBuilder.Entity("NoMercy.Database.Models.Release", b =>
+            modelBuilder.Entity("NoMercy.Database.Models.ReleaseGroup", b =>
                 {
                     b.HasOne("NoMercy.Database.Models.Library", "Library")
                         .WithMany()
@@ -4159,6 +4238,16 @@ namespace NoMercy.Database.Migrations
 
             modelBuilder.Entity("NoMercy.Database.Models.Translation", b =>
                 {
+                    b.HasOne("NoMercy.Database.Models.Album", "Album")
+                        .WithMany("Translations")
+                        .HasForeignKey("AlbumId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("NoMercy.Database.Models.Artist", "Artist")
+                        .WithMany("Translations")
+                        .HasForeignKey("ArtistId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("NoMercy.Database.Models.Collection", "Collection")
                         .WithMany("Translations")
                         .HasForeignKey("CollectionId")
@@ -4179,6 +4268,11 @@ namespace NoMercy.Database.Migrations
                         .HasForeignKey("PersonId")
                         .OnDelete(DeleteBehavior.Cascade);
 
+                    b.HasOne("NoMercy.Database.Models.ReleaseGroup", "ReleaseGroup")
+                        .WithMany("Translations")
+                        .HasForeignKey("ReleaseGroupId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("NoMercy.Database.Models.Season", "Season")
                         .WithMany("Translations")
                         .HasForeignKey("SeasonId")
@@ -4189,6 +4283,10 @@ namespace NoMercy.Database.Migrations
                         .HasForeignKey("TvId")
                         .OnDelete(DeleteBehavior.Cascade);
 
+                    b.Navigation("Album");
+
+                    b.Navigation("Artist");
+
                     b.Navigation("Collection");
 
                     b.Navigation("Episode");
@@ -4196,6 +4294,8 @@ namespace NoMercy.Database.Migrations
                     b.Navigation("Movie");
 
                     b.Navigation("People");
+
+                    b.Navigation("ReleaseGroup");
 
                     b.Navigation("Season");
 
@@ -4304,18 +4404,34 @@ namespace NoMercy.Database.Migrations
                 {
                     b.Navigation("AlbumArtist");
 
+                    b.Navigation("AlbumMusicGenre");
+
+                    b.Navigation("AlbumReleaseGroup");
+
                     b.Navigation("AlbumTrack");
 
                     b.Navigation("AlbumUser");
+
+                    b.Navigation("Images");
+
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("NoMercy.Database.Models.Artist", b =>
                 {
                     b.Navigation("AlbumArtist");
 
+                    b.Navigation("ArtistMusicGenre");
+
+                    b.Navigation("ArtistReleaseGroup");
+
                     b.Navigation("ArtistTrack");
 
                     b.Navigation("ArtistUser");
+
+                    b.Navigation("Images");
+
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("NoMercy.Database.Models.Collection", b =>
@@ -4343,9 +4459,9 @@ namespace NoMercy.Database.Migrations
 
             modelBuilder.Entity("NoMercy.Database.Models.Episode", b =>
                 {
-                    b.Navigation("Casts");
+                    b.Navigation("Cast");
 
-                    b.Navigation("Crews");
+                    b.Navigation("Crew");
 
                     b.Navigation("Files");
 
@@ -4457,14 +4573,16 @@ namespace NoMercy.Database.Migrations
 
             modelBuilder.Entity("NoMercy.Database.Models.Playlist", b =>
                 {
-                    b.Navigation("PlaylistTrack");
+                    b.Navigation("Tracks");
                 });
 
-            modelBuilder.Entity("NoMercy.Database.Models.Release", b =>
+            modelBuilder.Entity("NoMercy.Database.Models.ReleaseGroup", b =>
                 {
-                    b.Navigation("Albums");
+                    b.Navigation("AlbumReleaseGroup");
 
-                    b.Navigation("Artists");
+                    b.Navigation("ArtistReleaseGroup");
+
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("NoMercy.Database.Models.Role", b =>
@@ -4474,9 +4592,9 @@ namespace NoMercy.Database.Migrations
 
             modelBuilder.Entity("NoMercy.Database.Models.Season", b =>
                 {
-                    b.Navigation("Casts");
+                    b.Navigation("Cast");
 
-                    b.Navigation("Crews");
+                    b.Navigation("Crew");
 
                     b.Navigation("Episodes");
 
@@ -4525,6 +4643,8 @@ namespace NoMercy.Database.Migrations
                     b.Navigation("Cast");
 
                     b.Navigation("CertificationTvs");
+
+                    b.Navigation("Creators");
 
                     b.Navigation("Crew");
 

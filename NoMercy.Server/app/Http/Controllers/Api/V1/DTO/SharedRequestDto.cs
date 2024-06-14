@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
-public class FilterRequest
+public record FilterRequest
 {
-    [JsonProperty("letter")] public string Letter { get; set; } = "_";
+    [JsonProperty("letter")] public string? Letter { get; set; } = "_";
 }

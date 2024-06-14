@@ -4,25 +4,24 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Providers.TMDB.Models.Movies;
 
-namespace NoMercy.Database.Models
+namespace NoMercy.Database.Models;
+
+[PrimaryKey(nameof(GenreId), nameof(MovieId))]
+public class GenreMovie
 {
-    [PrimaryKey(nameof(GenreId), nameof(MovieId))]
-    public class GenreMovie
+    [JsonProperty("genre_id")] public int GenreId { get; set; }
+    public Genre Genre { get; set; }
+
+    [JsonProperty("movie_id")] public int MovieId { get; set; }
+    public Movie Movie { get; set; }
+
+    public GenreMovie()
     {
-        [JsonProperty("genre_id")] public int GenreId { get; set; }
-        public virtual Genre Genre { get; set; }
+    }
 
-        [JsonProperty("movie_id")] public int MovieId { get; set; }
-        public virtual Movie Movie { get; set; }
-
-        public GenreMovie()
-        {
-        }
-
-        public GenreMovie(Providers.TMDB.Models.Shared.Genre genre, MovieAppends movie)
-        {
-            GenreId = genre.Id;
-            MovieId = movie.Id;
-        }
+    public GenreMovie(Providers.TMDB.Models.Shared.TmdbGenre tmdbGenre, TmdbMovieAppends tmdbMovie)
+    {
+        GenreId = tmdbGenre.Id;
+        MovieId = tmdbMovie.Id;
     }
 }

@@ -9,7 +9,8 @@ public class ThrottlingDelegatingHandler : DelegatingHandler
         _throttler = throttler ?? throw new ArgumentNullException(nameof(throttler));
     }
 
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+        CancellationToken cancellationToken)
     {
         if (request == null) throw new ArgumentNullException(nameof(request));
 

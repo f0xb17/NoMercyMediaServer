@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Models.TV;
+
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Database.Models;
@@ -29,7 +30,7 @@ public class Tv : ColorPaletteTimeStamps
     [JsonProperty("last_episode_to_air")] public int? LastEpisodeToAir { get; set; }
     [JsonProperty("media_type")] public string? MediaType { get; set; }
     [JsonProperty("next_episode_to_air")] public int? NextEpisodeToAir { get; set; }
-    [JsonProperty("number_of_episodes")] public int NumberOfEpisodes { get; set; }
+    [JsonProperty("number_of_items")] public int NumberOfEpisodes { get; set; }
     [JsonProperty("number_of_seasons")] public int? NumberOfSeasons { get; set; }
     [JsonProperty("origin_country")] public string? OriginCountry { get; set; }
     [JsonProperty("original_language")] public string? OriginalLanguage { get; set; }
@@ -46,94 +47,62 @@ public class Tv : ColorPaletteTimeStamps
     [JsonProperty("vote_count")] public int? VoteCount { get; set; }
 
     [JsonProperty("library_id")] public Ulid LibraryId { get; set; }
-    public virtual Library Library { get; set; }
+    public Library Library { get; set; }
 
-    [JsonProperty("alternative_titles")]
-    public virtual ICollection<AlternativeTitle> AlternativeTitles { get; set; }
-    
-    [JsonProperty("casts")] 
-    public virtual ICollection<Cast> Cast { get; set; }
-    
-    [JsonProperty("certifications")] 
-    public virtual ICollection<CertificationTv> CertificationTvs { get; set; }
-    
-    [JsonProperty("crews")] 
-    public virtual ICollection<Crew> Crew { get; set; }
-    
-    [JsonProperty("genres")] 
-    public virtual ICollection<GenreTv> GenreTvs { get; set; }
-    
-    [JsonProperty("keywords")] 
-    public virtual ICollection<KeywordTv> KeywordTvs { get; set; }
-    
-    [JsonProperty("medias")] 
-    public virtual ICollection<Media> Media { get; set; }
-    
-    [JsonProperty("images")] 
-    public virtual ICollection<Image> Images { get; set; }
-    
-    [JsonProperty("seasons")] 
-    public virtual ICollection<Season> Seasons { get; set; }
-    
-    [JsonProperty("translations")] 
-    public virtual ICollection<Translation> Translations { get; set; }
-    
-    [JsonProperty("user_data")] 
-    public virtual ICollection<UserData> UserData { get; set; }
-
-    [JsonProperty("episodes")] 
-    public virtual ICollection<Episode> Episodes { get; set; } = new HashSet<Episode>();
-    
-    [InverseProperty("TvFrom")] 
-    public virtual ICollection<Recommendation> RecommendationFrom { get; set; }
-    
-    [InverseProperty("TvTo")] 
-    public virtual ICollection<Recommendation> RecommendationTo { get; set; }
-    
-    [InverseProperty("TvFrom")] 
-    public virtual ICollection<Similar> SimilarFrom { get; set; }
-    
-    [InverseProperty("TvTo")] 
-    public virtual ICollection<Similar> SimilarTo { get; set; }
-    
-    [JsonProperty("tv_user")] 
-    public virtual ICollection<TvUser> TvUser { get; set; }
+    [JsonProperty("alternative_titles")] public ICollection<AlternativeTitle> AlternativeTitles { get; set; }
+    [JsonProperty("casts")] public ICollection<Cast> Cast { get; set; }
+    [JsonProperty("certifications")] public ICollection<CertificationTv> CertificationTvs { get; set; }
+    [JsonProperty("crews")] public ICollection<Crew> Crew { get; set; }
+    [JsonProperty("creators")] public ICollection<Creator> Creators { get; set; }
+    [JsonProperty("genres")] public ICollection<GenreTv> GenreTvs { get; set; }
+    [JsonProperty("keywords")] public ICollection<KeywordTv> KeywordTvs { get; set; }
+    [JsonProperty("medias")] public ICollection<Media> Media { get; set; }
+    [JsonProperty("images")] public ICollection<Image> Images { get; set; }
+    [JsonProperty("seasons")] public ICollection<Season> Seasons { get; set; }
+    [JsonProperty("translations")] public ICollection<Translation> Translations { get; set; }
+    [JsonProperty("user_data")] public ICollection<UserData> UserData { get; set; }
+    [JsonProperty("episodes")] public ICollection<Episode> Episodes { get; set; } = new HashSet<Episode>();
+    [InverseProperty("TvFrom")] public ICollection<Recommendation> RecommendationFrom { get; set; }
+    [InverseProperty("TvTo")] public ICollection<Recommendation> RecommendationTo { get; set; }
+    [InverseProperty("TvFrom")] public ICollection<Similar> SimilarFrom { get; set; }
+    [InverseProperty("TvTo")] public ICollection<Similar> SimilarTo { get; set; }
+    [JsonProperty("tv_user")] public ICollection<TvUser> TvUser { get; set; }
 
     public Tv()
     {
     }
 
-    public Tv(TvShowAppends tvShowAppends, Ulid libraryId, string folder, string mediaType)
+    public Tv(TmdbTvShowAppends tmdbTvShowAppends, Ulid libraryId, string folder, string mediaType)
     {
-        Id = tvShowAppends.Id;
-        Backdrop = tvShowAppends.BackdropPath;
-        Duration = tvShowAppends.EpisodeRunTime?.Length > 0 
-            ? (int?)tvShowAppends.EpisodeRunTime?.Average() 
+        Id = tmdbTvShowAppends.Id;
+        Backdrop = tmdbTvShowAppends.BackdropPath;
+        Duration = tmdbTvShowAppends.EpisodeRunTime?.Length > 0
+            ? (int?)tmdbTvShowAppends.EpisodeRunTime?.Average()
             : 0;
-        FirstAirDate = tvShowAppends.FirstAirDate;
+        FirstAirDate = tmdbTvShowAppends.FirstAirDate;
         HaveEpisodes = 0;
-        Homepage = tvShowAppends.Homepage?.ToString();
-        ImdbId = tvShowAppends.ExternalIds.ImdbId;
-        InProduction = tvShowAppends.InProduction;
-        LastEpisodeToAir = tvShowAppends.LastEpisodeToAir?.Id;
-        NextEpisodeToAir = tvShowAppends.NextEpisodeToAir?.Id;
-        NumberOfEpisodes = tvShowAppends.NumberOfEpisodes;
-        NumberOfSeasons = tvShowAppends.NumberOfSeasons;
-        OriginCountry = tvShowAppends.OriginCountry.Length > 0 ? tvShowAppends.OriginCountry[0] : null;
-        OriginalLanguage = tvShowAppends.OriginalLanguage;
-        Overview = tvShowAppends.Overview;
-        Popularity = tvShowAppends.Popularity;
-        Poster = tvShowAppends.PosterPath;
-        SpokenLanguages = tvShowAppends.SpokenLanguages.Length > 0 ? tvShowAppends.SpokenLanguages[0].Name : null;
-        Status = tvShowAppends.Status;
-        Tagline = tvShowAppends.Tagline;
-        Title = tvShowAppends.Name;
-        TitleSort = tvShowAppends.Name.TitleSort(tvShowAppends.FirstAirDate);
-        Trailer = tvShowAppends.Videos.Results.Length > 0 ? tvShowAppends.Videos.Results[0].Key : null;
-        TvdbId = tvShowAppends.ExternalIds.TvdbId;
-        Type = tvShowAppends.Type;
-        VoteAverage = tvShowAppends.VoteAverage;
-        VoteCount = tvShowAppends.VoteCount;
+        Homepage = tmdbTvShowAppends.Homepage?.ToString();
+        ImdbId = tmdbTvShowAppends.ExternalIds.ImdbId;
+        InProduction = tmdbTvShowAppends.InProduction;
+        LastEpisodeToAir = tmdbTvShowAppends.LastEpisodeToAir?.Id;
+        NextEpisodeToAir = tmdbTvShowAppends.NextEpisodeToAir?.Id;
+        NumberOfEpisodes = tmdbTvShowAppends.NumberOfEpisodes;
+        NumberOfSeasons = tmdbTvShowAppends.NumberOfSeasons;
+        OriginCountry = tmdbTvShowAppends.OriginCountry.Length > 0 ? tmdbTvShowAppends.OriginCountry[0] : null;
+        OriginalLanguage = tmdbTvShowAppends.OriginalLanguage;
+        Overview = tmdbTvShowAppends.Overview;
+        Popularity = tmdbTvShowAppends.Popularity;
+        Poster = tmdbTvShowAppends.PosterPath;
+        SpokenLanguages = tmdbTvShowAppends.SpokenLanguages.Length > 0 ? tmdbTvShowAppends.SpokenLanguages[0].Name : null;
+        Status = tmdbTvShowAppends.Status;
+        Tagline = tmdbTvShowAppends.Tagline;
+        Title = tmdbTvShowAppends.Name;
+        TitleSort = tmdbTvShowAppends.Name.TitleSort(tmdbTvShowAppends.FirstAirDate);
+        Trailer = tmdbTvShowAppends.Videos.Results.Length > 0 ? tmdbTvShowAppends.Videos.Results[0].Key : null;
+        TvdbId = tmdbTvShowAppends.ExternalIds.TvdbId;
+        Type = tmdbTvShowAppends.Type;
+        VoteAverage = tmdbTvShowAppends.VoteAverage;
+        VoteCount = tmdbTvShowAppends.VoteCount;
 
         Folder = folder;
         LibraryId = libraryId;

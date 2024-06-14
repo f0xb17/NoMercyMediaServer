@@ -6,12 +6,13 @@ using Microsoft.EntityFrameworkCore;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Database.Models;
-    
+
 [PrimaryKey(nameof(Id))]
 public class QueueJob
-{ 
+{
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public long Id { get; set; }
+
     public int? Priority { get; set; }
     public string Queue { get; set; }
     public required string Payload { get; set; }
@@ -20,4 +21,3 @@ public class QueueJob
     public DateTime AvailableAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
-

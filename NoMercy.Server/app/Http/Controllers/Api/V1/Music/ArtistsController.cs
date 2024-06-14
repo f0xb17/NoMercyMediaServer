@@ -1,14 +1,13 @@
-using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
 using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Music.DTO;
+using NoMercy.Server.app.Http.Middleware;
 using NoMercy.Server.app.Jobs;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Music;
@@ -16,37 +15,27 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Music;
 [ApiController]
 [ApiVersion("1")]
 [Tags("Music Artists")]
-[Authorize, Route("api/v{Version:apiVersion}/music/artists")]
-public class ArtistsController: Controller
+[Authorize]
+[Route("api/v{Version:apiVersion}/music/artists")]
+public class ArtistsController : Controller
 {
-    [NonAction]
-    private Guid GetUserId()
-    {
-        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-    }
-    
     [HttpGet]
     public async Task<ArtistsResponseDto> Index([FromQuery] FilterRequest request)
     {
         List<ArtistsResponseItemDto> artists = [];
-        
-        Guid userId = GetUserId();
+
+        var userId = HttpContext.User.UserId();
 
         await using MediaContext mediaContext = new();
-        await foreach (var artist in ArtistsResponseDto.GetArtists(mediaContext, userId, request.Letter))
-        {
+        await foreach (var artist in ArtistsResponseDto.GetArtists(mediaContext, userId, request.Letter ?? "_" ))
             artists.Add(new ArtistsResponseItemDto(artist));
-        }
 
         var tracks = mediaContext.ArtistTrack
             .Where(artistTrack => artists.Select(a => a.Id).Contains(artistTrack.ArtistId))
             .Where(artistTrack => artistTrack.Track.Duration != null)
             .ToList();
-        
-        foreach (var artist in artists)
-        {
-            artist.Tracks = tracks.Count(track => track.ArtistId == artist.Id);
-        }
+
+        foreach (var artist in artists) artist.Tracks = tracks.Count(track => track.ArtistId == artist.Id);
 
         return new ArtistsResponseDto
         {
@@ -54,33 +43,30 @@ public class ArtistsController: Controller
                 .Where(response => response.Tracks > 0)
         };
     }
-    
+
     [HttpGet]
     [Route("{id:guid}")]
     public async Task<ArtistResponseDto> Show(Guid id)
     {
-        Guid userId = GetUserId();
-        
+        var userId = HttpContext.User.UserId();
+
         await using MediaContext mediaContext = new();
         var artist = await ArtistResponseDto.GetArtist(mediaContext, userId, id);
-        
-        if (artist is null)
-        {
-            return new ArtistResponseDto();
-        }
-        
+
+        if (artist is null) return new ArtistResponseDto();
+
         return new ArtistResponseDto
         {
-            Data = new ArtistResponseItemDto(artist)
+            Data = new ArtistResponseItemDto(artist, userId, HttpContext.Request.Headers.AcceptLanguage[1])
         };
     }
-    
+
     [HttpPost]
     [Route("{id:guid}/like")]
     public async Task<StatusResponseDto<string>> Like(Guid id, [FromBody] LikeRequestDto request)
     {
-        Guid userId = GetUserId();
-        
+        var userId = HttpContext.User.UserId();
+
         await using MediaContext mediaContext = new();
         var artist = await mediaContext.Artists
             .AsNoTracking()
@@ -88,13 +74,11 @@ public class ArtistsController: Controller
             .FirstOrDefaultAsync();
 
         if (artist is null)
-        {
             return new StatusResponseDto<string>
             {
                 Status = "error",
                 Message = "Tv not found"
             };
-        }
 
         if (request.Value)
         {
@@ -114,14 +98,11 @@ public class ArtistsController: Controller
                 .Where(tvUser => tvUser.ArtistId == artist.Id && tvUser.UserId == userId)
                 .FirstOrDefaultAsync();
 
-            if (tvUser is not null)
-            {
-                mediaContext.ArtistUser.Remove(tvUser);
-            }
+            if (tvUser is not null) mediaContext.ArtistUser.Remove(tvUser);
 
             await mediaContext.SaveChangesAsync();
         }
-        
+
         Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto()
         {
             QueryKey = ["music", "artists", artist.Id]
@@ -143,8 +124,8 @@ public class ArtistsController: Controller
     [Route("{id:guid}/rescan")]
     public async Task<StatusResponseDto<string>> Like(Guid id)
     {
-        Guid userId = GetUserId();
-        
+        var userId = HttpContext.User.UserId();
+
         await using MediaContext mediaContext = new();
 
         return new StatusResponseDto<string>

@@ -67,7 +67,7 @@ public class Networking
 
     private static string GetInternalIp()
     {
-        using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0);
+        using Socket socket = new(AddressFamily.InterNetwork, SocketType.Dgram, 0);
 
         socket.Connect("1.1.1.1", 65530);
 
@@ -84,9 +84,9 @@ public class Networking
 
     private static string GetExternalIp()
     {
-        var client = new HttpClient();
+        HttpClient client = new();
 
-        string externalIp = client.GetStringAsync("https://api-dev.nomercy.tv/server/ip").Result.Replace("\"", "");
+        var externalIp = client.GetStringAsync("https://api-dev.nomercy.tv/server/ip").Result.Replace("\"", "");
 
         ExternalAddress = $"https://{Regex.Replace(externalIp, "\\.", "-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
 
@@ -103,13 +103,9 @@ public class Networking
         ExternalIp = _device.GetExternalIP().ToString();
 
         if (ExternalIp == "")
-        {
             ExternalIp = GetExternalIp();
-        }
         else
-        {
             ExternalAddress = $"https://{Regex.Replace(ExternalIp, "\\.", "-")}.{SystemInfo.DeviceId}.nomercy.tv:7626";
-        }
     }
 
     public static IWebHost TempServer()
@@ -122,7 +118,7 @@ public class Networking
                 {
                     var code = context.Request.Query["code"].ToString();
 
-                    Auth.GetTokenByAuthorizationCode(code);
+                    Auth.TokenByAuthorizationCode(code);
 
                     context.Response.Headers.Append("Content-Type", "text/html");
                     await context.Response.WriteAsync("<script>window.close();</script>");
@@ -132,8 +128,10 @@ public class Networking
 
     internal static void SendToAll(string name, object? data = null)
     {
+        // Logger.Socket($"Sending {name} to all clients");
         foreach (var (_, client) in SocketClients)
         {
+            // Logger.Socket($"Sending {name} to {client.Sub}");
             try
             {
                 if (data != null)
@@ -152,7 +150,6 @@ public class Networking
     private static void SendTo(string name, Guid userId, object? data = null)
     {
         foreach (var (_, client) in SocketClients.Where(client => client.Value.Sub == userId))
-        {
             try
             {
                 if (data != null)
@@ -165,15 +162,13 @@ public class Networking
                 Logger.Socket(e, LogLevel.Error);
                 throw;
             }
-        }
     }
 
     private static void Reply(string name, HttpContext context, object? data = null)
     {
-        Guid userId = Guid.Parse(context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        var userId = Guid.Parse(context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
 
         foreach (var (_, client) in SocketClients.Where(client => client.Value.Sub == userId))
-        {
             try
             {
                 if (data != null)
@@ -186,6 +181,5 @@ public class Networking
                 Logger.Socket(e, LogLevel.Error);
                 throw;
             }
-        }
     }
 }

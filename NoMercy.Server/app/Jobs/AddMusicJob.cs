@@ -1,78 +1,100 @@
-using FFMpegCore;
-using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.Providers.AcoustId.Client;
-using NoMercy.Providers.AcoustId.Models;
+using NoMercy.Server.app.Helper;
 using NoMercy.Server.Logic;
 using NoMercy.Server.system;
-using LogLevel = NoMercy.Helpers.LogLevel;
 
 namespace NoMercy.Server.app.Jobs;
 
-public class AddMusicJob : IShouldQueue
-{    
+public class ParsedTrack
+{
+    public string LibraryFolder { get; set; } = "";
+    public string? Letter { get; set; }
+    public string? Type { get; set; }
+    public string? Artist { get; set; }
+    public int Year { get; set; }
+    public int? AlbumNumber { get; set; }
+    public int TrackNumber { get; set; }
+    public string? Album { get; set; }
+    public string Title { get; set; } = "";
+    public string? Artists { get; set; }
+    public string? Featuring { get; set; }
+    public string? Duplicate { get; set; }
+    public string Extension { get; set; } = "";
+}
+
+[Serializable]
+public class AddMusicJob : IShouldQueue, IDisposable, IAsyncDisposable
+{
     private readonly MediaContext _mediaContext = new();
 
-    private readonly string? _libraryId;
-    private readonly string _file;
-    
-    public AddMusicJob(string libraryId, string file)
+    public string? Folder { get; set; }
+    public Library? Library { get; set; }
+
+    public AddMusicJob()
     {
-        _libraryId = libraryId;
-        _file = file;
+        //
+    }
+
+    
+    public AddMusicJob(string folder, Library library)
+    {
+        Folder = folder;
+        Library = library;
     }
 
     public async Task Handle()
     {
-        Library? library;
+        if (Folder is null) return;
+        if (Library is null) return;
+
+        await using MediaScan mediaScan = new();
+        IEnumerable<MediaFolder> mediaFolder = await mediaScan
+            .EnableFileListing()
+            .Process(Folder, 20);
         
-        if (_libraryId is null)
+        foreach (var list in mediaFolder)
         {
-            library = await _mediaContext.Libraries
-                .Where(f => f.Type == "music")
-                .Include(l => l.FolderLibraries)
-                .ThenInclude(fl => fl.Folder)
-                .FirstOrDefaultAsync();
-        } 
-        else {
-            library = await _mediaContext.Libraries
-                .Where(f => f.Id == Ulid.Parse(_libraryId))
-                .Include(l => l.FolderLibraries)
-                .ThenInclude(fl => fl.Folder)
-                .FirstOrDefaultAsync();
+            // if (list.Path == Folder) continue;
+            
+            Logger.App($@"Music {list.Path}: Processing");
+
+            await using var music = new MusicLogic3(Library, list);
+            await music.Process();
+            
+            // foreach (var file in list.Files ?? [])
+            // {
+            //     if (file.Parsed is null) continue;
+            //
+            //     Logger.App($@"Music {file.Path}: Processing");
+            //
+            //     await using var music = new MusicLogic2(Library, file.Path);
+            //     await music.Process();
+            //
+            //     Logger.App($@"Music {file.Path}: Processed");
+            // }
         }
-        
-        using FingerprintClient fingerprintClient = new();
-        Fingerprint? fingerPrint = await fingerprintClient.Lookup(_file);
-        
-        IMediaAnalysis mediaAnalysis = await FFProbe.AnalyseAsync(_file);
-        int duration = (int)mediaAnalysis.Format.Duration.TotalSeconds;
+    }
 
-        if (fingerPrint is null || library is null) return;
-               
-            foreach (var result in fingerPrint.Results)
-            {
-                // foreach (var recording in result.Recordings?.Where(r => r.Duration == duration) ?? [])
-                foreach (var recording in result.Recordings ?? [])
-                {
-                    try
-                    {
-                        // if (recording.Title is null) continue;
+    ~AddMusicJob()
+    {
+        Dispose();
+    }
 
-                        MusicLogic music = new MusicLogic(recording.Id, library, _file, mediaAnalysis);
-                        await music.Process();
-                        
-                        music.Dispose();
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.App(e.InnerException?.Message ?? e.Message, LogLevel.Error);
-                    }
-                }
-            }
-         
-        Logger.App($@"Music {_file}: Processed");
+    public void Dispose()
+    {
+        _mediaContext.Dispose();
+        GC.Collect();
+        GC.WaitForFullGCComplete();
+        GC.WaitForPendingFinalizers();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _mediaContext.DisposeAsync();
+        GC.Collect();
+        GC.WaitForFullGCComplete();
+        GC.WaitForPendingFinalizers();
     }
 }

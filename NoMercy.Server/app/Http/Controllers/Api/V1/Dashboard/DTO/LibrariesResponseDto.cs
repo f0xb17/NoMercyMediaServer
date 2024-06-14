@@ -7,26 +7,25 @@ using NoMercy.Database.Models;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard.DTO;
 
-public class LibrariesResponseDto
+public record LibrariesResponseDto
 {
-    [JsonProperty("data")] public IEnumerable<LibrariesResponseItemDto>? Data { get; set; }
-    
-    public static readonly Func<MediaContext, Guid, string, IAsyncEnumerable<Library?>> GetLibraries =
-        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, string language) =>
+    [JsonProperty("data")] public IEnumerable<LibrariesResponseItemDto> Data { get; set; }
+
+    public static readonly Func<MediaContext, Guid, IAsyncEnumerable<Library?>> GetLibraries =
+        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId) =>
             mediaContext.Libraries.AsNoTracking()
                 .Where(library => library.LibraryUsers
                     .FirstOrDefault(u => u.UserId == userId) != null
                 )
                 .Include(library => library.FolderLibraries)
-                    .ThenInclude(folderLibrary => folderLibrary.Folder)
-                        .ThenInclude(folder => folder.EncoderProfileFolder)
-                            .ThenInclude(library => library.EncoderProfile)
-                
+                .ThenInclude(folderLibrary => folderLibrary.Folder)
+                .ThenInclude(folder => folder.EncoderProfileFolder)
+                .ThenInclude(library => library.EncoderProfile)
                 .Include(library => library.LanguageLibraries)
                 .ThenInclude(languageLibrary => languageLibrary.Language));
 }
 
-public class LibrariesResponseItemDto
+public record LibrariesResponseItemDto
 {
     [JsonProperty("id")] public Ulid Id { get; set; }
     [JsonProperty("autoRefreshInterval")] public long AutoRefreshInterval { get; set; }
@@ -39,14 +38,13 @@ public class LibrariesResponseItemDto
     [JsonProperty("type")] public string? Type { get; set; }
     [JsonProperty("order")] public int? Order { get; set; }
 
-    [JsonProperty("color_palette")] 
-    public object? ColorPalette { get; set; }
+    [JsonProperty("color_palette")] public object? ColorPalette { get; set; }
 
     [JsonProperty("created_at")] public DateTime? CreatedAt { get; set; }
     [JsonProperty("updated_at")] public DateTime? UpdatedAt { get; set; }
     [JsonProperty("folder_library")] public FolderLibraryDto[] FolderLibrary { get; set; }
     [JsonProperty("subtitles")] public string[] Subtitles { get; set; }
-    
+
     public LibrariesResponseItemDto(Library library)
     {
         Id = library.Id;
@@ -60,7 +58,7 @@ public class LibrariesResponseItemDto
         Order = library.Order;
         CreatedAt = library.CreatedAt;
         UpdatedAt = library.UpdatedAt;
-        
+
         Subtitles = library.LanguageLibraries
             .Select(languageLibrary => languageLibrary.Language.Iso6391)
             .ToArray();
@@ -80,19 +78,17 @@ public class LibrariesResponseItemDto
                 }
             })
             .ToArray();
-
     }
-
 }
 
-public class FolderLibraryDto
+public record FolderLibraryDto
 {
     [JsonProperty("folder_id")] public Ulid FolderId { get; set; }
     [JsonProperty("library_id")] public Ulid LibraryId { get; set; }
     [JsonProperty("folder")] public FolderDto Folder { get; set; }
 }
 
-public class FolderDto
+public record FolderDto
 {
     [JsonProperty("id")] public Ulid Id { get; set; }
     [JsonProperty("path")] public string Path { get; set; }

@@ -16,57 +16,48 @@ public static class AppFiles
     public static readonly string FolderRootsSeedFile = Path.Combine(ConfigPath, "folderRootsSeed.jsonc");
     public static readonly string LibrariesSeedFile = Path.Combine(ConfigPath, "librariesSeed.jsonc");
     public static readonly string EncoderProfilesSeedFile = Path.Combine(ConfigPath, "encoderProfilesSeed.jsonc");
-    
+
     public static readonly string DataPath = Path.Combine(AppPath, "data");
-    
+
     public static readonly string LogPath = Path.Combine(AppPath, "log");
     public static readonly string MetadataPath = Path.Combine(AppPath, "metadata");
     public static readonly string PluginsPath = Path.Combine(AppPath, "plugins");
     public static readonly string RootPath = Path.Combine(AppPath, "root");
 
     public static readonly string ApiCachePath = Path.Combine(CachePath, "apiData");
-    public static readonly string OmdbPath = Path.Combine(CachePath, "omdb");
     public static readonly string TempPath = Path.Combine(CachePath, "temp");
     public static readonly string TranscodePath = Path.Combine(CachePath, "transcode");
     public static readonly string ImagesPath = Path.Combine(CachePath, "images");
     public static readonly string MusicImagesPath = Path.Combine(ImagesPath, "music");
     public static readonly string TempImagesPath = Path.Combine(ImagesPath, "temp");
 
-    public static readonly string CollectionsPath = Path.Combine(DataPath, "collections");
-    public static readonly string PlaylistsPath = Path.Combine(DataPath, "playlists");
-    public static readonly string ScheduledTasksPath = Path.Combine(DataPath, "scheduledTasks");
-    public static readonly string SubtitlesPath = Path.Combine(DataPath, "subtitles");
     public static readonly string PluginConfigPath = Path.Combine(PluginsPath, "configurations");
     public static readonly string UserDataPath = Path.Combine(DataPath, "userData");
-
-    public static readonly string PeoplePath = Path.Combine(MetadataPath, "people");
-    public static readonly string LibraryPath = Path.Combine(MetadataPath, "library");
-    public static readonly string ViewsPath = Path.Combine(MetadataPath, "views");
-
-    public static readonly string BinariesPath = Path.Combine(RootPath, "binaries");
     
+    public static readonly string BinariesPath = Path.Combine(RootPath, "binaries");
     public static readonly string FfmpegPath = Path.Combine(BinariesPath, "ffmpeg/ffmpeg" + SystemInfo.ExecSuffix);
     public static readonly string FfProbePath = Path.Combine(BinariesPath, "ffmpeg/ffprobe" + SystemInfo.ExecSuffix);
     public static readonly string FpCalcPath = Path.Combine(BinariesPath, "fpcalc/fpcalc" + SystemInfo.ExecSuffix);
     public static readonly string SubtitleEdit = Path.Combine(BinariesPath, "subtitleedit/SubtitleEdit" + SystemInfo.ExecSuffix);
-    
+
     public static readonly string CertPath = Path.Combine(RootPath, "certs");
     public static readonly string CertFile = Path.Combine(CertPath, "cert.pem");
     public static readonly string KeyFile = Path.Combine(CertPath, "key.pem");
     public static readonly string CaFile = Path.Combine(CertPath, "ca.pem");
-    
+
     public static readonly string SecretsPath = Path.Combine(RootPath, "secrets");
     public static readonly string SecretsStore = Path.Combine(SecretsPath, "secrets.bin");
     public static readonly string SecretsKey = Path.Combine(SecretsPath, "secrets.key");
-    
+
     public static readonly string AppIcon = Path.Combine(Directory.GetCurrentDirectory(), "Assets/icon.ico");
-    
+
     public static readonly string MediaDatabase = Path.Combine(DataPath, "media.db");
     public static readonly string QueueDatabase = Path.Combine(DataPath, "queue.db");
 
     public static IEnumerable<string> AllPaths()
     {
-        return [
+        return
+        [
             AppDataPath,
             AppPath,
             CachePath,
@@ -78,29 +69,21 @@ public static class AppFiles
             RootPath,
             ApiCachePath,
             ImagesPath,
-            OmdbPath,
             TempPath,
             TranscodePath,
-            CollectionsPath,
-            PlaylistsPath,
-            ScheduledTasksPath,
-            SubtitlesPath,
             PluginConfigPath,
             UserDataPath,
-            PeoplePath,
-            LibraryPath,
-            ViewsPath,
             BinariesPath,
             CertPath,
             SecretsPath,
             MusicImagesPath,
-            TempImagesPath,
+            TempImagesPath
         ];
     }
 
     public static Task CreateAppFolders()
     {
-        if (!Directory.Exists(AppPath)) 
+        if (!Directory.Exists(AppPath))
             Directory.CreateDirectory(AppPath);
 
         foreach (var path in AllPaths().Where(path => !Directory.Exists(path)))
@@ -108,7 +91,7 @@ public static class AppFiles
             Console.WriteLine($"Creating directory: {path}");
             Directory.CreateDirectory(path);
         }
-                
+
         return Task.CompletedTask;
     }
 }

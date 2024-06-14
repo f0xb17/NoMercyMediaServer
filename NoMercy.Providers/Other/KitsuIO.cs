@@ -1,52 +1,45 @@
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 using Newtonsoft.Json;
+using NoMercy.Helpers;
+
 namespace NoMercy.Providers.Other;
 
 public static class KitsuIo
 {
     public static async Task<bool> IsAnime(string title, int year)
     {
-        bool isAnime = false;
-        
+        var isAnime = false;
+
         var client = new HttpClient();
-        var response = await client.GetAsync($"https://kitsu.io/api/edge/anime?filter[text]={title}&filter[year]={year}");
-        var content = await response.Content.ReadAsStringAsync();
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(ApiInfo.UserAgent);
+        client.BaseAddress = new Uri("https://kitsu.io/api/edge/");
         
+        var response = await client.GetAsync($"anime?filter[text]={title}&filter[year]={year}");
+        var content = await response.Content.ReadAsStringAsync();
+
         try
         {
-            KitsuAnime? anime = JsonConvert.DeserializeObject<KitsuAnime>(content);
-            
+            var anime = JsonConvert.DeserializeObject<KitsuAnime>(content);
+
             foreach (var data in anime?.Data ?? [])
-            {
                 if (data.Attributes.Titles.En?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
-                {
                     isAnime = true;
-                }
                 else if (data.Attributes.Titles.EnJp?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
-                {
                     isAnime = true;
-                }
                 else if (data.Attributes.Titles.JaJp?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
-                {
                     isAnime = true;
-                }
                 else if (data.Attributes.Titles.ThTh?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
-                {
                     isAnime = true;
-                }
-                else if (data.Attributes.AbbreviatedTitles.Any(abbreviatedTitle => abbreviatedTitle.Equals(abbreviatedTitle, StringComparison.CurrentCultureIgnoreCase)))
-                {
+                else if (data.Attributes.AbbreviatedTitles.Any(abbreviatedTitle =>
+                             abbreviatedTitle.Equals(abbreviatedTitle, StringComparison.CurrentCultureIgnoreCase)))
                     isAnime = true;
-                }
-                
-            }
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
             throw;
         }
-        
+
         return isAnime;
     }
 }
@@ -122,8 +115,7 @@ public class Dimensions
     [JsonProperty("large?")] public Large? Large { get; set; }
     [JsonProperty("small")] public Large? Small { get; set; }
 
-    [JsonProperty("medium", NullValueHandling = NullValueHandling.Ignore)]
-    public Large? Medium { get; set; }
+    [JsonProperty("medium")] public Large? Medium { get; set; }
 }
 
 public class Large

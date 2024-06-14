@@ -2,16 +2,28 @@
 
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using NoMercy.Providers.TMDB.Models.Shared;
+using NoMercy.Providers.TMDB.Models.TV;
 
-namespace NoMercy.Database.Models
+namespace NoMercy.Database.Models;
+
+[PrimaryKey(nameof(PersonId), nameof(TvId))]
+public class Creator
 {
-    [PrimaryKey(nameof(PersonId), nameof(TvId))]
-    public class Creator
-    {
-        [JsonProperty("person_id")] public required int PersonId { get; set; }
-        public virtual Person Person { get; set; }
+    [JsonProperty("person_id")] public int PersonId { get; set; }
+    public Person Person { get; set; }
 
-        [JsonProperty("tv_id")] public required int TvId { get; set; }
-        public virtual Tv Tv { get; set; }
+    [JsonProperty("tv_id")] public int TvId { get; set; }
+    public Tv Tv { get; set; }
+
+    public Creator(TmdbCreatedBy input, TmdbTvShowAppends show)
+    {
+        PersonId = input.Id;
+        TvId = show.Id;
+    }
+
+    public Creator()
+    {
+        //
     }
 }

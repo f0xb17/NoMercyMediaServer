@@ -3,17 +3,23 @@ using NoMercy.Server.system;
 
 namespace NoMercy.Server.app.Jobs;
 
+[Serializable]
 public class TvImagesJob : IShouldQueue
 {
-    private readonly int _id;
-    
-    public TvImagesJob(long id)
+    public int Id { get; set; }
+
+    public TvImagesJob()
     {
-        _id = (int)id;
+        //
+    }
+
+    public TvImagesJob(int id)
+    {
+        Id = id;
     }
 
     public async Task Handle()
     {
-        await TvShowLogic.StoreImages(_id);
+        await TvShowLogic.StoreImages(Id);
     }
 }

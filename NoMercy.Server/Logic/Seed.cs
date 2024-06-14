@@ -17,11 +17,11 @@ using LogLevel = NoMercy.Helpers.LogLevel;
 
 namespace NoMercy.Server.Logic;
 
-public static class Seed
+public class Seed : IDisposable, IAsyncDisposable
 {
-    private static ConfigClient ConfigClient { get; set; } = new();
-    private static MovieClient MovieClient { get; set; } = new();
-    private static TvClient TvClient { get; set; } = new();
+    private static TmdbConfigClient TmdbConfigClient { get; set; } = new();
+    private static TmdbMovieClient TmdbMovieClient { get; set; } = new();
+    private static TmdbTvClient TmdbTvClient { get; set; } = new();
     private static readonly MediaContext MediaContext = new();
     private static Folder[] _folders = [];
     private static User[] _users = [];
@@ -53,7 +53,7 @@ public static class Seed
             await AddFolderRoots();
             await AddEncoderProfiles();
             await AddLibraries();
-            await GetUsers();
+            await Users();
             // await AddSpecial();
         }
         catch (Exception e)
@@ -65,14 +65,14 @@ public static class Seed
 
     private static async Task AddEncoderProfiles()
     {
+        var hasEncoderProfiles = await MediaContext.EncoderProfiles.AnyAsync();
+        if (hasEncoderProfiles) return;
+        
         EncoderProfileDto[] encoderProfiles;
         if (File.Exists(AppFiles.EncoderProfilesSeedFile))
-        {
             encoderProfiles = JsonConvert.DeserializeObject<EncoderProfileDto[]>(
                 await File.ReadAllTextAsync(AppFiles.EncoderProfilesSeedFile)) ?? [];
-        }
         else
-        {
             encoderProfiles =
             [
                 new EncoderProfileDto
@@ -136,7 +136,6 @@ public static class Seed
                     }
                 }
             ];
-        }
 
         await MediaContext.EncoderProfiles.UpsertRange(encoderProfiles.ToList()
                 .ConvertAll<EncoderProfile>(encoderProfile => new EncoderProfile
@@ -151,8 +150,8 @@ public static class Seed
                         Preset = encoderProfile.Params.Preset,
                         Profile = encoderProfile.Params.Profile,
                         Codec = encoderProfile.Params.Codec,
-                        Audio = encoderProfile.Params.Audio,
-                    }),
+                        Audio = encoderProfile.Params.Audio
+                    })
                 })
             )
             .On(v => new { v.Id })
@@ -161,25 +160,25 @@ public static class Seed
                 Id = vi.Id,
                 Name = vi.Name,
                 Container = vi.Container,
-                Param = vi.Param,
+                Param = vi.Param
             })
             .RunAsync();
     }
 
-    private static async Task GetUsers()
+    private static async Task Users()
     {
-        HttpClient client = new HttpClient();
+        HttpClient client = new();
         client.DefaultRequestHeaders.Add("Accept", "application/json");
-        client.DefaultRequestHeaders.Add("User-Agent", "NoMercy");
+        client.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Auth.AccessToken);
 
         IDictionary<string, string?> query = new Dictionary<string, string?>();
         query.Add("server_id", SystemInfo.DeviceId.ToString());
 
-        string newUrl = QueryHelpers.AddQueryString("https://api-dev.nomercy.tv/v1/server/users", query);
+        var newUrl = QueryHelpers.AddQueryString("https://api-dev.nomercy.tv/v1/server/users", query);
 
-        HttpResponseMessage? response = await client.GetAsync(newUrl);
-        string? content = await response.Content.ReadAsStringAsync();
+        var response = await client.GetAsync(newUrl);
+        var content = await response.Content.ReadAsStringAsync();
 
         if (content == null) throw new Exception("Failed to get Server info");
 
@@ -197,7 +196,7 @@ public static class Seed
                 NoTranscoding = serverUser.Enabled,
                 VideoTranscoding = serverUser.Enabled,
                 Owner = serverUser.IsOwner,
-                UpdatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             })
             .ToArray();
 
@@ -215,7 +214,7 @@ public static class Seed
                 NoTranscoding = ui.NoTranscoding,
                 VideoTranscoding = ui.VideoTranscoding,
                 Owner = ui.Owner,
-                UpdatedAt = ui.UpdatedAt,
+                UpdatedAt = ui.UpdatedAt
             })
             .RunAsync();
 
@@ -227,17 +226,13 @@ public static class Seed
 
         List<LibraryUser> libraryUsers = [];
 
-        foreach (User user in _users.ToList())
-        {
-            foreach (Library library in libraries.ToList())
+        foreach (var user in _users.ToList())
+        foreach (var library in libraries.ToList())
+            libraryUsers.Add(new LibraryUser
             {
-                libraryUsers.Add(new LibraryUser
-                {
-                    LibraryId = library.Id,
-                    UserId = user.Id,
-                });
-            }
-        }
+                LibraryId = library.Id,
+                UserId = user.Id
+            });
 
         await MediaContext.LibraryUser
             .UpsertRange(libraryUsers)
@@ -245,23 +240,26 @@ public static class Seed
             .WhenMatched((lus, lui) => new LibraryUser
             {
                 LibraryId = lui.LibraryId,
-                UserId = lui.UserId,
+                UserId = lui.UserId
             })
             .RunAsync();
     }
 
     private static async Task AddGenres()
     {
+        var hasGenres = await MediaContext.Genres.AnyAsync();
+        if (hasGenres) return;
+        
         List<Genre> genres = [];
 
         genres.AddRange(
-            (await MovieClient.Genres())?
+            (await TmdbMovieClient.Genres())?
             .Genres.ToList()
             .ConvertAll<Genre>(x => new Genre(x)).ToArray() ?? []
         );
 
         genres.AddRange(
-            (await TvClient.Genres())?
+            (await TmdbTvClient.Genres())?
             .Genres.ToList()
             .ConvertAll<Genre>(x => new Genre(x)).ToArray() ?? []
         );
@@ -278,25 +276,20 @@ public static class Seed
 
     private static async Task AddCertifications()
     {
+        var hasCertifications = await MediaContext.Certifications.AnyAsync();
+        if (hasCertifications) return;
+        
         List<Certification> certifications = [];
 
-        foreach (KeyValuePair<string?, MovieCertification[]> keyValuePair in (await MovieClient.Certifications())
+        foreach (KeyValuePair<string?, TmdbMovieCertification[]> keyValuePair in (await TmdbMovieClient.Certifications())
                  ?.Certifications ?? [])
-        {
-            foreach (MovieCertification certification in keyValuePair.Value)
-            {
-                certifications.Add(new Certification(keyValuePair.Key, certification));
-            }
-        }
+        foreach (var certification in keyValuePair.Value)
+            certifications.Add(new Certification(keyValuePair.Key, certification));
 
-        foreach (KeyValuePair<string?, TvShowCertification[]> keyValuePair in (await TvClient.Certifications())
+        foreach (KeyValuePair<string?, TmdbTvShowCertification[]> keyValuePair in (await TmdbTvClient.Certifications())
                  ?.Certifications ?? [])
-        {
-            foreach (TvShowCertification certification in keyValuePair.Value)
-            {
-                certifications.Add(new Certification(keyValuePair.Key, certification));
-            }
-        }
+        foreach (var certification in keyValuePair.Value)
+            certifications.Add(new Certification(keyValuePair.Key, certification));
 
         await MediaContext.Certifications.UpsertRange(certifications)
             .On(v => new { v.Iso31661, v.Rating })
@@ -312,7 +305,10 @@ public static class Seed
 
     private static async Task AddLanguages()
     {
-        Language[] languages = (await ConfigClient.Languages())?.ToList()
+        var hasLanguages = await MediaContext.Languages.AnyAsync();
+        if (hasLanguages) return;
+        
+        Language[] languages = (await TmdbConfigClient.Languages())?.ToList()
             .ConvertAll<Language>(language => new Language(language)).ToArray() ?? [];
 
         await MediaContext.Languages.UpsertRange(languages)
@@ -321,14 +317,17 @@ public static class Seed
             {
                 Iso6391 = v.Iso6391,
                 Name = v.Name,
-                EnglishName = v.EnglishName,
+                EnglishName = v.EnglishName
             })
             .RunAsync();
     }
 
     private static async Task AddCountries()
     {
-        Country[] countries = (await ConfigClient.Countries())?.ToList()
+        var hasCountries = await MediaContext.Countries.AnyAsync();
+        if (hasCountries) return;
+        
+        Country[] countries = (await TmdbConfigClient.Countries())?.ToList()
             .ConvertAll<Country>(country => new Country(country)).ToArray() ?? [];
 
         await MediaContext.Countries.UpsertRange(countries)
@@ -337,16 +336,19 @@ public static class Seed
             {
                 Iso31661 = v.Iso31661,
                 NativeName = v.NativeName,
-                EnglishName = v.EnglishName,
+                EnglishName = v.EnglishName
             })
             .RunAsync();
     }
 
     private static async Task AddMusicGenres()
     {
-        GenreClient genreClient = new();
+        var hasMusicGenres = await MediaContext.MusicGenres.AnyAsync();
+        if (hasMusicGenres) return;
+        
+        MusicBrainzGenreClient musicBrainzGenreClient = new();
 
-        MusicGenre[] genres = (await genreClient.All()).ToList()
+        MusicGenre[] genres = (await musicBrainzGenreClient.All()).ToList()
             .ConvertAll<MusicGenre>(genre => new MusicGenre(genre)).ToArray();
 
         await MediaContext.MusicGenres.UpsertRange(genres)
@@ -354,7 +356,7 @@ public static class Seed
             .WhenMatched(v => new MusicGenre
             {
                 Id = v.Id,
-                Name = v.Name,
+                Name = v.Name
             })
             .RunAsync();
 
@@ -375,7 +377,7 @@ public static class Seed
                 .WhenMatched((vs, vi) => new Folder()
                 {
                     Id = vi.Id,
-                    Path = vi.Path,
+                    Path = vi.Path
                 })
                 .RunAsync();
         }
@@ -409,7 +411,7 @@ public static class Seed
                 SpecialSeasonName = librarySeedDto.SpecialSeasonName,
                 Title = librarySeedDto.Title,
                 Type = librarySeedDto.Type,
-                Order = librarySeedDto.Order,
+                Order = librarySeedDto.Order
             }).ToList();
 
             await MediaContext.Libraries.UpsertRange(libraries)
@@ -427,19 +429,15 @@ public static class Seed
                     SpecialSeasonName = vi.SpecialSeasonName,
                     Title = vi.Title,
                     Type = vi.Type,
-                    Order = vi.Order,
+                    Order = vi.Order
                 })
                 .RunAsync();
 
             List<FolderLibrary> libraryFolders = [];
 
-            foreach (LibrarySeedDto library in librarySeed.ToList())
-            {
-                foreach (FolderDto folder in library.Folders.ToList())
-                {
-                    libraryFolders.Add(new FolderLibrary(folder.Id, library.Id));
-                }
-            }
+            foreach (var library in librarySeed.ToList())
+            foreach (var folder in library.Folders.ToList())
+                libraryFolders.Add(new FolderLibrary(folder.Id, library.Id));
 
             await MediaContext.FolderLibrary
                 .UpsertRange(libraryFolders)
@@ -447,7 +445,7 @@ public static class Seed
                 .WhenMatched((vs, vi) => new FolderLibrary()
                 {
                     FolderId = vi.FolderId,
-                    LibraryId = vi.LibraryId,
+                    LibraryId = vi.LibraryId
                 })
                 .RunAsync();
         }
@@ -812,18 +810,19 @@ public static class Seed
             new SpecialItemDto { Type = "episode", Id = 2927203 },
             new SpecialItemDto { Type = "episode", Id = 2927204 },
             new SpecialItemDto { Type = "episode", Id = 2927205 },
-            new SpecialItemDto { Type = "episode", Id = 2927206 },
+            new SpecialItemDto { Type = "episode", Id = 2927206 }
         ];
 
-        Special specialDto = new Special
+        Special specialDto = new()
         {
             Id = Ulid.Parse("01HSBYSE7ZNGN7P586BQJ7W9ZB"),
             Title = "Marvel Cinematic Universe",
             Backdrop = "https://storage.nomercy.tv/laravel/clje9xd4v0000d4ef0usufhy9.jpg",
             Poster = "/4Af70wDv1sN8JztUNnvXgae193O.jpg",
             Logo = "/hUzeosd33nzE5MCNsZxCGEKTXaQ.png",
-            Description = "Chronological order of the movies and episodes from the Marvel Cinematic Universe in the timeline of the story.",
-            Creator = "Stoney_Eagle",
+            Description =
+                "Chronological order of the movies and episodes from the Marvel Cinematic Universe in the timeline of the story.",
+            Creator = "Stoney_Eagle"
         };
 
         await MediaContext.Specials
@@ -837,58 +836,68 @@ public static class Seed
                 Poster = su.Poster,
                 Logo = su.Logo,
                 Description = su.Description,
-                Creator = su.Creator,
+                Creator = su.Creator
             })
             .RunAsync();
 
         foreach (var specialItem in specialData)
         {
-            int index = specialData.IndexOf(specialItem);
+            var index = specialData.IndexOf(specialItem);
 
             try
             {
-                if (specialItem.Type == "movie" )
-                {
+                if (specialItem.Type == "movie")
                     await MediaContext.SpecialItems
                         .Upsert(new SpecialItem()
                         {
                             SpecialId = specialDto.Id,
                             Order = index,
-                            MovieId = specialItem.Id,
+                            MovieId = specialItem.Id
                         })
                         .On(v => new { v.SpecialId, v.MovieId })
                         .WhenMatched((si, su) => new SpecialItem()
                         {
                             SpecialId = su.SpecialId,
                             Order = su.Order,
-                            MovieId = su.MovieId,
+                            MovieId = su.MovieId
                         })
                         .RunAsync();
-                }
                 else
-                {
                     await MediaContext.SpecialItems
                         .Upsert(new SpecialItem()
                         {
                             SpecialId = specialDto.Id,
                             Order = index,
-                            EpisodeId = specialItem.Id,
+                            EpisodeId = specialItem.Id
                         })
                         .On(v => new { v.SpecialId, v.EpisodeId })
                         .WhenMatched((si, su) => new SpecialItem()
                         {
                             SpecialId = su.SpecialId,
                             Order = su.Order,
-                            EpisodeId = su.EpisodeId,
+                            EpisodeId = su.EpisodeId
                         })
                         .RunAsync();
-                }
             }
             catch (Exception e)
             {
                 //
             }
         }
+    }
+
+    public void Dispose()
+    {
+        GC.Collect();
+        GC.WaitForFullGCComplete();
+        GC.WaitForPendingFinalizers();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        GC.Collect();
+        GC.WaitForFullGCComplete();
+        GC.WaitForPendingFinalizers();
     }
 }
 

@@ -1,5 +1,5 @@
 // ReSharper disable All
- 
+
 namespace NoMercy.Server.system;
 
 public class FailingJob : IShouldQueue

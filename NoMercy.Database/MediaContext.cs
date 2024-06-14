@@ -4,13 +4,13 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Newtonsoft.Json;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
 using File = NoMercy.Database.Models.File;
-using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace NoMercy.Database;
 
@@ -74,7 +74,7 @@ public class MediaContext : DbContext
 
         base.OnModelCreating(modelBuilder);
     }
-
+    
     public virtual DbSet<ActivityLog> ActivityLogs { get; init; }
     public virtual DbSet<Cast> Casts { get; init; }
     public virtual DbSet<CertificationMovie> CertificationMovie { get; init; }
@@ -142,7 +142,7 @@ public class MediaContext : DbContext
     public virtual DbSet<UserData> UserData { get; init; }
     public virtual DbSet<User> Users { get; init; }
     public virtual DbSet<VideoFile> VideoFiles { get; init; }
-    
+
     public virtual DbSet<AlbumArtist> AlbumArtist { get; init; }
     public virtual DbSet<AlbumLibrary> AlbumLibrary { get; init; }
     public virtual DbSet<AlbumMusicGenre> AlbumMusicGenre { get; init; }
@@ -159,9 +159,10 @@ public class MediaContext : DbContext
     public virtual DbSet<PlaylistTrack> PlaylistTrack { get; init; }
     public virtual DbSet<TrackUser> TrackUser { get; init; }
     public virtual DbSet<Track> Tracks { get; init; }
-    public virtual DbSet<Release> Releases { get; init; }
-    public virtual DbSet<AlbumRelease> AlbumRelease { get; init; }
-    public virtual DbSet<ArtistRelease> ArtistRelease { get; init; }
+    public virtual DbSet<ReleaseGroup> ReleaseGroups { get; init; }
+    public virtual DbSet<AlbumReleaseGroup> AlbumReleaseGroup { get; init; }
+    public virtual DbSet<ArtistReleaseGroup> ArtistReleaseGroup { get; init; }
+    public virtual DbSet<MusicGenreReleaseGroup> MusicGenreReleaseGroup { get; init; }
 }
 
 public class Timestamps
@@ -170,14 +171,16 @@ public class Timestamps
     [JsonProperty("created_at")]
     [TypeConverter("TIMESTAMP")]
     [Timestamp]
-    [Required, DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+    [Required]
+    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
     public DateTime CreatedAt { get; set; }
 
     [DefaultValue("CURRENT_TIMESTAMP")]
     [JsonProperty("updated_at")]
     [TypeConverter("TIMESTAMP")]
     [Timestamp]
-    [Required, DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+    [Required]
+    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 
@@ -186,15 +189,15 @@ public class ColorPalettes
     [Column("ColorPalette")]
     [StringLength(1024)]
     [JsonProperty("color_palette")]
-    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
     public string _colorPalette { get; set; } = string.Empty;
 
     [NotMapped]
     public IColorPalettes? ColorPalette
     {
-        get => (_colorPalette != string.Empty
+        get => _colorPalette != string.Empty
             ? JsonConvert.DeserializeObject<IColorPalettes>(_colorPalette)
-            : null);
+            : null;
         set => _colorPalette = JsonConvert.SerializeObject(value);
     }
 }
@@ -204,41 +207,53 @@ public class ColorPaletteTimeStamps : Timestamps
     [Column("ColorPalette")]
     [StringLength(1024)]
     [JsonProperty("color_palette")]
-    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
     public string _colorPalette { get; set; } = string.Empty;
 
     [NotMapped]
     public IColorPalettes? ColorPalette
     {
-        get => (_colorPalette != string.Empty
+        get => _colorPalette != string.Empty
             ? JsonConvert.DeserializeObject<IColorPalettes>(_colorPalette)
-            : null);
+            : null;
         set => _colorPalette = JsonConvert.SerializeObject(value);
     }
 }
 
 public class IColorPalettes
 {
-    [JsonProperty("poster", NullValueHandling = NullValueHandling.Ignore)] public IPalette? Poster { get; set; }
-    [JsonProperty("backdrop", NullValueHandling = NullValueHandling.Ignore)] public IPalette? Backdrop { get; set; }
-    [JsonProperty("still", NullValueHandling = NullValueHandling.Ignore)] public IPalette? Still { get; set; }
-    [JsonProperty("profile", NullValueHandling = NullValueHandling.Ignore)] public IPalette? Profile { get; set; }
-    [JsonProperty("image", NullValueHandling = NullValueHandling.Ignore)] public IPalette? Image { get; set; }
-    [JsonProperty("cover", NullValueHandling = NullValueHandling.Ignore)] public IPalette? Cover { get; set; }
+    [JsonProperty("poster", NullValueHandling = NullValueHandling.Ignore)]
+    public PaletteColors? Poster { get; set; }
+
+    [JsonProperty("backdrop", NullValueHandling = NullValueHandling.Ignore)]
+    public PaletteColors? Backdrop { get; set; }
+
+    [JsonProperty("still", NullValueHandling = NullValueHandling.Ignore)]
+    public PaletteColors? Still { get; set; }
+
+    [JsonProperty("profile", NullValueHandling = NullValueHandling.Ignore)]
+    public PaletteColors? Profile { get; set; }
+
+    [JsonProperty("image", NullValueHandling = NullValueHandling.Ignore)]
+    public PaletteColors? Image { get; set; }
+
+    [JsonProperty("cover", NullValueHandling = NullValueHandling.Ignore)]
+    public PaletteColors? Cover { get; set; }
 }
 
-public class IPalette
+public class PaletteColors
 {
-    public string Primary { get; set; }
-    public string LightVibrant { get; set; }
-    public string DarkVibrant { get; set; }
-    public string LightMuted { get; set; }
-    public string DarkMuted { get; set; }
+    [JsonProperty("dominant")] public string Dominant { get; set; }
+    [JsonProperty("primary")] public string Primary { get; set; }
+    [JsonProperty("lightVibrant")] public string LightVibrant { get; set; }
+    [JsonProperty("darkVibrant")] public string DarkVibrant { get; set; }
+    [JsonProperty("lightMuted")] public string LightMuted { get; set; }
+    [JsonProperty("darkMuted")] public string DarkMuted { get; set; }
 }
 
 public class UlidToStringConverter : ValueConverter<Ulid, string>
 {
-    private static readonly ConverterMappingHints defaultHints = new(size: 26);
+    private static readonly ConverterMappingHints defaultHints = new(26);
 
     public UlidToStringConverter() : this(null)
     {
@@ -246,9 +261,9 @@ public class UlidToStringConverter : ValueConverter<Ulid, string>
 
     private UlidToStringConverter(ConverterMappingHints? mappingHints = null)
         : base(
-            convertToProviderExpression: x => x.ToString(),
-            convertFromProviderExpression: x => Ulid.Parse(x),
-            mappingHints: defaultHints.With(mappingHints))
+            x => x.ToString(),
+            x => Ulid.Parse(x),
+            defaultHints.With(mappingHints))
     {
     }
 }

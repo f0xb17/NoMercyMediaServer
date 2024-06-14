@@ -3,17 +3,23 @@ using NoMercy.Server.system;
 
 namespace NoMercy.Server.app.Jobs;
 
+[Serializable]
 public class CollectionImagesJob : IShouldQueue
 {
-    private readonly int _id;
-    
-    public CollectionImagesJob(long id)
+    public int Id { get; set; }
+
+    public CollectionImagesJob()
     {
-        _id = (int)id;
+        //
     }
-    
+
+    public CollectionImagesJob(int id)
+    {
+        Id = id;
+    }
+
     public async Task Handle()
     {
-        await CollectionLogic.StoreImages(_id);
+        await CollectionLogic.StoreImages(Id);
     }
 }

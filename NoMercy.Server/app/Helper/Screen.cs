@@ -6,15 +6,15 @@ namespace NoMercy.Server.app.Helper;
 
 public static class Screen
 {
-    public static int GetScreenWidth()
+    public static int ScreenWidth()
     {
-        return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? GetScreenWidthWindows() : 1666;
+        return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ScreenWidthWindows() : 1666;
     }
 
     [DllImport("user32.dll")]
     private static extern int GetSystemMetrics(int nIndex);
 
-    private static int GetScreenWidthWindows(int screenIndex = 0)
+    private static int ScreenWidthWindows(int screenIndex = 0)
     {
         return GetSystemMetrics(screenIndex);
     }

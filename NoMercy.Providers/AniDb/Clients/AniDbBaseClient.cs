@@ -16,14 +16,14 @@ public class AniDbBaseClient
     {
         ClientName = "nomercy",
         ClientVersion = 1,
-        LocalPort = (ushort)(SystemInfo.ServerPort + 1),
+        LocalPort = (ushort)(SystemInfo.ServerPort + 1)
     };
 
     private static readonly AniDBClient AniDbClient = new(AniDbClientOptions);
 
     static AniDbBaseClient()
     {
-        UserPass? userPass = CredentialManager.GetCredential("AniDb");
+        var userPass = CredentialManager.Credential("AniDb");
         if (userPass == null) return;
 
         Username = userPass.Username;
@@ -37,20 +37,18 @@ public class AniDbBaseClient
     public static void Dispose()
     {
         if (AniDbClient.IsConnected)
-        {
             try
             {
                 AniDbClient.Logout(LogoutCallback);
                 DisconnectBarrier.SignalAndWait();
             }
-            catch (Exception _)
+            catch (Exception)
             {
                 AniDbClient.Disconnect();
             }
-        }
     }
 
-    public static AniDBClient GetClient()
+    public static AniDBClient Client()
     {
         return AniDbClient;
     }
@@ -71,7 +69,7 @@ public class AniDbBaseClient
             try
             {
                 AniDbClient.Connect();
-                AniDbClient.Login(callback: LoginCallback, username: Username, password: Password, api_key: ApiKey);
+                AniDbClient.Login(LoginCallback, Username, Password, ApiKey);
             }
             catch (Exception e)
             {

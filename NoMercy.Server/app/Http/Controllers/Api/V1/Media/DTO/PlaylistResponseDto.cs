@@ -1,13 +1,14 @@
 using Newtonsoft.Json;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Music.DTO;
 using NoMercy.Server.Logic;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
-public class PlaylistResponseDto
+public record PlaylistResponseDto
 {
     [JsonProperty("id")] public int Id { get; set; }
     [JsonProperty("title")] public string? Title { get; set; }
@@ -38,30 +39,30 @@ public class PlaylistResponseDto
 
     public PlaylistResponseDto(Episode episode, int? index = null)
     {
-        VideoFile? videoFile = episode.VideoFiles.FirstOrDefault();
+        var videoFile = episode.VideoFiles.FirstOrDefault();
         if (videoFile is null) return;
 
         var userData = videoFile.UserData.FirstOrDefault();
-        string baseFolder = $"/{videoFile.Share}{videoFile.Folder}";
-        
-        string? logo = episode.Tv.Images.FirstOrDefault(image => image.Type == "logo")?.FilePath;
-        
-        string? tvTitle = episode.Tv.Translations.FirstOrDefault()?.Title ?? episode.Tv.Title;
-        
-        string? title = episode.Translations.FirstOrDefault()?.Title ?? episode.Title;
-        string? overview = episode.Translations.FirstOrDefault()?.Overview ?? episode.Overview;
+        var baseFolder = $"/{videoFile.Share}{videoFile.Folder}";
 
-        string? specialTitle = index is not null
+        var logo = episode.Tv.Images.FirstOrDefault(image => image.Type == "logo")?.FilePath;
+
+        var tvTitle = episode.Tv.Translations.FirstOrDefault()?.Title ?? episode.Tv.Title;
+
+        var title = episode.Translations.FirstOrDefault()?.Title ?? episode.Title;
+        var overview = episode.Translations.FirstOrDefault()?.Overview ?? episode.Overview;
+
+        var specialTitle = index is not null
             ? $"{tvTitle} %S{episode.SeasonNumber} %E{episode.EpisodeNumber} - {title}"
             : title;
 
-        Subs subs = GetSubtitles(videoFile);
+        var subs = Subtitles(videoFile);
 
         Id = episode.Id;
         Title = specialTitle;
         Description = overview;
         Show = index is not null
-            ? null 
+            ? null
             : tvTitle;
         Origin = SystemInfo.DeviceId;
         Uuid = episode.Tv.Id + episode.Id;
@@ -71,17 +72,17 @@ public class PlaylistResponseDto
         VideoType = "tv";
         PlaylistType = "tv";
         Year = episode.Tv.FirstAirDate.ParseYear();
-        Progress = userData?.UpdatedAt is not null 
+        Progress = userData?.UpdatedAt is not null
             ? new ProgressDto
             {
                 Percentage =
                     (int)Math.Round((double)(100 * (userData.Time ?? 0)) / (videoFile.Duration?.ToSeconds() ?? 0)),
                 Date = userData?.UpdatedAt
-            } 
+            }
             : null;
-        Poster = episode.Tv.Poster is not null ? ("https://image.tmdb.org/t/p/w300" + episode.Tv.Poster) : null;
-        Image = episode.Still is not null ? ("https://image.tmdb.org/t/p/w300" + episode.Still) : null;
-        Logo = logo is not null ? ("https://image.tmdb.org/t/p/original" + logo) : null;
+        Poster = episode.Tv.Poster is not null ? "https://image.tmdb.org/t/p/w300" + episode.Tv.Poster : null;
+        Image = episode.Still is not null ? "https://image.tmdb.org/t/p/w300" + episode.Still : null;
+        Logo = logo is not null ? "https://image.tmdb.org/t/p/original" + logo : null;
         Sources =
         [
             new SourceDto
@@ -139,7 +140,7 @@ public class PlaylistResponseDto
 
     public PlaylistResponseDto(Movie movie, int? index = null, Collection? collection = null)
     {
-        VideoFile? videoFile = movie.VideoFiles.FirstOrDefault();
+        var videoFile = movie.VideoFiles.FirstOrDefault();
         if (videoFile is null) return;
 
         var logo = movie.Images.FirstOrDefault(image => image.Type == "logo")?.FilePath;
@@ -149,7 +150,7 @@ public class PlaylistResponseDto
         var title = movie.Translations.FirstOrDefault()?.Title ?? movie.Title;
         var overview = movie.Translations.FirstOrDefault()?.Overview ?? movie.Overview;
 
-        Subs subs = GetSubtitles(videoFile);
+        var subs = Subtitles(videoFile);
 
         Id = movie.Id;
         Title = title;
@@ -162,17 +163,17 @@ public class PlaylistResponseDto
         VideoType = "movie";
         PlaylistType = "movie";
         Year = movie.ReleaseDate.ParseYear();
-        Progress = userData?.UpdatedAt is not null 
+        Progress = userData?.UpdatedAt is not null
             ? new ProgressDto
-                {
-                    Percentage =
-                        (int)Math.Round((double)(100 * (userData.Time ?? 0)) / (videoFile.Duration?.ToSeconds() ?? 0)),
-                    Date = userData?.UpdatedAt
-                } 
+            {
+                Percentage =
+                    (int)Math.Round((double)(100 * (userData.Time ?? 0)) / (videoFile.Duration?.ToSeconds() ?? 0)),
+                Date = userData?.UpdatedAt
+            }
             : null;
-        Poster = movie.Poster is not null ? ("https://image.tmdb.org/t/p/w300" + movie.Poster) : null;
-        Image = movie.Backdrop is not null ? ("https://image.tmdb.org/t/p/w300" + movie.Backdrop) : null;
-        Logo = logo is not null ? ("https://image.tmdb.org/t/p/original" + logo) : null;
+        Poster = movie.Poster is not null ? "https://image.tmdb.org/t/p/w300" + movie.Poster : null;
+        Image = movie.Backdrop is not null ? "https://image.tmdb.org/t/p/w300" + movie.Backdrop : null;
+        Logo = logo is not null ? "https://image.tmdb.org/t/p/original" + logo : null;
         Sources =
         [
             new SourceDto
@@ -229,14 +230,14 @@ public class PlaylistResponseDto
         EpisodeId = movie.Id;
     }
 
-    private class Subs
+    private record Subs
     {
         public List<TextTrackDto> TextTracks { get; set; }
         public List<FontDto?>? Fonts { get; set; }
         public string FontsFile { get; set; }
     }
 
-    private Subs GetSubtitles(VideoFile videoFile)
+    private Subs Subtitles(VideoFile videoFile)
     {
         var baseFolder = $"/{videoFile.Share}{videoFile.Folder}";
 
@@ -244,18 +245,15 @@ public class PlaylistResponseDto
         var subtitleList = JsonConvert.DeserializeObject<List<Subtitle>>(subtitles);
 
         List<TextTrackDto> textTracks = [];
-        bool search = false;
+        var search = false;
 
         foreach (var sub in subtitleList ?? [])
         {
-            string language = sub.Language;
-            string type = sub.Type;
-            string ext = sub.Ext;
+            var language = sub.Language;
+            var type = sub.Type;
+            var ext = sub.Ext;
 
-            if (ext == "ass")
-            {
-                search = true;
-            }
+            if (ext == "ass") search = true;
 
             textTracks.Add(new TextTrackDto
             {
@@ -267,23 +265,21 @@ public class PlaylistResponseDto
                 SrcLang = $"languages:{language}",
                 Ext = ext,
                 Language = language,
-                Kind = "subtitles",
+                Kind = "subtitles"
             });
         }
 
         List<FontDto?>? fonts = [];
-        string fontsFile = "";
+        var fontsFile = "";
 
         if (!search || !System.IO.File.Exists($"{videoFile?.HostFolder}fonts.json"))
-        {
             return new Subs
             {
                 TextTracks = textTracks,
                 Fonts = fonts,
-                FontsFile = fontsFile,
+                FontsFile = fontsFile
             };
-        }
-        
+
         fontsFile = $"/{videoFile?.Share}/{videoFile?.Folder}fonts.json";
         fonts = JsonConvert.DeserializeObject<List<FontDto?>?>(
             System.IO.File.ReadAllText($"{videoFile?.HostFolder}fonts.json"));
@@ -292,19 +288,19 @@ public class PlaylistResponseDto
         {
             TextTracks = textTracks,
             Fonts = fonts,
-            FontsFile = fontsFile,
+            FontsFile = fontsFile
         };
     }
 }
 
-public class SourceDto
+public record SourceDto
 {
     [JsonProperty("src")] public string Src { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("languages")] public string[]? Languages { get; set; }
 }
 
-public class TextTrackDto
+public record TextTrackDto
 {
     [JsonProperty("label")] public string Label { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
@@ -315,19 +311,19 @@ public class TextTrackDto
     [JsonProperty("kind")] public string Kind { get; set; }
 }
 
-public class TrackDto
+public record TrackDto
 {
     [JsonProperty("file")] public string File { get; set; }
     [JsonProperty("kind")] public string Kind { get; set; }
 }
 
-public class ProgressDto
+public record ProgressDto
 {
     [JsonProperty("percentage")] public int? Percentage { get; set; }
     [JsonProperty("date")] public DateTime? Date { get; set; }
 }
 
-public class FontDto
+public record FontDto
 {
     [JsonProperty("file")] public string File { get; set; }
     [JsonProperty("type")] public string Type { get; set; }

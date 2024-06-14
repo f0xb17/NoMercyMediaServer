@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Security.Authentication;
 using System.Security.Cryptography;
@@ -14,16 +13,16 @@ public static class Certificate
 {
     public static void KestrelConfig(KestrelServerOptions options)
     {
-        options.ConfigureEndpointDefaults(listenOptions => 
+        options.ConfigureEndpointDefaults(listenOptions =>
             listenOptions.UseHttps(HttpsConnectionAdapterOptions()));
         options.AddServerHeader = false;
     }
-    
+
     private static X509Certificate2 CombinePublicAndPrivateCerts()
     {
         var publicPemBytes = File.ReadAllBytes(Path.Combine(AppFiles.CertFile));
 
-        using var publicX509 = new X509Certificate2(publicPemBytes);
+        using X509Certificate2 publicX509 = new(publicPemBytes);
 
         var privateKeyText = File.ReadAllText(Path.Combine(AppFiles.KeyFile));
         var privateKeyBlocks = privateKeyText.Split("-", StringSplitOptions.RemoveEmptyEntries);
@@ -59,12 +58,12 @@ public static class Certificate
 
     private static bool ValidateSslCertificate()
     {
-        if(!File.Exists(Path.Combine(AppFiles.CertFile)))
+        if (!File.Exists(Path.Combine(AppFiles.CertFile)))
             return false;
-        
+
         var certificate = CombinePublicAndPrivateCerts();
-        
-        if(!certificate.Verify())
+
+        if (!certificate.Verify())
             return false;
 
         return certificate.NotAfter >= DateTime.Now - TimeSpan.FromDays(30);
@@ -81,31 +80,33 @@ public static class Certificate
 
         Logger.Certificate(@"Renewing SSL Certificate...");
 
-        var client = new HttpClient();
+        HttpClient client = new();
         client.Timeout = new TimeSpan(0, 10, 0);
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Auth.AccessToken);
-        
-        var response = client.GetStringAsync("https://api-dev.nomercy.tv/v1/server/renewcertificate?server_id=" + SystemInfo.DeviceId).Result;
-        
-        dynamic data = JsonConvert.DeserializeObject(response) 
+
+        var response = client
+            .GetStringAsync($"{Config.ApiServerBaseUrl}renewcertificate?server_id=" + SystemInfo.DeviceId)
+            .Result;
+
+        dynamic data = JsonConvert.DeserializeObject(response)
                        ?? throw new Exception("Failed to deserialize JSON");
-        
+
         if (File.Exists(AppFiles.KeyFile))
             File.Delete(AppFiles.KeyFile);
-        
+
         if (File.Exists(AppFiles.CaFile))
             File.Delete(AppFiles.CaFile);
-        
+
         if (File.Exists(AppFiles.CertFile))
             File.Delete(AppFiles.CertFile);
-        
+
         await File.WriteAllTextAsync(AppFiles.KeyFile, $"{data.private_key}");
         await File.WriteAllTextAsync(AppFiles.CaFile, $"{data.certificate_authority}");
         await File.WriteAllTextAsync(AppFiles.CertFile, @$"{data.certificate}\n{data.issuer_certificate}");
-        
+
         Logger.Certificate(@"SSL Certificate renewed");
-        
+
         await Task.CompletedTask;
     }
 }

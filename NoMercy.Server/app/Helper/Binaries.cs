@@ -7,13 +7,13 @@ namespace NoMercy.Server.app.Helper;
 public static class Binaries
 {
     private static List<Download> Downloads { get; set; }
-    
-    private static readonly HttpClient Client = new ();
-    
+
+    private static readonly HttpClient Client = new();
+
     static Binaries()
     {
-        Client.DefaultRequestHeaders.Add("User-Agent", "NoMercy/Server");
-        
+        Client.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             Downloads = ApiInfo.BinaryList.Linux;
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -24,16 +24,15 @@ public static class Binaries
             Downloads = [];
     }
 
-    public static async  Task DownloadAll()
+    public static async Task DownloadAll()
     {
-        
         // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
-        foreach (Download program in Downloads)
+        foreach (var program in Downloads)
         {
-            string destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Name);
+            var destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Name);
             var creationTime = Directory.GetCreationTimeUtc(destinationDirectoryName);
-            
-            int days = creationTime.Subtract(program.LastUpdated).Days;
+
+            var days = creationTime.Subtract(program.LastUpdated).Days;
 
             if (Directory.Exists(destinationDirectoryName) && days > 0) continue;
 
@@ -42,36 +41,37 @@ public static class Binaries
             await Cleanup(program);
         }
     }
-    
+
     private static async Task Download(Download program)
     {
         Console.WriteLine($@"Downloading {program.Name}");
-        
+
         var result = await Client.GetAsync(program.Url);
         var content = await result.Content.ReadAsByteArrayAsync();
-        
-        string baseName = Path.GetFileName(program.Url?.ToString() ?? "");
-        
+
+        var baseName = Path.GetFileName(program.Url?.ToString() ?? "");
+
         await File.WriteAllBytesAsync(Path.Combine(AppFiles.BinariesPath, baseName), content);
     }
 
     private static async Task Extract(Download program)
     {
-        string sourceArchiveFileName = Path.Combine(AppFiles.BinariesPath, Path.GetFileName(program.Url?.ToString() ?? ""));
-        string destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Name);
-        
+        var sourceArchiveFileName =
+            Path.Combine(AppFiles.BinariesPath, Path.GetFileName(program.Url?.ToString() ?? ""));
+        var destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Name);
+
         Console.WriteLine($@"Extracting {program.Name}");
-        
-        if(Directory.Exists(destinationDirectoryName))
+
+        if (Directory.Exists(destinationDirectoryName))
             Directory.Delete(destinationDirectoryName, true);
-        
+
         ZipFile.ExtractToDirectory(sourceArchiveFileName, destinationDirectoryName);
-        
+
         File.Delete(sourceArchiveFileName);
-        
+
         await Task.Delay(0);
     }
-    
+
     private static async Task Cleanup(Download program)
     {
         if (program.Filter == "")
@@ -80,15 +80,15 @@ public static class Binaries
             return;
         }
 
-        string workingDir = Path.Combine(AppFiles.BinariesPath, program.Name, program.Filter);
-        foreach (string file in Directory.GetFiles(workingDir))
+        var workingDir = Path.Combine(AppFiles.BinariesPath, program.Name, program.Filter);
+        foreach (var file in Directory.GetFiles(workingDir))
         {
-            string filter = Path.DirectorySeparatorChar + program.Filter;
-            string dirName = file.Replace(filter, "");
-            
+            var filter = Path.DirectorySeparatorChar + program.Filter;
+            var dirName = file.Replace(filter, "");
+
             File.Move(file, dirName);
         }
-        
+
         Directory.Delete(workingDir);
     }
 }

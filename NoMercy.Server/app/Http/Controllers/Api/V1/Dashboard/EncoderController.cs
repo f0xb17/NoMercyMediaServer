@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +6,8 @@ using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Music;
+using NoMercy.Server.app.Http.Middleware;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -15,39 +16,34 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [ApiController]
 [Tags("Dashboard Server Encoder Profiles")]
 [ApiVersion("1")]
-[Authorize, Route("api/v{Version:apiVersion}/dashboard/encoderprofiles", Order = 10)]
+[Authorize]
+[Route("api/v{Version:apiVersion}/dashboard/encoderprofiles", Order = 10)]
 public class EncoderController : Controller
 {
-    [NonAction]
-    private Guid GetUserId()
-    {
-        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-    }
-
     [HttpGet]
     public async Task<List<EncoderProfileDto>> Index()
     {
-        Guid userId = GetUserId();
-        
+        var userId = HttpContext.User.UserId();
+
         await using MediaContext mediaContext = new();
         var profiles = await mediaContext.EncoderProfiles.ToListAsync();
-        
+
         List<EncoderProfileDto> encoderProfiles = [];
-        
+
         foreach (var profile in profiles)
         {
             if (profile.Param == null) continue;
-            
-            ParamsDto? paramJson = JsonConvert.DeserializeObject<ParamsDto>(profile.Param);
-            
-            var profileDto = new EncoderProfileDto
+
+            var paramJson = JsonConvert.DeserializeObject<ParamsDto>(profile.Param);
+
+            EncoderProfileDto profileDto = new()
             {
                 Id = profile.Id.ToString(),
                 Name = profile.Name,
                 Container = profile.Container,
                 CreatedAt = profile.CreatedAt,
                 UpdatedAt = profile.UpdatedAt,
-                Params = paramJson is not null 
+                Params = paramJson is not null
                     ? new ParamsDto
                     {
                         Width = paramJson.Width,
@@ -66,14 +62,14 @@ public class EncoderController : Controller
     }
 
     [HttpPost]
-    public async Task<StatusResponseDto<EncoderProfile>>  Create()
+    public async Task<StatusResponseDto<EncoderProfile>> Create()
     {
-        Guid userId = GetUserId();
-        
+        var userId = HttpContext.User.UserId();
+
         await using MediaContext mediaContext = new();
-        int libraries = await mediaContext.EncoderProfiles.CountAsync();
-        
-        var profile = new EncoderProfile
+        var libraries = await mediaContext.EncoderProfiles.CountAsync();
+
+        EncoderProfile profile = new()
         {
             Name = $"Profile {libraries}",
             Container = "mp4",
@@ -98,8 +94,12 @@ public class EncoderController : Controller
     [HttpDelete]
     public IActionResult Destroy()
     {
-        Guid userId = GetUserId();
-        return Ok();
+        var userId = HttpContext.User.UserId();
+
+        return Ok(new PlaceholderResponse
+        {
+            Data = []
+        });
     }
 }
 

@@ -8,13 +8,13 @@ namespace NoMercy.Helpers.Monitoring
         {
             DriveInfo[] allDrives = DriveInfo.GetDrives();
             List<ResourceMonitorDto> resourceMonitorDtos = new();
-            
-            foreach (DriveInfo d in allDrives)
+
+            foreach (var d in allDrives)
             {
-                ResourceMonitorDto resourceMonitorDto = new ResourceMonitorDto
+                var resourceMonitorDto = new ResourceMonitorDto
                 {
                     Name = d.Name,
-                    Type = d.DriveType,
+                    Type = d.DriveType
                 };
                 if (d.IsReady)
                 {
@@ -22,10 +22,10 @@ namespace NoMercy.Helpers.Monitoring
                     resourceMonitorDto.AvailableStorage =
                         $"Total available space: {d.AvailableFreeSpace / 1024 / 1024 / 1024} GB";
                 }
-                
+
                 resourceMonitorDtos.Add(resourceMonitorDto);
             }
-            
+
             return resourceMonitorDtos;
         }
     }

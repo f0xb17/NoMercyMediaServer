@@ -11,69 +11,59 @@ using NoMercy.Server.system;
 
 namespace NoMercy.Server.app.Jobs;
 
-public class AddShowJob : IShouldQueue
+[Serializable]
+public class AddShowJob : IShouldQueue, IDisposable, IAsyncDisposable
 {
-    private readonly int _id;
-    private readonly string? _libraryId;
-    
-    public AddShowJob(long id)
+    public int Id { get; set; }
+    public Library? Library { get; set; }
+
+    public AddShowJob()
     {
-        _id = (int)id;
+        //
     }
-    
-    public AddShowJob(long id, string libraryId)
+
+    public AddShowJob(int id)
     {
-        _id = (int)id;
-        _libraryId = libraryId;
+        Id = id;
+    }
+
+    public AddShowJob(int id, Library? library = null)
+    {
+        Id = id;
+        Library = library;
     }
 
     public async Task Handle()
     {
-        await using MediaContext context = new MediaContext();
-        
-        Library? library;
-        
-        if (_libraryId is null)
-        {
-            TvClient tvClient = new(_id);
-            TvShowDetails? tvShowDetails = await tvClient.WithAllAppends();
-            if (tvShowDetails is null) return;
-            
-            string searchName = string.IsNullOrEmpty(tvShowDetails.OriginalName) 
-                ? tvShowDetails.Name 
-                : tvShowDetails.OriginalName;
-            
-            bool isAnime = await KitsuIo.IsAnime(searchName, tvShowDetails.FirstAirDate.ParseYear());
-            
-            library = await context.Libraries
-                .Where(f => f.Type == (isAnime ? "anime" : "tv"))
-                .Include(l => l.FolderLibraries)
-                .ThenInclude(fl => fl.Folder)
-                .FirstOrDefaultAsync();
-        } 
-        else {
-            library = await context.Libraries
-                .Where(f => f.Id == Ulid.Parse(_libraryId))
-                .Include(l => l.FolderLibraries)
-                .ThenInclude(fl => fl.Folder)
-                .FirstOrDefaultAsync();
-        }
-        
-        if (library is null) return;
+        await using MediaContext context = new();
 
-        TvShowLogic tvShow = new(_id, library);
+        if (Library is null) return;
+
+        await using TvShowLogic tvShow = new(Id, Library);
         await tvShow.Process();
-        
+
         if (tvShow.Show != null)
         {
             Logger.MovieDb($@"TvShow {tvShow.Show.Name}: Processed");
-            
+
             Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
             {
-                QueryKey = [ "tv", tvShow.Show.Id.ToString() ]
+                QueryKey = ["tv", tvShow.Show.Id.ToString()]
             });
         }
+    }
 
-        tvShow.Dispose();
+    public void Dispose()
+    {
+        GC.Collect();
+        GC.WaitForFullGCComplete();
+        GC.WaitForPendingFinalizers();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        GC.Collect();
+        GC.WaitForFullGCComplete();
+        GC.WaitForPendingFinalizers();
     }
 }

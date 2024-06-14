@@ -1,10 +1,7 @@
-
 namespace NoMercy.Helpers;
 
 public static class Mutators
 {
-    private static Random _rand = new();  
-
     // public static void Shuffle<T>(this IList<T> list)  
     // {  
     //     int n = list.Count;  
@@ -16,7 +13,7 @@ public static class Mutators
     // }
     public static IEnumerable<T> Randomize<T>(this IEnumerable<T> source)
     {
-        Random rnd = new Random();
+        var rnd = new Random();
         return source.OrderBy(_ => rnd.Next());
     }
 }

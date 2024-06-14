@@ -3,54 +3,54 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using NoMercy.Providers.TMDB.Models.Shared;
 
-namespace NoMercy.Database.Models
+namespace NoMercy.Database.Models;
+
+[PrimaryKey(nameof(Id))]
+[Index(nameof(CreditId), IsUnique = true)]
+[Index(nameof(GuestStarId), IsUnique = true)]
+public class Role
 {
-    [PrimaryKey(nameof(Id))]
-    [Index(nameof(CreditId), IsUnique = true)]
-    [Index(nameof(GuestStarId), IsUnique = true)]
-    public class Role
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    [JsonProperty("id")]
+    public int Id { get; set; }
+
+    [JsonProperty("character")] public string? Character { get; set; }
+    [JsonProperty("episode_count")] public int EpisodeCount { get; set; }
+    [JsonProperty("order")] public int? Order { get; set; } = 9999;
+
+    [JsonProperty("credit_id")] public string? CreditId { get; set; }
+    public Cast? Cast { get; set; }
+
+    [JsonProperty("guest_star_id")] public int? GuestStarId { get; set; }
+    public GuestStar? GuestStar { get; set; }
+
+    public Role()
     {
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        [JsonProperty("id")]
-        public int Id { get; set; }
+    }
 
-        [JsonProperty("character")] public string? Character { get; set; }
-        [JsonProperty("episode_count")] public int EpisodeCount { get; set; }
-        [JsonProperty("order")] public int? Order { get; set; }
+    public Role(TmdbAggregatedCreditRole role)
+    {
+        Character = role.Character;
+        EpisodeCount = role.EpisodeCount;
+        Order = role.Order;
+        CreditId = role.CreditId;
+    }
 
-        [JsonProperty("credit_id")] public string? CreditId { get; set; }
-        public virtual Cast? Cast { get; set; }
+    public Role(Providers.TMDB.Models.Shared.TmdbCast tmdbCast)
+    {
+        Character = tmdbCast.Character;
+        CreditId = tmdbCast.CreditId;
+        Order = tmdbCast.Order;
+        EpisodeCount = 0;
+    }
 
-        [JsonProperty("guest_star_id")] public int? GuestStarId { get; set; }
-        public virtual GuestStar? GuestStar { get; set; }
-
-        public Role()
-        {
-        }
-
-        public Role(NoMercy.Providers.TMDB.Models.Shared.AggregatedCreditRole role)
-        {
-            Character = role.Character;
-            EpisodeCount = role.EpisodeCount;
-            Order = role.Order;
-            CreditId = role.CreditId;
-        }
-
-        public Role(NoMercy.Providers.TMDB.Models.Shared.Cast cast)
-        {
-            Character = cast.Character;
-            CreditId = cast.CreditId;
-            Order = cast.Order;
-            EpisodeCount = 0;
-        }
-
-        public Role(NoMercy.Providers.TMDB.Models.Shared.GuestStar guest)
-        {
-            Character = guest.CharacterName;
-            CreditId = guest.CreditId;
-            Order = guest.Order;
-            EpisodeCount = 0;
-        }
+    public Role(Providers.TMDB.Models.Shared.TmdbGuestStar tmdbGuest)
+    {
+        Character = tmdbGuest.CharacterName;
+        CreditId = tmdbGuest.CreditId;
+        Order = tmdbGuest.Order;
+        EpisodeCount = 0;
     }
 }

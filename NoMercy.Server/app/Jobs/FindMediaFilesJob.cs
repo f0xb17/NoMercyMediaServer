@@ -9,54 +9,61 @@ using NoMercy.Server.system;
 
 namespace NoMercy.Server.app.Jobs;
 
+[Serializable]
 public class FindMediaFilesJob : IShouldQueue
 {
-    private readonly int _id;
-    private readonly string _libraryId;
-    
-    public FindMediaFilesJob(long id, string libraryId)
+    public int Id { get; set; }
+    public Library? Library { get; set; }
+
+    public FindMediaFilesJob()
     {
-        _id = (int)id;
-        _libraryId = libraryId;
+        //
+    }
+
+    public FindMediaFilesJob(int id, Library library)
+    {
+        Id = id;
+        Library = library;
     }
 
     public async Task Handle()
     {
-        Logger.Queue($"Finding media files for {_id} in library {_libraryId}");
+        if (Library == null) return;
         
-        await using MediaContext context = new MediaContext();
-        Library? library = await context.Libraries
+        Logger.Queue($"Finding media files for {Id} in library {Library.Id.ToString()}");
+
+        await using MediaContext context = new();
+        var library = await context.Libraries
             .AsTracking()
-            
-            .Where(f => f.Id == Ulid.Parse(_libraryId))
+            .Where(f => f.Id == Library.Id)
             
             .Include(l => l.FolderLibraries)
                 .ThenInclude(fl => fl.Folder)
             
             .Include(l => l.LibraryMovies
-                .Where(lm => lm.Movie.Id == _id)
+                .Where(lm => lm.Movie.Id == Id)
             )
                 .ThenInclude(lm => lm.Movie)
             
             .Include(l => l.LibraryTvs
-                .Where(lt => lt.Tv.Id == _id)
+                .Where(lt => lt.Tv.Id == Id)
             )
                 .ThenInclude(lt => lt.Tv)
             
             .FirstOrDefaultAsync();
-        
+
         Logger.Queue($"Found library {library?.Id} with {library?.FolderLibraries.Count} folders");
-        
+
         if (library == null) return;
-        
-        FileLogic file = new(_id, library);
+
+        await using FileLogic file = new(Id, library);
         await file.Process();
-        
+
         if (file.Files.Count > 0)
         {
             Logger.MovieDb($@"Found {file.Files.Count} files in {file.Files.FirstOrDefault()?.Path}");
             Console.WriteLine("");
-            
+
             // if(library.LibraryMovies.Count > 0)
             // {
             //     LibraryMovie? libraryMovie = library.LibraryMovies?.FirstOrDefault();
@@ -77,25 +84,21 @@ public class FindMediaFilesJob : IShouldQueue
             //     await context.SaveChangesAsync();
             //     
             // }
-            
+
             Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
             {
-                QueryKey = [ "libraries", library.Id.ToString() ]
+                QueryKey = ["libraries", library.Id.ToString()]
             });
         }
-        
+
         Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
         {
-            QueryKey = [ library.Type == "movie" ? "movies" : "tvs", _id]
+            QueryKey = [library.Type == "movie" ? "movie" : "tv", Id]
         });
-        
-        file.Dispose();
     }
-
 }
 
 public class RefreshLibraryDto
 {
-    [JsonProperty("queryKey")]
-    public dynamic[] QueryKey { get; set; } = [];
+    [JsonProperty("queryKey")] public dynamic?[] QueryKey { get; set; } = [];
 }

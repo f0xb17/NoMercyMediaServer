@@ -1,66 +1,80 @@
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 
-// ReSharper disable All
-
 namespace NoMercy.Server.system;
 
-public class JobQueue
+public class JobQueue(QueueContext context, byte maxAttempts = 3)
 {
-    private QueueContext _context { get; set; }
-    private readonly int _maxAttempts;
-
-    public JobQueue(QueueContext context, int maxAttempts = 3)
-    {
-        _context = context;
-        _maxAttempts = maxAttempts;
-    }
+    private QueueContext Context { get; } = context;
 
     public void Enqueue(QueueJob queueJob)
     {
-        lock (_context)
+        lock (Context)
         {
-            _context.QueueJobs.Add(queueJob);
+            var exists = Exists(queueJob.Payload);
+            if (exists) return;
 
-            _context.SaveChangesAsync();
+            Context.QueueJobs.Add(queueJob);
+
+            try
+            {
+                Context.SaveChanges();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
     }
 
     public QueueJob? Dequeue()
     {
-        lock (_context)
+        lock (Context)
         {
-            var job = _context.QueueJobs.FirstOrDefault();
+            var job = Context.QueueJobs.FirstOrDefault();
             if (job == null) return job;
-            
-            _context.QueueJobs.Remove(job);
-            
-            _context.SaveChanges();
+
+            Context.QueueJobs.Remove(job);
+
+            try
+            {
+                Context.SaveChanges();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
 
             return job;
         }
     }
 
-    public QueueJob? ReserveJob(string name, long? currentJobId)
-    {
-        lock (_context)
-        {
-            QueueJob? job = _context.QueueJobs
-                .Where(j => j.ReservedAt == null && j.Attempts <= _maxAttempts)
+    public static readonly Func<QueueContext, byte, string, long?, Task<QueueJob?>> ReserveJobQuery =
+        EF.CompileAsyncQuery((QueueContext queueContext, byte maxAttempts, string name, long? currentJobId) =>
+            queueContext.QueueJobs
+                .Where(j => j.ReservedAt == null && j.Attempts <= maxAttempts)
                 .Where(j => currentJobId == null)
                 .Where(j => j.Queue == name)
                 .OrderByDescending(j => j.Priority)
-                .FirstOrDefault() ?? null;
+                .FirstOrDefault());
+
+
+    public QueueJob? ReserveJob(string name, long? currentJobId)
+    {
+        lock (Context)
+        {
+            var job = ReserveJobQuery(Context, maxAttempts, name, currentJobId).Result;
 
             if (job == null) return job;
-            
+
             job.ReservedAt = DateTime.UtcNow;
             job.Attempts++;
 
             try
             {
-                _context.SaveChanges();
+                Context.SaveChanges();
             }
             catch (Exception _)
             {
@@ -73,13 +87,13 @@ public class JobQueue
 
     public void FailJob(QueueJob queueJob, Exception exception)
     {
-        lock (_context)
+        lock (Context)
         {
             queueJob.ReservedAt = null;
 
-            if (queueJob.Attempts >= _maxAttempts)
+            if (queueJob.Attempts >= maxAttempts)
             {
-                var failedJob = new FailedJob
+                FailedJob failedJob = new()
                 {
                     Uuid = Guid.NewGuid(),
                     Connection = "default",
@@ -88,41 +102,65 @@ public class JobQueue
                     Exception = JsonConvert.SerializeObject(exception.InnerException ?? exception),
                     FailedAt = DateTime.UtcNow
                 };
-                _context.QueueJobs.Remove(queueJob);
-                _context.FailedJobs.Add(failedJob);
+
+                Context.FailedJobs.Add(failedJob);
+                Context.QueueJobs.Remove(queueJob);
             }
 
-            _context.SaveChanges();
+            Context.SaveChanges();
         }
     }
 
     public void DeleteJob(QueueJob queueJob)
     {
-        lock (_context)
+        lock (Context)
         {
-            _context.QueueJobs.Remove(queueJob);
-            
-            _context.SaveChanges();
+            Context.QueueJobs.Remove(queueJob);
+
+            try
+            {
+                Context.SaveChanges();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
     }
 
     public void RequeueFailedJob(int failedJobId)
     {
-        lock (_context)
+        lock (Context)
         {
-            var failedJob = _context.FailedJobs.Find(failedJobId);
+            var failedJob = Context.FailedJobs.Find(failedJobId);
             if (failedJob == null) return;
-            
-            _context.FailedJobs.Remove(failedJob);
-            _context.QueueJobs.Add(new QueueJob
+
+            Context.FailedJobs.Remove(failedJob);
+            Context.QueueJobs.Add(new QueueJob
             {
                 Queue = failedJob.Queue,
                 Payload = failedJob.Payload,
                 AvailableAt = DateTime.UtcNow,
                 Attempts = 0
             });
-            
-            _context.SaveChanges();
+
+            try
+            {
+                Context.SaveChanges();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
+    }
+
+    private static readonly Func<QueueContext, string, Task<bool>> ExistsQuery =
+        EF.CompileAsyncQuery((QueueContext queueContext, string payloadString) =>
+            queueContext.QueueJobs.Any(queueJob => queueJob.Payload == payloadString));
+
+    public bool Exists(string payloadString)
+    {
+        return ExistsQuery(Context, payloadString).Result;
     }
 }

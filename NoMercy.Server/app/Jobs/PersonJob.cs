@@ -1,83 +1,81 @@
 using NoMercy.Providers.TMDB.Client;
-using NoMercy.Providers.TMDB.Models.Episode;
-using NoMercy.Providers.TMDB.Models.Movies;
-using NoMercy.Providers.TMDB.Models.Season;
-using NoMercy.Providers.TMDB.Models.TV;
 using NoMercy.Server.app.Helper;
 using NoMercy.Server.Logic;
 using NoMercy.Server.system;
 
 namespace NoMercy.Server.app.Jobs;
 
+[Serializable]
 public class PersonJob : IShouldQueue
 {
-    private readonly int? _id;
-    private readonly string? _type;
-    
-    public PersonJob(long id, string type)
+    public int? Id { get; set; }
+    public string? Type { get; set; }
+
+    public PersonJob()
     {
-        _id = (int)id;
-        _type = type;
+        //
     }
-    
+
+    public PersonJob(int id, string type)
+    {
+        Id = id;
+        Type = type;
+    }
+
     public async Task Handle()
     {
-        switch (_type)
+        switch (Type)
         {
-            case "tv" when _id != null:
+            case "tv" when Id != null:
             {
-                TvShowAppends? show = await new TvClient(_id).WithAllAppends();
+                var show = await new TmdbTvClient(Id).WithAllAppends();
                 if (show is null) return;
-            
-                PersonLogic personShowLogic = new PersonLogic(show);
+
+                await using var personShowLogic = new PersonLogic(show);
                 await personShowLogic.FetchPeople();
-                personShowLogic.Dispose();
-            
+
                 foreach (var s in show.Seasons)
                 {
-                    using SeasonClient seasonClient = new(show.Id, s.SeasonNumber);
-                    SeasonAppends? season = await seasonClient.WithAllAppends();
+                    await using TmdbSeasonClient tmdbSeasonClient = new(show.Id, s.SeasonNumber);
+                    var season = await tmdbSeasonClient.WithAllAppends();
                     if (season is null) continue;
-                
-                    PersonLogic personSeasonLogic = new PersonLogic(show, season);
+
+                    await using var personSeasonLogic = new PersonLogic(show, season);
                     await personSeasonLogic.FetchPeople();
-                    personSeasonLogic.Dispose();
-                
+
                     foreach (var e in season.Episodes)
                     {
-                        using EpisodeClient episodeClient = new(show.Id, season.SeasonNumber, e.EpisodeNumber);
-                        EpisodeAppends? episode = await episodeClient.WithAllAppends();
+                        await using TmdbEpisodeClient tmdbEpisodeClient = new(show.Id, season.SeasonNumber, e.EpisodeNumber);
+                        var episode = await tmdbEpisodeClient.WithAllAppends();
 
-                        PersonLogic personEpisodeLogic = new PersonLogic(show, season, episode);
+                        await using var personEpisodeLogic = new PersonLogic(show, season, episode);
                         await personEpisodeLogic.FetchPeople();
-                        personEpisodeLogic.Dispose();
                     }
                 }
-                
+
                 Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
                 {
-                    QueryKey = [ "tv", _id ]
+                    QueryKey = ["tv", Id]
                 });
 
 
                 break;
             }
-            
-            case "movie" when _id != null:
+
+            case "movie" when Id != null:
             {
-                MovieAppends? movie = await new MovieClient(_id).WithAllAppends();
-                
-                PersonLogic personMovieLogic = new PersonLogic(movie);
+                var movie = await new TmdbMovieClient(Id).WithAllAppends();
+
+                await using var personMovieLogic = new PersonLogic(movie);
                 await personMovieLogic.FetchPeople();
-                personMovieLogic.Dispose();
-                
+
                 Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
                 {
-                    QueryKey = [ "movie", _id ]
+                    QueryKey = ["movie", Id]
                 });
                 break;
             }
-            
+
             default:
                 throw new Exception("Invalid model Type");
         }

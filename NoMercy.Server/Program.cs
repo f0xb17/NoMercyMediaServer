@@ -1,13 +1,10 @@
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 using CommandLine;
 using Microsoft.AspNetCore;
-using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Helpers;
 using NoMercy.Providers.AniDb.Clients;
 using NoMercy.Server.app.Helper;
-using NoMercy.Server.app.Jobs;
 using NoMercy.Server.Logic;
 using NoMercy.Server.system;
 using Networking = NoMercy.Server.app.Helper.Networking;
@@ -23,7 +20,7 @@ public static class Program
             var exception = (Exception)eventArgs.ExceptionObject;
             Logger.App("UnhandledException " + exception);
         };
-        
+
         return Parser.Default.ParseArguments<StartupOptions>(args)
             .MapResult(Start, ErrorParsingArguments);
 
@@ -36,11 +33,13 @@ public static class Program
 
     private static async Task Start(StartupOptions options)
     {
-        var stopWatch = new Stopwatch();
+        Stopwatch stopWatch = new();
         stopWatch.Start();
-        
+
         Databases.QueueContext = new QueueContext();
         Databases.MediaContext = new MediaContext();
+
+        Init();
 
         var app = CreateWebHostBuilder(new WebHostBuilder()).Build();
 
@@ -51,7 +50,7 @@ public static class Program
                 stopWatch.Stop();
 
                 Task.Delay(300).Wait();
-                
+
                 Logger.App($@"Internal Address: {Networking.InternalAddress}");
                 Logger.App($@"External Address: {Networking.ExternalAddress}");
 
@@ -60,9 +59,10 @@ public static class Program
                 Logger.App($@"Server started in {stopWatch.ElapsedMilliseconds}ms");
             });
         });
-        
-        app.RunAsync().Wait();
-        
+
+        new Thread(() => app.RunAsync()).Start();
+        new Thread(Dev.Run).Start();
+
         await Task.CompletedTask;
     }
 
@@ -78,6 +78,24 @@ public static class Program
 
     private static IWebHostBuilder CreateWebHostBuilder(this IWebHostBuilder _)
     {
+        return WebHost.CreateDefaultBuilder([])
+            .ConfigureKestrel(Certificate.KestrelConfig)
+            .UseUrls("https://0.0.0.0:" + SystemInfo.ServerPort)
+            .UseKestrel(options =>
+            {
+                options.AddServerHeader = false;
+                options.Limits.MaxRequestBodySize = null;
+                options.Limits.MaxRequestBufferSize = null;
+                options.Limits.MaxConcurrentConnections = null;
+                options.Limits.MaxConcurrentUpgradedConnections = null;
+            })
+            .UseQuic()
+            .UseSockets()
+            .UseStartup<Startup>();
+    }
+
+    private static void Init()
+    {
         ApiInfo.RequestInfo().Wait();
         List<Task> startupTasks =
         [
@@ -92,28 +110,10 @@ public static class Program
             // AniDbBaseClient.Init(),
             TrayIcon.Make()
         ];
-        
-        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
-        {
-            AniDbBaseClient.Dispose();   
-        };
+
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => { AniDbBaseClient.Dispose(); };
 
         RunStartup(startupTasks);
-        
-        return WebHost.CreateDefaultBuilder([])
-            .ConfigureKestrel(Certificate.KestrelConfig)
-            .UseUrls("https://0.0.0.0:" + SystemInfo.ServerPort)
-            .UseKestrel(options =>
-            {
-                options.AddServerHeader = false;
-                options.Limits.MaxRequestBodySize = null; 
-                options.Limits.MaxRequestBufferSize = null;
-                options.Limits.MaxConcurrentConnections = null;
-                options.Limits.MaxConcurrentUpgradedConnections = null;
-            })
-            .UseQuic()
-            .UseSockets()
-            .UseStartup<Startup>();
     }
 
     private static void RunStartup(List<Task> startupTasks)
@@ -125,5 +125,4 @@ public static class Program
             task.Start();
         }
     }
-
 }

@@ -6,7 +6,8 @@ namespace NoMercy.Server.app.Helper;
 
 public class AnimeParser
 {
-    private static readonly Regex NameRegex = new(@"^\[([^\s\[\]]*?)\](?:[\s_\.]+)?([^\[\]]+?)(?:[\s_\.]+)?-?(?:[\s_\.]+)?(?:(?:S(\d+))?(?:[\s_.]+)?-?(?:[\s_.]+)E?([0-9\.]+)(?:v[0-9]+)?(?:[\s_\.]+)?([^\(\[\]\)]+?)?(?:[\s_\.]+)?)?(?:[\(\[](.*?)[\]\)])?(?:[\s_\.]+)?(?:\[([a-fA-F0-9]+)\])\.([a-zA-Z]+)$");
+    private static readonly Regex NameRegex = new(
+        @"^\[([^\s\[\]]*?)\](?:[\s_\.]+)?([^\[\]]+?)(?:[\s_\.]+)?-?(?:[\s_\.]+)?(?:(?:S(\d+))?(?:[\s_.]+)?-?(?:[\s_.]+)E?([0-9\.]+)(?:v[0-9]+)?(?:[\s_\.]+)?([^\(\[\]\)]+?)?(?:[\s_\.]+)?)?(?:[\(\[](.*?)[\]\)])?(?:[\s_\.]+)?(?:\[([a-fA-F0-9]+)\])\.([a-zA-Z]+)$");
 
     /// <summary>
     /// This function parses video filenames to determine information about the series or movie they are a part of.

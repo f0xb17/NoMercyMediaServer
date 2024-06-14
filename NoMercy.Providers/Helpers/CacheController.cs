@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using NoMercy.Helpers;
 
@@ -12,8 +13,8 @@ public static class CacheController
 
     private static string CreateMd5(string input)
     {
-        byte[] inputBytes = Encoding.ASCII.GetBytes(input);
-        byte[] hashBytes = System.Security.Cryptography.MD5.HashData(inputBytes);
+        var inputBytes = Encoding.ASCII.GetBytes(input);
+        var hashBytes = MD5.HashData(inputBytes);
 
         return Convert.ToHexString(hashBytes);
     }
@@ -22,10 +23,10 @@ public static class CacheController
     {
         // Console.WriteLine(@"Reading from cache for {0} path {1}", url, GenerateFileName(url));
 
-        string fullname = Path.Combine(AppFiles.ApiCachePath, GenerateFileName(url));
+        var fullname = Path.Combine(AppFiles.ApiCachePath, GenerateFileName(url));
         lock (fullname)
         {
-            if(File.Exists(fullname) == false)
+            if (File.Exists(fullname) == false)
             {
                 value = default;
                 return false;
@@ -34,45 +35,43 @@ public static class CacheController
             T? data;
             try
             {
-                string d = File.ReadAllTextAsync(fullname).Result;
+                var d = File.ReadAllTextAsync(fullname).Result;
                 data = JsonHelper.FromJson<T>(d);
-                
             }
-            catch (Exception _)
+            catch (Exception)
             {
                 value = default;
                 return false;
             }
-            
+
             if (data == null)
             {
                 value = default;
                 return true;
             }
-            
+
             if (data is { } item)
             {
                 value = item;
                 return true;
             }
-            
+
             value = default;
             return false;
         }
     }
-    
+
     public static async Task Write(string url, string data)
     {
-        string fullname = Path.Combine(AppFiles.ApiCachePath, GenerateFileName(url));
+        var fullname = Path.Combine(AppFiles.ApiCachePath, GenerateFileName(url));
 
         try
         {
             await File.WriteAllTextAsync(fullname, data);
         }
-        catch (Exception _)
+        catch (Exception)
         {
             await Write(url, data);
         }
-        
     }
 }

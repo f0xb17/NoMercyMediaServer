@@ -1,31 +1,27 @@
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using NoMercy.Database;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Music;
+using NoMercy.Server.app.Http.Middleware;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 
 [ApiController]
 [Tags("Dashboard Server Activity")]
 [ApiVersion("1")]
-[Authorize, Route("api/v{Version:apiVersion}/dashboard/activity", Order = 10)]
+[Authorize]
+[Route("api/v{Version:apiVersion}/dashboard/activity", Order = 10)]
 public class ServerActivityController : Controller
 {
-    [NonAction]
-    private Guid GetUserId()
-    {
-        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-    }
-
     [HttpGet]
     public async Task<ServerActivityDto[]> Index()
     {
-        Guid userId = GetUserId();
-        
+        var userId = HttpContext.User.UserId();
+
         await using MediaContext mediaContext = new();
         ServerActivityDto[] activityDtos = mediaContext.ActivityLogs
             .OrderByDescending(x => x.CreatedAt)
@@ -50,15 +46,23 @@ public class ServerActivityController : Controller
     [HttpPost]
     public IActionResult Create()
     {
-        Guid userId = GetUserId();
-        return Ok();
+        var userId = HttpContext.User.UserId();
+
+        return Ok(new PlaceholderResponse
+        {
+            Data = []
+        });
     }
 
     [HttpDelete]
     public IActionResult Destroy()
     {
-        Guid userId = GetUserId();
-        return Ok();
+        var userId = HttpContext.User.UserId();
+
+        return Ok(new PlaceholderResponse
+        {
+            Data = []
+        });
     }
 }
 

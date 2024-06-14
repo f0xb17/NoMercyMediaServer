@@ -1,18 +1,20 @@
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-using System.Web.Http.Results;
-using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.People;
+using NoMercy.Providers.TMDB.Models.Shared;
 using NoMercy.Providers.TMDB.Models.TV;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
+using Cast = NoMercy.Database.Models.Cast;
+using Crew = NoMercy.Database.Models.Crew;
+using Genre = NoMercy.Database.Models.Genre;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
-public class VideoDto
+public record VideoDto
 {
     [JsonProperty("src")] public string? Src { get; set; }
     [JsonProperty("type")] public string? Type { get; set; }
@@ -29,7 +31,7 @@ public class VideoDto
         Size = media.Size;
     }
 
-    public VideoDto(TvVideo media)
+    public VideoDto(TmdbTvVideo media)
     {
         Src = media.Key;
         Type = "video";
@@ -38,7 +40,7 @@ public class VideoDto
         Size = media.Size;
     }
 
-    public VideoDto(MovieVideo media)
+    public VideoDto(TmdbMovieVideo media)
     {
         Src = media.Key;
         Type = "video";
@@ -48,12 +50,9 @@ public class VideoDto
     }
 }
 
-public class GenreDto
+public record GenreDto
 {
-    [JsonProperty("id")] public int Id { get; set; }
-
-    [JsonProperty("item_id")] public int? ItemId { get; set; }
-
+    [JsonProperty("id")] public dynamic Id { get; set; }
     [JsonProperty("name")] public string Name { get; set; }
 
     public GenreDto(GenreMovie genreMovie)
@@ -74,80 +73,84 @@ public class GenreDto
         Name = genreMovie.Name;
     }
 
-    public GenreDto(Providers.TMDB.Models.Shared.Genre genreMovie)
+    public GenreDto(Providers.TMDB.Models.Shared.TmdbGenre tmdbGenreMovie)
     {
-        Id = genreMovie.Id;
-        Name = genreMovie.Name;
+        Id = tmdbGenreMovie.Id;
+        Name = tmdbGenreMovie.Name;
+    }
+
+    public GenreDto(ArtistMusicGenre artistMusicGenre)
+    {
+        Id = artistMusicGenre.MusicGenreId;
+        Name = artistMusicGenre.MusicGenre.Name;
+    }
+
+    public GenreDto(AlbumMusicGenre artistMusicGenre)
+    {
+        Id = artistMusicGenre.MusicGenreId;
+        Name = artistMusicGenre.MusicGenre.Name;
     }
 }
 
-public class RatingDto
+public record RatingDto
 {
     [JsonProperty("rating")] public string RatingRating { get; set; }
 
     [JsonProperty("iso_3166_1")] public string Iso31661 { get; set; }
 }
 
-public class ColorPalettesDto
+public record ColorPalettesDto
 {
-    [JsonProperty("logo", NullValueHandling = NullValueHandling.Ignore)]
-    public IColorPalettes Logo { get; set; }
+    [JsonProperty("logo")] public IColorPalettes Logo { get; set; }
 
-    [JsonProperty("poster", NullValueHandling = NullValueHandling.Ignore)]
-    public IColorPalettes Poster { get; set; }
+    [JsonProperty("poster")] public IColorPalettes Poster { get; set; }
 
-    [JsonProperty("backdrop", NullValueHandling = NullValueHandling.Ignore)]
-    public IColorPalettes Backdrop { get; set; }
+    [JsonProperty("backdrop")] public IColorPalettes Backdrop { get; set; }
 }
 
-public class StatusResponseDto<T>
+public record StatusResponseDto<T>
 {
     [JsonProperty("status")] public string Status { get; set; }
 
-    [JsonProperty("data", NullValueHandling = NullValueHandling.Ignore)]
-    public T Data { get; set; }
+    [JsonProperty("data")] public T Data { get; set; }
 
-    [JsonProperty("message", NullValueHandling = NullValueHandling.Ignore)]
-    public string? Message { get; set; }
+    [JsonProperty("message")] public string? Message { get; set; }
 
-    [JsonProperty("args", NullValueHandling = NullValueHandling.Ignore)]
-    public dynamic[]? Args { get; set; } = [];
+    [JsonProperty("args")] public dynamic[]? Args { get; set; } = [];
 }
 
-public class AvailableResponseDto
+public record AvailableResponseDto
 {
     [JsonProperty("available")] public bool Available { get; set; }
     [JsonProperty("server")] public string? Message { get; set; }
 }
 
-public class LikeRequestDto
+public record LikeRequestDto
 {
     [JsonProperty("value")] public bool Value { get; set; }
 }
 
-public class PeopleDto
+public record PeopleDto
 {
-    [JsonProperty("character", NullValueHandling = NullValueHandling.Ignore)]
-    public string? Character { get; set; }
+    [JsonProperty("character")] public string? Character { get; set; }
 
-    [JsonProperty("job", NullValueHandling = NullValueHandling.Ignore)]
-    public string? Job { get; set; }
+    [JsonProperty("job")] public string? Job { get; set; }
 
-    [JsonProperty("profilePath")] public string? ProfilePath { get; set; }
+    [JsonProperty("profile")] public string? ProfilePath { get; set; }
     [JsonProperty("gender")] public string Gender { get; set; }
     [JsonProperty("id")] public long Id { get; set; }
-    [JsonProperty("knownForDepartment")] public string? KnownForDepartment { get; set; }
+    [JsonProperty("known_for_department")] public string? KnownForDepartment { get; set; }
     [JsonProperty("name")] public string Name { get; set; }
     [JsonProperty("popularity")] public double Popularity { get; set; }
-    [JsonProperty("deathDay")] public DateTime? DeathDay { get; set; }
+    [JsonProperty("death_day")] public DateTime? DeathDay { get; set; }
     [JsonProperty("translations")] public TranslationDto[] Translations { get; set; }
     [JsonProperty("order")] public int? Order { get; set; }
 
-    [JsonProperty("color_palette", NullValueHandling = NullValueHandling.Include)]
-    public IColorPalettes? ColorPalette { get; set; }
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
 
     public PeopleDto(Cast cast)
     {
+        Id = cast.Person.Id;
         Character = cast.Role.Character;
         ProfilePath = cast.Person.Profile;
         KnownForDepartment = cast.Person.KnownForDepartment;
@@ -156,23 +159,23 @@ public class PeopleDto
         DeathDay = cast.Person.DeathDay;
         Gender = cast.Person.Gender;
         Order = cast.Role.Order;
-        Id = cast.Person.Id;
     }
 
-    public PeopleDto(Providers.TMDB.Models.Shared.Cast cast)
+    public PeopleDto(Providers.TMDB.Models.Shared.TmdbCast tmdbCast)
     {
-        Character = cast.Character;
-        ProfilePath = cast.ProfilePath;
-        KnownForDepartment = cast.KnownForDepartment;
-        Name = cast.Name ?? string.Empty;
+        Id = tmdbCast.Id;
+        Character = tmdbCast.Character;
+        ProfilePath = tmdbCast.ProfilePath;
+        KnownForDepartment = tmdbCast.KnownForDepartment;
+        Name = tmdbCast.Name ?? string.Empty;
         ColorPalette = new IColorPalettes();
-        Gender = Enum.Parse<Gender>(cast.Gender.ToString(), true).ToString();
-        Order = cast.Order;
-        Id = cast.Id;
+        Gender = Enum.Parse<TmdbGender>(tmdbCast.Gender.ToString(), true).ToString();
+        Order = tmdbCast.Order;
     }
 
     public PeopleDto(Crew crew)
     {
+        Id = crew.Person.Id;
         Job = crew.Job.Task;
         ProfilePath = crew.Person.Profile;
         KnownForDepartment = crew.Person.KnownForDepartment;
@@ -180,30 +183,51 @@ public class PeopleDto
         ColorPalette = crew.Person.ColorPalette;
         DeathDay = crew.Person.DeathDay;
         Gender = crew.Person.Gender;
-        Id = crew.Person.Id;
         Order = crew.Job.Order;
     }
-    
-    public PeopleDto(Providers.TMDB.Models.Shared.Crew crew)
+
+    public PeopleDto(Providers.TMDB.Models.Shared.TmdbCrew tmdbCrew)
     {
-        Job = crew.Job;
+        Id = tmdbCrew.Id;
+        Job = tmdbCrew.Job;
+        ProfilePath = tmdbCrew.ProfilePath;
+        KnownForDepartment = tmdbCrew.KnownForDepartment;
+        Name = tmdbCrew.Name;
+        ColorPalette = new IColorPalettes();
+        Gender = Enum.Parse<TmdbGender>(tmdbCrew.Gender.ToString(), true).ToString();
+        Order = tmdbCrew.Order;
+    }
+
+    public PeopleDto(TmdbCreatedBy crew)
+    {
+        Id = crew.Id;
+        Job = "Creator";
         ProfilePath = crew.ProfilePath;
-        KnownForDepartment = crew.KnownForDepartment;
         Name = crew.Name;
         ColorPalette = new IColorPalettes();
-        Gender = Enum.Parse<Gender>(crew.Gender.ToString(), true).ToString();
-        Id = crew.Id;
-        Order = crew.Order;
+        Gender = Enum.Parse<TmdbGender>(crew.Gender.ToString(), true).ToString();
+    }
+
+    public PeopleDto(Creator creator)
+    {
+        Id = creator.Person.Id;
+        Job = "Creator";
+        ProfilePath = creator.Person.Profile;
+        KnownForDepartment = creator.Person.KnownForDepartment;
+        Name = creator.Person.Name;
+        ColorPalette = creator.Person.ColorPalette;
+        DeathDay = creator.Person.DeathDay;
+        Gender = creator.Person.Gender;
     }
 }
 
-public class ContentRating
+public record ContentRating
 {
     [JsonProperty("rating")] public string? Rating { get; set; }
     [JsonProperty("iso_3166_1")] public string? Iso31661 { get; set; }
 }
 
-public class DataResponseDto<T>
+public record DataResponseDto<T>
 {
-    [JsonProperty("data")] public T? Data { get; set; } = default(T);
+    [JsonProperty("data")] public T? Data { get; set; }
 }

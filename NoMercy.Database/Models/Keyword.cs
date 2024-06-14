@@ -4,25 +4,24 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
-namespace NoMercy.Database.Models
+namespace NoMercy.Database.Models;
+
+[PrimaryKey(nameof(Id))]
+public class Keyword
 {
-    [PrimaryKey(nameof(Id))]
-    public class Keyword
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    [JsonProperty("id")]
+    public int Id { get; set; }
+
+    [JsonProperty("name")] public string Name { get; set; }
+
+    public Keyword()
     {
-        [DatabaseGenerated(DatabaseGeneratedOption.None)]
-        [JsonProperty("id")]
-        public int Id { get; set; }
+    }
 
-        [JsonProperty("name")] public string Name { get; set; }
-
-        public Keyword()
-        {
-        }
-
-        public Keyword(Providers.TMDB.Models.Shared.Keyword input)
-        {
-            Id = input.Id;
-            Name = input.Name;
-        }
+    public Keyword(Providers.TMDB.Models.Shared.TmdbKeyword input)
+    {
+        Id = input.Id;
+        Name = input.Name;
     }
 }

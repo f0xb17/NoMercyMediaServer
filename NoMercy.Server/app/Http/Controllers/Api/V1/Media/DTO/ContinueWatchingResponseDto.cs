@@ -8,15 +8,15 @@ using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
-public class ContinueWatchingDto
+public record ContinueWatchingDto
 {
     [JsonProperty("data")] public IEnumerable<ContinueWatchingItemDto> Data { get; set; }
 }
 
-public class ContinueWatchingItemDto
+public record ContinueWatchingItemDto
 {
     [JsonProperty("id")] public string Id { get; set; }
-    [JsonProperty("mediaType")] public string? MediaType { get; set; }
+    [JsonProperty("media_type")] public string? MediaType { get; set; }
     [JsonProperty("poster")] public string? Poster { get; set; }
     [JsonProperty("backdrop")] public string? Backdrop { get; set; }
     [JsonProperty("title")] public string? Title { get; set; }
@@ -26,16 +26,18 @@ public class ContinueWatchingItemDto
     [JsonProperty("created_at")] public DateTime? CreatedAt { get; set; }
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("year")] public long? Year { get; set; }
-    [JsonProperty("have_episodes")] public long? HaveEpisodes { get; set; }
     [JsonProperty("overview")] public string? Overview { get; set; }
     [JsonProperty("logo")] public string? Logo { get; set; }
     [JsonProperty("rating")] public RatingDto? Rating { get; set; }
     [JsonProperty("videoId")] public string? VideoId { get; set; }
     [JsonProperty("videos")] public VideoDto[]? Videos { get; set; }
+    [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
+    [JsonProperty("have_items")] public int? HaveItems { get; set; }
 
     public ContinueWatchingItemDto(UserData item)
     {
-        Id = item.MovieId?.ToString() ?? item.TvId?.ToString() ?? item.SpecialId?.ToString() ?? item.CollectionId.ToString() ?? string.Empty;
+        Id = item.MovieId?.ToString() ?? item.TvId?.ToString() ??
+            item.SpecialId?.ToString() ?? item.CollectionId.ToString() ?? string.Empty;
         Type = item.Type;
         UpdatedAt = item.UpdatedAt;
         CreatedAt = item.CreatedAt;
@@ -50,6 +52,11 @@ public class ContinueWatchingItemDto
             TitleSort = item.Movie.Title.TitleSort(item.Movie.ReleaseDate);
             Overview = item.Movie.Overview;
             MediaType = "movie";
+            Type = "movie";
+
+            NumberOfItems = 1;
+            HaveItems = item.Movie.VideoFiles.Count(v => v.Folder != null);
+
             Videos = item.Movie.Media
                 .Select(media => new VideoDto(media))
                 .ToArray();
@@ -62,10 +69,17 @@ public class ContinueWatchingItemDto
             Backdrop = item.Tv.Backdrop;
             Title = item.Tv.Title;
             TitleSort = item.Tv.Title.TitleSort(item.Tv.FirstAirDate);
-            HaveEpisodes = item.Tv.HaveEpisodes;
+            HaveItems = item.Tv.HaveEpisodes;
             Overview = item.Tv.Overview;
             Type = item.Tv.Type;
+
             MediaType = "tv";
+            Type = "tv";
+
+            NumberOfItems = item.Tv.NumberOfEpisodes;
+            HaveItems = item.Tv.Episodes
+                .Count(episode => episode.VideoFiles.Any(v => v.Folder != null));
+
             Videos = item.Tv.Media
                 .Select(media => new VideoDto(media))
                 .ToArray();
@@ -78,7 +92,15 @@ public class ContinueWatchingItemDto
             Title = item.Special.Title;
             TitleSort = item.Special.Title.TitleSort();
             Overview = item.Special.Overview;
+
             MediaType = "specials";
+            Type = "specials";
+
+            NumberOfItems = item.Special.Items.Count;
+            HaveItems = item.Special.Items
+                            .Select(specialItem => specialItem.Episode?.VideoFiles
+                                .Any(videoFile => videoFile.Folder != null)).Count()
+                        + item.Special.Items.Count(i => i.MovieId != null);
             // Videos = item.SpecialItemsDto.SpecialItems
             //     .SelectMany(specialDto => specialDto.Tv.Media)
             //     .Select(media => new VideoDto(media))
@@ -92,7 +114,15 @@ public class ContinueWatchingItemDto
             Title = item.Collection.Title;
             TitleSort = item.Collection.Title.TitleSort();
             Overview = item.Collection.Overview;
+
             MediaType = "collection";
+            Type = "collection";
+
+            NumberOfItems = item.Collection.CollectionMovies.Count;
+            HaveItems = item.Collection.CollectionMovies
+                .SelectMany(collectionMovie => collectionMovie.Movie.VideoFiles)
+                .Count(videoFile => videoFile.Folder != null);
+
             Videos = item.Collection.CollectionMovies
                 .SelectMany(collectionMovie => collectionMovie.Movie.Media)
                 .Select(media => new VideoDto(media))

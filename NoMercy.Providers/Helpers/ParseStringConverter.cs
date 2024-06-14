@@ -15,11 +15,11 @@ public class ParseJwtStringConverter : JsonConverter
     {
         if (reader.TokenType == JsonToken.Null)
             return null;
-        
+
         var value = serializer.Deserialize<string>(reader);
-        
+
         if (long.TryParse(value, out var l)) return l;
-        
+
         throw new Exception("Cannot unmarshal type long");
     }
 
@@ -49,11 +49,11 @@ public class ParseStringConverter : JsonConverter
     {
         if (reader.TokenType == JsonToken.Null)
             return null;
-        
+
         var value = serializer.Deserialize<string>(reader);
-        
+
         if (CanConvert(t) && long.TryParse(value, out var l)) return l;
-        
+
         throw new Exception("Cannot unmarshal type long");
     }
 

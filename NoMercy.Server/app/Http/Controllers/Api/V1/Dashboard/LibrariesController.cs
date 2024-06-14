@@ -9,30 +9,20 @@ using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.Providers.TMDB.Client;
-using NoMercy.Providers.TMDB.Models.TV;
-using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
-using NoMercy.Server.app.Jobs;
+using NoMercy.Server.app.Http.Middleware;
 using NoMercy.Server.Logic;
-using NoMercy.Server.system;
-using Movie = NoMercy.Providers.TMDB.Models.Movies.Movie;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 
 [ApiController]
 [Tags("Dashboard Libraries")]
 [ApiVersion("1")]
-[Authorize, Route("api/v{Version:apiVersion}/dashboard/libraries", Order = 10)]
+[Authorize]
+[Route("api/v{Version:apiVersion}/dashboard/libraries", Order = 10)]
 public class LibrariesController : Controller
 {
-    [NonAction]
-    private Guid GetUserId()
-    {
-        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-    }
-
     [HttpGet]
     public async Task<LibrariesResponseDto> Index()
     {
@@ -41,21 +31,16 @@ public class LibrariesController : Controller
         await using MediaContext mediaContext = new();
         var libraries = await mediaContext.Libraries
             .AsNoTracking()
-            
             .Include(library => library.LibraryUsers)
-                .ThenInclude(libraryUser => libraryUser.User)
-            
+            .ThenInclude(libraryUser => libraryUser.User)
             .Include(library => library.FolderLibraries)
-                .ThenInclude(folderLibrary => folderLibrary.Folder)
-                    .ThenInclude(library => library.EncoderProfileFolder)
-                        .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
-            
+            .ThenInclude(folderLibrary => folderLibrary.Folder)
+            .ThenInclude(library => library.EncoderProfileFolder)
+            .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
             .Include(library => library.LanguageLibraries)
-                .ThenInclude(languageLibrary => languageLibrary.Language)
-            
+            .ThenInclude(languageLibrary => languageLibrary.Language)
             .Where(library => library.LibraryUsers
                 .FirstOrDefault(u => u.UserId == userId) != null)
-            
             .OrderBy(library => library.Order)
             .ToListAsync();
 
@@ -68,14 +53,14 @@ public class LibrariesController : Controller
     [HttpPost]
     public async Task<StatusResponseDto<Library>> Store()
     {
-        Guid userId = GetUserId();
-        
+        var userId = HttpContext.User.UserId();
+
         try
         {
             await using MediaContext mediaContext = new();
-            int libraries = await mediaContext.Libraries.CountAsync();
+            var libraries = await mediaContext.Libraries.CountAsync();
 
-            Library profile = new Library
+            Library profile = new()
             {
                 Id = Ulid.NewUlid(),
                 Title = $"Library {libraries}",
@@ -87,7 +72,7 @@ public class LibrariesController : Controller
                 Realtime = true,
                 SpecialSeasonName = "Specials",
                 Type = "",
-                Order = 99,
+                Order = 99
             };
 
             await mediaContext.Libraries.Upsert(profile)
@@ -103,15 +88,15 @@ public class LibrariesController : Controller
                     Realtime = li.Realtime,
                     SpecialSeasonName = li.SpecialSeasonName,
                     Type = li.Type,
-                    Order = li.Order,
+                    Order = li.Order
                 })
                 .RunAsync();
-            
+
             await mediaContext.LibraryUser.Upsert(new LibraryUser
-            {
-                LibraryId = profile.Id,
-                UserId = userId
-            })
+                {
+                    LibraryId = profile.Id,
+                    UserId = userId
+                })
                 .On(lu => new { lu.LibraryId, lu.UserId })
                 .WhenMatched((lus, lui) => new LibraryUser
                 {
@@ -147,14 +132,12 @@ public class LibrariesController : Controller
         var library = await mediaContext.Libraries.FindAsync(id);
 
         if (library is null)
-        {
             return new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Library {0} does not exist.",
                 Args = [id.ToString()]
             };
-        }
 
         try
         {
@@ -243,7 +226,7 @@ public class LibrariesController : Controller
             List<FolderDto> folders = request.FolderLibrary
                 .Select(f => f.Folder)
                 .ToList();
-            
+
             foreach (var folder in folders)
             {
                 var encoderProfileFolders = folder.EncoderProfiles
@@ -253,7 +236,7 @@ public class LibrariesController : Controller
                         EncoderProfileId = profile
                     })
                     .ToArray();
-                
+
                 await mediaContext.EncoderProfileFolder.UpsertRange(encoderProfileFolders)
                     .On(epl => new { epl.FolderId, epl.EncoderProfileId })
                     .WhenMatched((epls, epli) => new EncoderProfileFolder()
@@ -293,14 +276,12 @@ public class LibrariesController : Controller
             var library = await mediaContext.Libraries.FindAsync(id);
 
             if (library is null)
-            {
                 return new StatusResponseDto<string>()
                 {
                     Status = "error",
                     Message = "Library {0} does not exist.",
                     Args = [id.ToString()]
                 };
-            }
 
             mediaContext.Libraries.Remove(library);
             await mediaContext.SaveChangesAsync();
@@ -331,17 +312,15 @@ public class LibrariesController : Controller
         var libraries = await mediaContext.Libraries
             .AsTracking()
             .ToListAsync();
-        
+
         if (libraries.Count == 0)
-        {
             return new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "No libraries exist.",
                 Args = []
             };
-        }
-        
+
         try
         {
             foreach (var item in request.Libraries)
@@ -350,7 +329,7 @@ public class LibrariesController : Controller
                 if (lib is null) continue;
                 lib.Order = item.Order;
             }
-            
+
             await mediaContext.SaveChangesAsync();
         }
         catch (Exception e)
@@ -362,7 +341,7 @@ public class LibrariesController : Controller
                 Args = [e.Message]
             };
         }
-        
+
         return new StatusResponseDto<string>()
         {
             Status = "ok",
@@ -378,91 +357,92 @@ public class LibrariesController : Controller
         await using MediaContext mediaContext = new();
         var librariesList = await mediaContext.Libraries
             .Include(library => library.FolderLibraries)
-                .ThenInclude(folderLibrary => folderLibrary.Folder)
+            .ThenInclude(folderLibrary => folderLibrary.Folder)
             .ToListAsync();
-        
+
         if (librariesList.Count == 0)
-        {
             return new StatusResponseDto<List<string?>>()
             {
                 Status = "error",
                 Message = "No libraries exist."
             };
-        }
-        
-        const int depth = 1;
-        
+
+        // const int depth = 1;
+
         List<string?> titles = new();
-        
+
         foreach (var library in librariesList)
         {
-            List<MediaFolder> folders = new();
-            MediaScan mediaScan = new();
-            
-            string[] paths = library.FolderLibraries
-                .Select(folderLibrary => folderLibrary.Folder.Path)
-                .ToArray();
+            LibraryLogic libraryLogic = new(library.Id);
+            await libraryLogic.Process();
 
-            foreach (var path in paths)
-            {
-                var list = await mediaScan
-                    .Process(path, depth);
-
-                folders.AddRange(list);
-            }
-
-            mediaScan.Dispose();
-
-            foreach (var folder in folders)
-            {
-                if (folder.Parsed is null) continue;
-
-                switch (library.Type)
-                {
-                    case "movie":
-                    {
-                        SearchClient searchClient = new();
-
-                        var paginatedMovieResponse = await searchClient.Movie(folder.Parsed.Title!, folder.Parsed.Year!);
-
-                        if (paginatedMovieResponse?.Results.Length <= 0) continue;
-                    
-                        // List<Movie> res = Str.SortByMatchPercentage(paginatedMovieResponse.Results, m => m.Title, folder.Parsed.Title);
-                        List<Movie> res = paginatedMovieResponse?.Results.ToList() ?? [];
-                        if (res.Count is 0) continue;
-                    
-                        titles.Add(res[0].Title);
-
-                        AddMovieJob addMovieJob = new AddMovieJob(id:res[0].Id, libraryId:library.Id.ToString());
-                        JobDispatcher.Dispatch(addMovieJob, "queue", 5);
-                        break;
-                    }
-                    case "tv":
-                    {                
-                        SearchClient searchClient = new();
-
-                        var paginatedTvShowResponse = await searchClient.TvShow(folder.Parsed.Title!, folder.Parsed.Year!);
-
-                        if (paginatedTvShowResponse?.Results.Length <= 0) continue;
-                    
-                        // List<TvShow> res = Str.SortByMatchPercentage(paginatedTvShowResponse.Results, m => m.Name, folder.Parsed.Title);
-                        List<TvShow> res = paginatedTvShowResponse?.Results.ToList() ?? [];
-                        if (res.Count is 0) continue;
-
-                        titles.Add(res[0].Name);
-
-                        AddShowJob addShowJob = new AddShowJob(id:res[0].Id, libraryId:library.Id.ToString());
-                        JobDispatcher.Dispatch(addShowJob, "queue", 5);
-                        break;
-                    }
-                    case "music":
-                    {
-                        Logger.App(folders);
-                        Logger.App("Music library rescan not implemented.");
-                        break;
-                    }
-                }
-            }
+            // List<MediaFolder> folders = new();
+            // MediaScan mediaScan = new();
+            //
+            // string[] paths = library.FolderLibraries
+            //     .Select(folderLibrary => folderLibrary.Folder.Path)
+            //     .ToArray();
+            //
+            // foreach (var path in paths)
+            // {
+            //     var list = await mediaScan
+            //         .Process(path, depth);
+            //
+            //     folders.AddRange(list);
+            // }
+            //
+            // mediaScan.Dispose();
+            //
+            // foreach (var folder in folders)
+            // {
+            //     if (folder.Parsed is null) continue;
+            //
+            //     switch (library.Type)
+            //     {
+            //         case "movie":
+            //         {
+            //             SearchClient searchClient = new();
+            //
+            //             var paginatedMovieResponse = await searchClient.Movie(folder.Parsed.Title!, folder.Parsed.Year!);
+            //
+            //             if (paginatedMovieResponse?.Results.Length <= 0) continue;
+            //         
+            //             // List<Movie> res = Str.SortByMatchPercentage(paginatedMovieResponse.Results, m => m.Title, folder.Parsed.Title);
+            //             List<Movie> res = paginatedMovieResponse?.Results.ToList() ?? [];
+            //             if (res.Count is 0) continue;
+            //         
+            //             titles.Add(res[0].Title);
+            //
+            //             AddMovieJob addMovieJob = new AddMovieJob(id:res[0].Id, libraryId:library.Id.ToString());
+            //             JobDispatcher.Dispatch(addMovieJob, "queue", 5);
+            //             break;
+            //         }
+            //         case "tv":
+            //         {                
+            //             SearchClient searchClient = new();
+            //
+            //             var paginatedTvShowResponse = await searchClient.TvShow(folder.Parsed.Title!, folder.Parsed.Year!);
+            //
+            //             if (paginatedTvShowResponse?.Results.Length <= 0) continue;
+            //         
+            //             // List<TvShow> res = Str.SortByMatchPercentage(paginatedTvShowResponse.Results, m => m.Name, folder.Parsed.Title);
+            //             List<TvShow> res = paginatedTvShowResponse?.Results.ToList() ?? [];
+            //             if (res.Count is 0) continue;
+            //
+            //             titles.Add(res[0].Name);
+            //
+            //             AddShowJob addShowJob = new AddShowJob(id:res[0].Id, libraryId:library.Id.ToString());
+            //             JobDispatcher.Dispatch(addShowJob, "queue", 5);
+            //             break;
+            //         }
+            //         case "music":
+            //         {
+            //             Logger.App(folders);
+            //             Logger.App("Music library rescan not implemented.");
+            //             break;
+            //         }
+            //     }
+            // }
         }
 
         return new StatusResponseDto<List<string?>>()
@@ -477,10 +457,9 @@ public class LibrariesController : Controller
     [Route("{id}/rescan")]
     public async Task<StatusResponseDto<List<dynamic>>> Rescan(Ulid id)
     {
-        LibraryLogic libraryLogic = new(id.ToString());
+        LibraryLogic libraryLogic = new(id);
 
         if (await libraryLogic.Process())
-        {
             return new StatusResponseDto<List<dynamic>>()
             {
                 Status = "ok",
@@ -488,8 +467,7 @@ public class LibrariesController : Controller
                 Message = "Rescanning {0} library.",
                 Args = [libraryLogic.Id]
             };
-        }
-        
+
         return new StatusResponseDto<List<dynamic>>()
         {
             Status = "error",
@@ -504,33 +482,30 @@ public class LibrariesController : Controller
     {
         await using MediaContext mediaContext = new();
         var library = await mediaContext.Libraries.FindAsync(id);
-        
+
         if (library is null)
-        {
             return new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Library {0} does not exist.",
                 Args = [id.ToString()]
             };
-        }
 
         try
         {
-            Folder folder = new Folder()
+            var folder = new Folder()
             {
                 Id = Ulid.NewUlid(),
-                Path = request.Path,
+                Path = request.Path
             };
 
             await mediaContext.Folders.Upsert(folder)
                 .On(f => new { f.Path })
                 .WhenMatched((fs, fi) => new Folder()
                 {
-                    Path = fi.Path,
+                    Path = fi.Path
                 })
                 .RunAsync();
-
         }
         catch (Exception e)
         {
@@ -541,20 +516,21 @@ public class LibrariesController : Controller
                 Args = [id.ToString(), e.Message]
             };
         }
+
         try
         {
-
-            Folder? folder = await mediaContext.Folders
+            var folder = await mediaContext.Folders
                 .Where(folder => folder.Path == request.Path)
                 .FirstOrDefaultAsync();
 
-            if (folder is null) return new StatusResponseDto<string>()
-            {
-                Status = "error",
-                Message = "Folder {0} does not exist.",
-                Args = [id.ToString()]
-            };
-            
+            if (folder is null)
+                return new StatusResponseDto<string>()
+                {
+                    Status = "error",
+                    Message = "Folder {0} does not exist.",
+                    Args = [id.ToString()]
+                };
+
             var folderLibrary = new FolderLibrary()
             {
                 LibraryId = library.Id,
@@ -568,7 +544,7 @@ public class LibrariesController : Controller
                     LibraryId = fli.LibraryId,
                     FolderId = fli.FolderId
                 })
-                    .RunAsync();
+                .RunAsync();
         }
         catch (Exception e)
         {
@@ -579,7 +555,7 @@ public class LibrariesController : Controller
                 Args = [id.ToString(), e.Message]
             };
         }
-        
+
         return new StatusResponseDto<string>()
         {
             Status = "ok",
@@ -596,20 +572,19 @@ public class LibrariesController : Controller
         var folder = await mediaContext.Folders
             .Where(folder => folder.Id == folderId)
             .FirstOrDefaultAsync();
-        
+
         if (folder is null)
-        {
             return new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Folder {0} does not exist.",
                 Args = [id.ToString()]
             };
-        }
-        
-        try {
+
+        try
+        {
             mediaContext.Folders.Remove(folder);
-            
+
             await mediaContext.SaveChangesAsync();
         }
         catch (Exception e)
@@ -621,7 +596,7 @@ public class LibrariesController : Controller
                 Args = [e.Message]
             };
         }
-        
+
         return new StatusResponseDto<string>()
         {
             Status = "ok",
@@ -629,26 +604,25 @@ public class LibrariesController : Controller
             Args = [folder.Path]
         };
     }
-    
+
     [HttpPost]
     [Route("{id}/folders/{folderId}/encoder_profiles")]
-    public async Task<StatusResponseDto<string>> AddEncoderProfile(Ulid id, Ulid folderId, [FromBody] ProfilesRequest request)
+    public async Task<StatusResponseDto<string>> AddEncoderProfile(Ulid id, Ulid folderId,
+        [FromBody] ProfilesRequest request)
     {
         await using MediaContext mediaContext = new();
         var folder = await mediaContext.Folders
             .Where(folder => folder.Id == folderId)
             .FirstOrDefaultAsync();
-        
+
         if (folder is null)
-        {
             return new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Folder {0} does not exist.",
                 Args = [id.ToString()]
             };
-        }
-        
+
         try
         {
             var encoderProfileFolder = request.Profiles
@@ -677,7 +651,7 @@ public class LibrariesController : Controller
                 Args = [id.ToString(), e.Message]
             };
         }
-        
+
         return new StatusResponseDto<string>()
         {
             Status = "ok",
@@ -685,7 +659,7 @@ public class LibrariesController : Controller
             Args = [id.ToString()]
         };
     }
-    
+
     [HttpDelete]
     [Route("{id}/folders/{folderId}/encoder_profiles/{encoderProfileId}")]
     public async Task<StatusResponseDto<string>> DeleteEncoderProfile(Ulid id, Ulid profileId)
@@ -694,20 +668,19 @@ public class LibrariesController : Controller
         var encoderProfile = await mediaContext.EncoderProfiles
             .Where(folder => folder.Id == profileId)
             .FirstOrDefaultAsync();
-        
+
         if (encoderProfile is null)
-        {
             return new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Folder {0} does not exist.",
                 Args = [id.ToString()]
             };
-        }
-        
-        try {
+
+        try
+        {
             mediaContext.EncoderProfiles.Remove(encoderProfile);
-            
+
             await mediaContext.SaveChangesAsync();
         }
         catch (Exception e)
@@ -719,7 +692,7 @@ public class LibrariesController : Controller
                 Args = [e.Message]
             };
         }
-        
+
         return new StatusResponseDto<string>()
         {
             Status = "ok",

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
@@ -6,6 +7,7 @@ using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Jobs;
+using NoMercy.Server.Logic.ImageLogic;
 using NoMercy.Server.system;
 using LogLevel = NoMercy.Helpers.LogLevel;
 using Movie = NoMercy.Database.Models.Movie;
@@ -13,13 +15,13 @@ using Translation = NoMercy.Database.Models.Translation;
 
 namespace NoMercy.Server.Logic;
 
-public class MovieLogic(int id, Library library)
+public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
 {
-    private MovieClient MovieClient { get; set; } = new(id);
+    private TmdbMovieClient TmdbMovieClient { get; } = new(id);
     private string MediaType { get; set; } = "";
     private string Folder { get; set; } = "";
 
-    public MovieAppends? Movie { get; private set; }
+    public TmdbMovieAppends? Movie { get; private set; }
 
     private readonly MediaContext _mediaContext = new();
 
@@ -32,18 +34,18 @@ public class MovieLogic(int id, Library library)
         //     return;
         // }
 
-        Movie = await MovieClient.WithAllAppends();
+        Movie = await TmdbMovieClient.WithAllAppends();
         if (Movie is null)
         {
-            Logger.MovieDb($@"Movie {MovieClient.Id}: not found");
+            Logger.MovieDb($@"Movie {TmdbMovieClient.Id}: not found");
             return;
         }
 
         Folder = FindFolder();
-        MediaType = GetMediaType();
+        MediaType = MakeMediaType();
 
         await Store();
- 
+
         await StoreAlternativeTitles();
         await StoreTranslations();
         await StoreGenres();
@@ -61,7 +63,7 @@ public class MovieLogic(int id, Library library)
 
     private async Task StoreAlternativeTitles()
     {
-        AlternativeTitle[] alternativeTitles = Movie?.AlternativeTitles.Results.ToList()
+        var alternativeTitles = Movie?.AlternativeTitles.Results.ToList()
             .ConvertAll<AlternativeTitle>(x => new AlternativeTitle(x, Movie.Id)).ToArray() ?? [];
 
         await _mediaContext.AlternativeTitles.UpsertRange(alternativeTitles)
@@ -70,7 +72,7 @@ public class MovieLogic(int id, Library library)
             {
                 Title = ati.Title,
                 Iso31661 = ati.Iso31661,
-                MovieId = ati.MovieId,
+                MovieId = ati.MovieId
             })
             .RunAsync();
 
@@ -87,7 +89,7 @@ public class MovieLogic(int id, Library library)
     {
         try
         {
-            Translation[] translations = Movie?.Translations.Translations.ToList()
+            var translations = Movie?.Translations.Translations.ToList()
                 .ConvertAll<Translation>(x => new Translation(x, Movie)).ToArray() ?? [];
 
             await _mediaContext.Translations
@@ -107,7 +109,7 @@ public class MovieLogic(int id, Library library)
                     SeasonId = ti.SeasonId,
                     EpisodeId = ti.EpisodeId,
                     CollectionId = ti.CollectionId,
-                    PersonId = ti.PersonId,
+                    PersonId = ti.PersonId
                 })
                 .RunAsync();
         }
@@ -124,9 +126,9 @@ public class MovieLogic(int id, Library library)
         {
             List<CertificationMovie> certifications = [];
 
-            foreach (Result movieContentRating in Movie?.ReleaseDates.Results ?? [])
+            foreach (var movieContentRating in Movie?.ReleaseDates.Results ?? [])
             {
-                Certification? certification = _mediaContext.Certifications
+                var certification = _mediaContext.Certifications
                     .FirstOrDefault(c =>
                         c.Iso31661 == movieContentRating.Iso31661 &&
                         c.Rating == movieContentRating.ReleaseDates[0].Certification);
@@ -140,7 +142,7 @@ public class MovieLogic(int id, Library library)
                 .WhenMatched((ts, ti) => new CertificationMovie
                 {
                     CertificationId = ti.CertificationId,
-                    MovieId = ti.MovieId,
+                    MovieId = ti.MovieId
                 })
                 .RunAsync();
         }
@@ -156,7 +158,7 @@ public class MovieLogic(int id, Library library)
 
     private async Task StoreSimilar()
     {
-        List<Similar> data = Movie?.Similar.Results.ToList()
+        var data = Movie?.Similar.Results.ToList()
             .ConvertAll<Similar>(x => new Similar(x, Movie)) ?? [];
 
         await _mediaContext.Similar.UpsertRange(data)
@@ -170,9 +172,12 @@ public class MovieLogic(int id, Library library)
                 TitleSort = ti.TitleSort,
                 Backdrop = ti.Backdrop,
                 Poster = ti.Poster,
-                MediaId = ti.MediaId,
+                MediaId = ti.MediaId
             })
             .RunAsync();
+
+        ColorPaletteJob similarColorPaletteJob = new(id, model: "similar", type: "movie");
+        JobDispatcher.Dispatch(similarColorPaletteJob, "image", 2);
 
         Logger.MovieDb($@"Movie {Movie?.Title}: Similar stored");
         await Task.CompletedTask;
@@ -180,7 +185,7 @@ public class MovieLogic(int id, Library library)
 
     private async Task StoreRecommendations()
     {
-        List<Recommendation> data = Movie?.Recommendations.Results.ToList()
+        var data = Movie?.Recommendations.Results.ToList()
             .ConvertAll<Recommendation>(x => new Recommendation(x, Movie)) ?? [];
 
         await _mediaContext.Recommendations.UpsertRange(data)
@@ -194,9 +199,12 @@ public class MovieLogic(int id, Library library)
                 TitleSort = ti.TitleSort,
                 Backdrop = ti.Backdrop,
                 Poster = ti.Poster,
-                MediaId = ti.MediaId,
+                MediaId = ti.MediaId
             })
             .RunAsync();
+
+        ColorPaletteJob recommendationColorPaletteJob = new(id, model: "recommendation", type: "movie");
+        JobDispatcher.Dispatch(recommendationColorPaletteJob, "image", 2);
 
         Logger.MovieDb($@"Movie {Movie?.Title}: Recommendations stored");
         await Task.CompletedTask;
@@ -206,7 +214,7 @@ public class MovieLogic(int id, Library library)
     {
         try
         {
-            List<Media> videos = Movie?.Videos.Results.ToList()
+            var videos = Movie?.Videos.Results.ToList()
                 .ConvertAll<Media>(x => new Media(x, Movie, "video")) ?? [];
 
             await _mediaContext.Medias.UpsertRange(videos)
@@ -219,7 +227,7 @@ public class MovieLogic(int id, Library library)
                     MovieId = ti.MovieId,
                     Name = ti.Name,
                     Site = ti.Site,
-                    Size = ti.Size,
+                    Size = ti.Size
                 })
                 .RunAsync();
         }
@@ -234,18 +242,18 @@ public class MovieLogic(int id, Library library)
 
     public static async Task StoreImages(int id)
     {
-        MovieClient movieClient = new(id);
-        MovieAppends? movie = await movieClient.WithAllAppends();
+        TmdbMovieClient tmdbMovieClient = new(id);
+        var movie = await tmdbMovieClient.WithAllAppends();
         if (movie is null) return;
 
-        List<Image> posters = movie.Images.Posters.ToList()
-            .ConvertAll<Image>(image => new Image(image: image, movie: movie, type: "poster"));
+        var posters = movie.Images.Posters.ToList()
+            .ConvertAll<Image>(image => new Image(image, movie, "poster"));
 
         List<Image> backdrops = movie.Images.Backdrops.ToList()
-            .ConvertAll<Image>(image => new Image(image: image, movie: movie, type: "backdrop"));
+            .ConvertAll<Image>(image => new Image(image, movie, "backdrop"));
 
         List<Image> logos = movie.Images.Logos.ToList()
-            .ConvertAll<Image>(image => new Image(image: image, movie: movie, type: "logo"));
+            .ConvertAll<Image>(image => new Image(image, movie, "logo"));
 
         List<Image> images = posters
             .Concat(backdrops)
@@ -266,47 +274,12 @@ public class MovieLogic(int id, Library library)
                 VoteCount = ti.VoteCount,
                 Width = ti.Width,
                 Type = ti.Type,
-                MovieId = ti.MovieId,
+                MovieId = ti.MovieId
             })
             .RunAsync();
-        
-        try
-        {
-            var colorPaletteJob = new ColorPaletteJob(id: id, model: "movie");
-            JobDispatcher.Dispatch(colorPaletteJob, "data", 2);
-        }
-        catch (Exception e)
-        {
-            Logger.MovieDb(e, LogLevel.Error);
-        }
 
-        try
-        {
-            var colorPaletteJob = new ColorPaletteJob(id: id, model: "similar", type: "movie");
-            JobDispatcher.Dispatch(colorPaletteJob, "data", 2);
-        }
-        catch (Exception e)
-        {
-            Logger.MovieDb(e, LogLevel.Error);
-        }
-
-        try
-        {
-            var colorPaletteJob = new ColorPaletteJob(id: id, model: "recommendation", type: "movie");
-            JobDispatcher.Dispatch(colorPaletteJob, "data", 2);
-        }
-        catch (Exception e)
-        {
-            Logger.MovieDb(e, LogLevel.Error);
-        }
-        
-        foreach (Image image in images)
-        {
-            if (string.IsNullOrEmpty(image.FilePath)) continue;
-            
-            var colorPaletteJob = new ColorPaletteJob(filePath: image.FilePath, model: "image", image.Iso6391);
-            JobDispatcher.Dispatch(colorPaletteJob, "data", 2);
-        }
+        ColorPaletteJob movieColorPaletteJob = new(id, "movie");
+        JobDispatcher.Dispatch(movieColorPaletteJob, "image", 2);
 
         Logger.MovieDb($@"Movie {movie.Title}: Images stored");
         await Task.CompletedTask;
@@ -350,7 +323,7 @@ public class MovieLogic(int id, Library library)
 
     private async Task StoreKeywords()
     {
-        Keyword[] keywords = Movie?.Keywords.Results.ToList()
+        var keywords = Movie?.Keywords.Results.ToList()
             .ConvertAll<Keyword>(x => new Keyword(x)).ToArray() ?? [];
 
         await _mediaContext.Keywords.UpsertRange(keywords)
@@ -358,7 +331,7 @@ public class MovieLogic(int id, Library library)
             .WhenMatched((ts, ti) => new Keyword
             {
                 Id = ti.Id,
-                Name = ti.Name,
+                Name = ti.Name
             })
             .RunAsync();
 
@@ -370,7 +343,7 @@ public class MovieLogic(int id, Library library)
             .WhenMatched((ts, ti) => new KeywordMovie()
             {
                 KeywordId = ti.KeywordId,
-                MovieId = ti.MovieId,
+                MovieId = ti.MovieId
             })
             .RunAsync();
 
@@ -380,7 +353,7 @@ public class MovieLogic(int id, Library library)
 
     private async Task StoreGenres()
     {
-        GenreMovie[] genreMovies = Movie?.Genres.ToList()
+        var genreMovies = Movie?.Genres.ToList()
             .ConvertAll<GenreMovie>(x => new GenreMovie(x, Movie)).ToArray() ?? [];
 
         await _mediaContext.GenreMovie.UpsertRange(genreMovies)
@@ -388,7 +361,7 @@ public class MovieLogic(int id, Library library)
             .WhenMatched((ts, ti) => new GenreMovie
             {
                 GenreId = ti.GenreId,
-                MovieId = ti.MovieId,
+                MovieId = ti.MovieId
             })
             .RunAsync();
 
@@ -396,7 +369,7 @@ public class MovieLogic(int id, Library library)
         await Task.CompletedTask;
     }
 
-    private static string GetMediaType()
+    private static string MakeMediaType()
     {
         const string defaultMediaType = "movie";
 
@@ -405,10 +378,7 @@ public class MovieLogic(int id, Library library)
 
     private string FindFolder()
     {
-        if (Movie == null)
-        {
-            return "";
-        }
+        if (Movie == null) return "";
 
         return FileNameParsers.CreateBaseFolder(Movie);
     }
@@ -417,7 +387,16 @@ public class MovieLogic(int id, Library library)
     {
         if (Movie == null) return;
 
-        Movie movieResponse = new Movie(Movie, library.Id, Folder);
+        Movie movieResponse = new(Movie, library.Id, Folder)
+        {
+            _colorPalette = await MovieDbImage
+                .MultiColorPalette(new[]
+                {
+                new BaseImage.MultiStringType("poster", Movie.PosterPath),
+                new BaseImage.MultiStringType("backdrop", Movie.BackdropPath)
+            })
+        };
+
         await _mediaContext.Movies.Upsert(movieResponse)
             .On(v => new { v.Id })
             .WhenMatched((ts, ti) => new Movie
@@ -441,7 +420,7 @@ public class MovieLogic(int id, Library library)
                 VoteCount = ti.VoteCount,
                 Folder = ti.Folder,
                 LibraryId = ti.LibraryId,
-                UpdatedAt = ti.UpdatedAt,
+                UpdatedAt = ti.UpdatedAt
             })
             .RunAsync();
 
@@ -450,113 +429,116 @@ public class MovieLogic(int id, Library library)
             .WhenMatched((lts, lti) => new LibraryMovie
             {
                 LibraryId = lti.LibraryId,
-                MovieId = lti.MovieId,
+                MovieId = lti.MovieId
             })
             .RunAsync();
-        
+
         Logger.MovieDb($@"Movie {Movie.Title}: Movie stored");
     }
 
     private Task DispatchJobs()
     {
         if (Movie is null) return Task.CompletedTask;
-        
-        try
-        {
-            FindMediaFilesJob findMediaFilesJob = new FindMediaFilesJob(id: Movie.Id, libraryId: library.Id.ToString());
-            JobDispatcher.Dispatch(findMediaFilesJob, "queue", 6);
-        }
-        catch (Exception e)
-        {
-            Logger.MovieDb(e, LogLevel.Error);
-        }
 
-        try
-        {
-            PersonJob personJob = new PersonJob(id: Movie.Id, type: "movie");
-            JobDispatcher.Dispatch(personJob, "queue", 3);
-        }
-        catch (Exception e)
-        {
-            Logger.MovieDb(e, LogLevel.Error);
-        }
+        FindMediaFilesJob findMediaFilesJob = new(id, library);
+        JobDispatcher.Dispatch(findMediaFilesJob, "queue", 6);
 
-        try
-        {
-            MovieImagesJob imagesJob = new MovieImagesJob(id: Movie.Id);
-            JobDispatcher.Dispatch(imagesJob, "data", 2);
-        }
-        catch (Exception e)
-        {
-            Logger.MovieDb(e, LogLevel.Error);
-        }
+        PersonJob personJob = new(id, "movie");
+        JobDispatcher.Dispatch(personJob, "queue", 3);
+
+        MovieImagesJob imagesJob = new(id);
+        JobDispatcher.Dispatch(imagesJob, "data", 2);
 
         if (Movie.BelongsToCollection is null) return Task.CompletedTask;
-        try
-        {
-            AddCollectionJob addCollectionJob = new AddCollectionJob(id: Movie.BelongsToCollection.Id, libraryId: library.Id.ToString());
-            JobDispatcher.Dispatch(addCollectionJob, "queue", 4);
-        }
-        catch (Exception e)
-        {
-            Logger.MovieDb(e, LogLevel.Error);
-        }
+
+        AddCollectionJob addCollectionJob = new(Movie.BelongsToCollection.Id, library);
+        JobDispatcher.Dispatch(addCollectionJob, "queue", 4);
 
         return Task.CompletedTask;
     }
 
-    public static async Task GetPalette(int id, bool download = true)
+    public static async Task Palette(int id, bool download = true)
     {
+        Logger.Queue($"Fetching color palette for Movie {id}");
+
         await using MediaContext mediaContext = new();
-        Movie? movie = await mediaContext.Movies
+        var movie = await mediaContext.Movies
+            .Where(e => e._colorPalette == "")
             .FirstOrDefaultAsync(e => e.Id == id);
 
         if (movie is { _colorPalette: "" })
         {
-            string palette = await ImageLogic.GenerateColorPalette(posterPath: movie.Poster, backdropPath: movie.Backdrop);
-            movie._colorPalette = palette;
+            movie._colorPalette = await MovieDbImage
+                .MultiColorPalette(new[]
+                {
+                    new BaseImage.MultiStringType("poster", movie.Poster),
+                    new BaseImage.MultiStringType("backdrop", movie.Backdrop)
+                });
 
             await mediaContext.SaveChangesAsync();
         }
+
+        var images = await mediaContext.Images
+            .Where(e => e.MovieId == id)
+            .Where(e => e._colorPalette == "")
+            .Where(e => e.Iso6391 == null || e.Iso6391 == "en" || e.Iso6391 == "" ||
+                        e.Iso6391 == CultureInfo.CurrentCulture.TwoLetterISOLanguageName)
+            .ToArrayAsync();
+
+        foreach (var image in images)
+        {
+            if (string.IsNullOrEmpty(image.FilePath)) continue;
+
+            image._colorPalette = await MovieDbImage.ColorPalette("image", image.FilePath);
+        }
+        
+        await mediaContext.SaveChangesAsync();
     }
 
-    public static async Task GetSimilarPalette(int id)
+    public static async Task SimilarPalette(int id)
     {
         await using MediaContext mediaContext = new();
-        List<Similar> similarList = await mediaContext.Similar
-            .Where(e => e.MovieFromId == id)
+        var similarList = await mediaContext.Similar
+            .Where(e => e.MovieFromId == id && e._colorPalette == "")
             .ToListAsync();
 
         if (similarList.Count is 0) return;
 
-        foreach (Similar similar in similarList)
+        foreach (var similar in similarList)
         {
             if (similar is not { _colorPalette: "" }) continue;
 
-            string palette = await ImageLogic.GenerateColorPalette(posterPath: similar.Poster, backdropPath: similar.Backdrop);
-            similar._colorPalette = palette;
+            similar._colorPalette = await MovieDbImage
+                .MultiColorPalette(new[]
+                {
+                    new BaseImage.MultiStringType("poster", similar.Poster),
+                    new BaseImage.MultiStringType("backdrop", similar.Backdrop)
+                });
         }
 
         await mediaContext.SaveChangesAsync();
     }
 
-    public static async Task GetRecommendationPalette(int id)
+    public static async Task RecommendationPalette(int id)
     {
         await using MediaContext mediaContext = new();
 
-        List<Recommendation> recommendations = await mediaContext.Recommendations
-            .Where(e => e.MovieFromId == id)
+        var recommendations = await mediaContext.Recommendations
+            .Where(e => e.MovieFromId == id && e._colorPalette == "")
             .ToListAsync();
 
         if (recommendations.Count is 0) return;
 
-        foreach (Recommendation recommendation in recommendations)
+        foreach (var recommendation in recommendations)
         {
             if (recommendation is not { _colorPalette: "" }) continue;
 
-            string palette = await ImageLogic
-                .GenerateColorPalette(posterPath: recommendation.Poster, backdropPath: recommendation.Backdrop);
-            recommendation._colorPalette = palette;
+            recommendation._colorPalette = await MovieDbImage
+                .MultiColorPalette(new[]
+                {
+                    new BaseImage.MultiStringType("poster", recommendation.Poster),
+                    new BaseImage.MultiStringType("backdrop", recommendation.Backdrop)
+                });
         }
 
         await mediaContext.SaveChangesAsync();
@@ -565,6 +547,17 @@ public class MovieLogic(int id, Library library)
     public void Dispose()
     {
         Movie = null;
+        _mediaContext.Dispose();
+        TmdbMovieClient.Dispose();
+        GC.Collect();
+        GC.WaitForFullGCComplete();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Movie = null;
+        await _mediaContext.DisposeAsync();
+        await TmdbMovieClient.DisposeAsync();
         GC.Collect();
         GC.WaitForFullGCComplete();
     }

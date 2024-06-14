@@ -1,7 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
-using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.Server.app.Helper;
 using LogLevel = NoMercy.Helpers.LogLevel;
 
 // ReSharper disable All
@@ -10,67 +9,67 @@ namespace NoMercy.Server.system;
 
 public static class QueueRunner
 {
-    private static readonly Dictionary<string, (int count, List<Worker> workerInstances, CancellationTokenSource _cancellationTokenSource)> Workers = new()
-    {
-        ["cron"] = (5, [], new CancellationTokenSource()),
-        ["queue"] = (1, [], new CancellationTokenSource()),
-        ["data"] = (5, [], new CancellationTokenSource()),
-        ["encoder"] = (2, [], new CancellationTokenSource()),
-        // ["request"] = (15, [], new CancellationTokenSource()),
-    };
+    private static readonly
+        Dictionary<string, (int count, List<Worker> workerInstances, CancellationTokenSource _cancellationTokenSource)>
+        Workers = new()
+        {
+            ["queue"] = (1, [], new CancellationTokenSource()),
+            ["encoder"] = (2, [], new CancellationTokenSource()),
+            ["cron"] = (1, [], new CancellationTokenSource()),
+            ["data"] = (5, [], new CancellationTokenSource()),
+            ["image"] = (1, [], new CancellationTokenSource())
+            // ["request"] = (15, [], new CancellationTokenSource()),
+        };
 
     private static bool _isInitialized;
     private static readonly JobQueue JobQueue = new(new QueueContext());
     private static bool _isUpdating;
-    
+
     public static async Task Initialize()
     {
         if (_isInitialized) return;
-        
-        await Task.Delay(10000);
+
+        await Task.Delay(2000);
 
         _isInitialized = true;
 
         List<Task> taskList = [];
-            
-        List<QueueJob> queueJobs = Databases.QueueContext.QueueJobs.ToList();
-        foreach (var queueJob in queueJobs)
-        {
-            queueJob.ReservedAt = null;
-        }
-        
-        Databases.QueueContext.SaveChanges();
-        
+
+        await using QueueContext queueContext = new();
+        await queueContext.QueueJobs
+            .ForEachAsync(job => job.ReservedAt = null);
+        await queueContext.SaveChangesAsync();
+
         foreach (var keyValuePair in Workers)
         {
             for (int i = 0; i < keyValuePair.Value.count; i++)
             {
-                taskList.Add(Task.Run(() => SpawnWorker(keyValuePair.Key)));
-                await Task.Delay(5000);
+                taskList.Add(Task.Run(() => new Thread(() => SpawnWorker(keyValuePair.Key)).Start()));
+                await Task.Delay(2000);
             }
         }
-        
+
         await Task.WhenAll(taskList);
-        
+
         return;
     }
 
     private static Task SpawnWorker(string name)
     {
-        Worker workerInstance = new Worker(JobQueue, name);
+        Worker workerInstance = new(JobQueue, name);
 
         workerInstance.WorkCompleted += QueueWorkerCompleted(name, workerInstance);
 
         Workers[name].workerInstances.Add(workerInstance);
 
         workerInstance.Start();
-        
+
         return Task.CompletedTask;
     }
 
 
     #region MyRegion
-    
+
     public static Task Start(string name)
     {
         foreach (var workerInstance in Workers[name].workerInstances)
@@ -131,16 +130,15 @@ public static class QueueRunner
         return Task.CompletedTask;
     }
 
-    
     #endregion
-    
-    
+
+
     private static WorkCompletedEventHandler QueueWorkerCompleted(string name, Worker instance)
     {
         return (sender, args) =>
         {
             if (!ShouldRemoveWorker(name)) return;
-            
+
             instance.Stop();
             Workers[name].workerInstances.Remove(instance);
         };
@@ -159,19 +157,17 @@ public static class QueueRunner
         }
 
         int i = Workers[name].workerInstances.Count;
-        
+
         Task.Run(async () =>
         {
-            while (!_isUpdating  && i < Workers[name].count)
+            while (!_isUpdating && i < Workers[name].count)
             {
                 if (_isUpdating || i >= Workers[name].count) break;
-                
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                Task.Run(() => SpawnWorker(name));
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                
+
+                Task.Run(() => SpawnWorker(name)).ConfigureAwait(ConfigureAwaitOptions.None).GetAwaiter();
+
                 i += 1;
-                
+
                 await Task.Delay(100);
             }
         }, cancellationToken: Workers[name]._cancellationTokenSource.Token);
@@ -182,25 +178,25 @@ public static class QueueRunner
     public static async Task<bool> SetWorkerCount(string name, int max)
     {
         if (!Workers.ContainsKey(name)) return false;
-        
+
         Logger.Queue($"Setting queue {name} to {max} workers", LogLevel.Info);
         _isUpdating = true;
         Workers[name]._cancellationTokenSource.Cancel();
-            
+
         var valueTuple = Workers[name];
         valueTuple.count = max;
         valueTuple._cancellationTokenSource = new CancellationTokenSource();
         Workers[name] = valueTuple;
-            
-        await Task.Run(() => {
+
+        await Task.Run(() =>
+        {
             _isUpdating = false;
             UpdateRunningWorkerCounts(name);
         }, Workers[name]._cancellationTokenSource.Token);
-        
-        return true;
 
+        return true;
     }
-    
+
     public static int GetWorkerIndex(string name, Worker worker)
     {
         return Workers[name].workerInstances.IndexOf(worker);

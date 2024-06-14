@@ -1,10 +1,11 @@
-using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Music;
+using NoMercy.Server.app.Http.Middleware;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -13,26 +14,21 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [ApiController]
 [Tags("Dashboard Server Devices")]
 [ApiVersion("1")]
-[Authorize, Route("api/v{Version:apiVersion}/dashboard/devices", Order = 10)]
+[Authorize]
+[Route("api/v{Version:apiVersion}/dashboard/devices", Order = 10)]
 public class DevicesController : Controller
 {
-    [NonAction]
-    private Guid GetUserId()
-    {
-        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-    }
-
     [HttpGet]
     public async Task<DevicesDto[]> Index()
     {
-        Guid userId = GetUserId();
-        
+        var userId = HttpContext.User.UserId();
+
         await using MediaContext mediaContext = new();
         var devices = await mediaContext.Devices
             .Include(device => device.ActivityLogs)
-                // .ThenInclude(activityLog => activityLog.Device)
+            // .ThenInclude(activityLog => activityLog.Device)
             .ToListAsync();
-            
+
         var devicesDtos = devices
             .Select(x => new DevicesDto
             {
@@ -40,7 +36,7 @@ public class DevicesController : Controller
                 DeviceId = x.DeviceId,
                 Browser = x.Browser,
                 Os = x.Os,
-                Device = x.CustomName,
+                Device = x.Model,
                 Type = x.Type,
                 Name = x.Name,
                 CustomName = x.CustomName,
@@ -57,25 +53,33 @@ public class DevicesController : Controller
                         CreatedAt = activityLog.CreatedAt,
                         UpdatedAt = activityLog.UpdatedAt,
                         UserId = activityLog.UserId,
-                        DeviceId = activityLog.DeviceId.ToString(),
-                    }), 
+                        DeviceId = activityLog.DeviceId.ToString()
+                    })
             });
-        
+
         return devicesDtos.ToArray();
     }
 
     [HttpPost]
     public IActionResult Create()
     {
-        Guid userId = GetUserId();
-        return Ok();
+        var userId = HttpContext.User.UserId();
+
+        return Ok(new PlaceholderResponse
+        {
+            Data = []
+        });
     }
 
     [HttpDelete]
     public IActionResult Destroy()
     {
-        Guid userId = GetUserId();
-        return Ok();
+        var userId = HttpContext.User.UserId();
+
+        return Ok(new PlaceholderResponse
+        {
+            Data = []
+        });
     }
 }
 

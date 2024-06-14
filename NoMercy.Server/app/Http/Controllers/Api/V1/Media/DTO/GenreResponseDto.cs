@@ -9,44 +9,38 @@ using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
-public class GenreResponseDto
+public record GenreResponseDto
 {
     [JsonProperty("nextId")] public long? NextId { get; set; }
 
     [JsonProperty("data")] public IOrderedEnumerable<GenreResponseItemDto> Data { get; set; }
-    
+
     public static readonly Func<MediaContext, Guid, int, string, int, int, Task<Genre>> GetGenre =
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, int id, string language, int take, int page) =>
             mediaContext.Genres.AsNoTracking()
-                
                 .Where(genre => genre.Id == id)
                 // .Where(genre => genre.GenresUsers
                 //     .FirstOrDefault(u => u.UserId == userId) != null
                 // )
                 .Take(take)
                 .Skip(page * take)
-                
                 .Include(genre => genre.GenreMovies
                     .Where(genreMovie => genreMovie.Movie.VideoFiles
                         .Any(videoFile => videoFile.Folder != null) == true
                     )
                 )
-                    .ThenInclude(genreMovie => genreMovie.Movie)
-                        .ThenInclude(movie => movie.VideoFiles)
-                
+                .ThenInclude(genreMovie => genreMovie.Movie)
+                .ThenInclude(movie => movie.VideoFiles)
                 .Include(genre => genre.GenreMovies)
-                    .ThenInclude(genreMovie => genreMovie.Movie.Media)
-                
+                .ThenInclude(genreMovie => genreMovie.Movie.Media)
                 .Include(genre => genre.GenreMovies)
-                    .ThenInclude(genreMovie => genreMovie.Movie.Images)
-                
+                .ThenInclude(genreMovie => genreMovie.Movie.Images)
                 .Include(genre => genre.GenreMovies)
-                    .ThenInclude(genreMovie => genreMovie.Movie.Translations
+                .ThenInclude(genreMovie => genreMovie.Movie.Translations
                     .Where(translation => translation.Iso6391 == language))
                 .Include(genre => genre.GenreMovies)
-                    .ThenInclude(genreMovie => genreMovie.Movie.CertificationMovies)
-                        .ThenInclude(certificationMovie => certificationMovie.Certification)
-                
+                .ThenInclude(genreMovie => genreMovie.Movie.CertificationMovies)
+                .ThenInclude(certificationMovie => certificationMovie.Certification)
                 .Include(genre => genre.GenreTvShows
                     .Where(genreTv => genreTv.Tv.Episodes
                         .Any(episode => episode.VideoFiles
@@ -54,28 +48,24 @@ public class GenreResponseDto
                         ) == true
                     )
                 )
-                    .ThenInclude(genreTv => genreTv.Tv)
-                        .ThenInclude(tv => tv.Episodes
-                        .Where(episode => episode.SeasonNumber > 0 && episode.VideoFiles.Count != 0))
-                            .ThenInclude(episode => episode.VideoFiles)
-                
+                .ThenInclude(genreTv => genreTv.Tv)
+                .ThenInclude(tv => tv.Episodes
+                    .Where(episode => episode.SeasonNumber > 0 && episode.VideoFiles.Count != 0))
+                .ThenInclude(episode => episode.VideoFiles)
                 .Include(genre => genre.GenreTvShows)
-                    .ThenInclude(genreTv => genreTv.Tv.Media)
-                
+                .ThenInclude(genreTv => genreTv.Tv.Media)
                 .Include(genre => genre.GenreTvShows)
-                    .ThenInclude(genreTv => genreTv.Tv.Images)
-                
+                .ThenInclude(genreTv => genreTv.Tv.Images)
                 .Include(genre => genre.GenreTvShows)
-                    .ThenInclude(genreTv => genreTv.Tv.Translations
+                .ThenInclude(genreTv => genreTv.Tv.Translations
                     .Where(translation => translation.Iso6391 == language))
-                
                 .Include(genre => genre.GenreTvShows)
-                    .ThenInclude(genreTv => genreTv.Tv.CertificationTvs)
-                        .ThenInclude(certificationTv => certificationTv.Certification)
+                .ThenInclude(genreTv => genreTv.Tv.CertificationTvs)
+                .ThenInclude(certificationTv => certificationTv.Certification)
                 .First());
 }
 
-public class GenreResponseItemDto
+public record GenreResponseItemDto
 {
     [JsonProperty("id")] public long Id { get; set; }
 
@@ -87,16 +77,15 @@ public class GenreResponseItemDto
 
     [JsonProperty("logo")] public string? Logo { get; set; }
 
-    [JsonProperty("mediaType")] public string MediaType { get; set; }
+    [JsonProperty("media_type")] public string MediaType { get; set; }
 
-    [JsonProperty("number_of_episodes")] public int? NumberOfEpisodes { get; set; }
+    [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
 
-    [JsonProperty("have_episodes")] public int? HaveEpisodes { get; set; }
+    [JsonProperty("have_items")] public int? HaveItems { get; set; }
 
     [JsonProperty("overview")] public string? Overview { get; set; }
 
-    [JsonProperty("color_palette")] 
-    public IColorPalettes? ColorPalette { get; set; }
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
 
     [JsonProperty("poster")] public string? Poster { get; set; }
 
@@ -113,7 +102,7 @@ public class GenreResponseItemDto
     [JsonProperty("videoId")] public string? VideoId { get; set; }
 
     [JsonProperty("videos")] public VideoDto[] Videos { get; set; }
-    
+
     public GenreResponseItemDto(GenreMovie movie)
     {
         Id = movie.Movie.Id;
@@ -130,7 +119,7 @@ public class GenreResponseItemDto
         TitleSort = movie.Movie.Title
             .TitleSort(movie.Movie.ReleaseDate);
         Type = "movie";
-        
+
         Genres = movie.Movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie))
             .ToArray();
@@ -156,10 +145,11 @@ public class GenreResponseItemDto
         Title = tv.Tv.Title;
         TitleSort = tv.Tv.Title.TitleSort(tv.Tv.FirstAirDate);
         Type = "tv";
-        NumberOfEpisodes = tv.Tv.NumberOfEpisodes;
-        
-        HaveEpisodes = tv.Tv.Episodes.Count;
-            
+
+        NumberOfItems = tv.Tv.Episodes?.Count;
+        HaveItems = tv.Tv.Episodes?.Count(episode => episode.VideoFiles.Any(videoFile => videoFile.Folder != null)) ??
+                    0;
+
         Genres = tv.Tv.GenreTvs
             .Select(genreTv => new GenreDto(genreTv))
             .ToArray();
@@ -186,7 +176,7 @@ public class GenreResponseItemDto
         TitleSort = movie.Movie.Title
             .TitleSort(movie.Movie.ReleaseDate);
         Type = "movie";
-        
+
         Genres = movie.Movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie))
             .ToArray();
@@ -199,10 +189,10 @@ public class GenreResponseItemDto
 
     public GenreResponseItemDto(Collection collection)
     {
-        string title = collection.Translations
+        var title = collection.Translations
             .FirstOrDefault()?.Title ?? collection.Title;
-        
-        string overview = collection.Translations
+
+        var overview = collection.Translations
             .FirstOrDefault()?.Overview ?? collection.Overview ?? string.Empty;
 
         Id = collection.Id;
@@ -211,31 +201,33 @@ public class GenreResponseItemDto
         Backdrop = collection.Backdrop;
         Logo = collection.Images
             .FirstOrDefault(media => media.Type == "logo")?.FilePath;
-        
+
         MediaType = "collection";
         Year = collection.CollectionMovies
             .MinBy(collectionMovie => collectionMovie.Movie.ReleaseDate)
             ?.Movie.ReleaseDate.ParseYear();
-        
+
         ColorPalette = collection.ColorPalette;
         Poster = collection.Poster;
         TitleSort = collection.Title
             .TitleSort(collection.CollectionMovies
                 .MinBy(collectionMovie => collectionMovie.Movie.ReleaseDate)
                 ?.Movie.ReleaseDate.ParseYear());
-        
+
         Type = "collection";
-        NumberOfEpisodes = collection.Parts;
-        HaveEpisodes = collection.CollectionMovies?
+
+        NumberOfItems = collection.Parts;
+        HaveItems = collection.CollectionMovies?
             .Where(collectionMovie => collectionMovie.Movie.VideoFiles.Any(v => v.Folder != null))
             .Count() ?? 0;
+
         Genres = collection.CollectionMovies?
             .Select(genreTv => genreTv.Movie)
             .SelectMany(movie => movie.GenreMovies?
                 .Select(genreMovie => genreMovie.Genre) ?? [])
             .Select(genre => new GenreDto(genre))
             .ToArray() ?? [];
-        
+
         VideoId = collection.CollectionMovies?
             .FirstOrDefault()
             ?.Movie.Video;

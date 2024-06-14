@@ -8,12 +8,12 @@ using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
-public class LoloMoResponseDto<T>
+public record LoloMoResponseDto<T>
 {
     [JsonProperty("data")] public IEnumerable<LoloMoRowDto<T>> Data { get; set; } = [];
 }
 
-public class LoloMoRowDto<T>
+public record LoloMoRowDto<T>
 {
     [JsonProperty("id")] public string Id { get; set; }
     [JsonProperty("title")] public string Title { get; set; }
@@ -21,7 +21,7 @@ public class LoloMoRowDto<T>
     [JsonProperty("items")] public IOrderedEnumerable<T> Items { get; set; }
 }
 
-public class LoloMoRowItemDto
+public record LoloMoRowItemDto
 {
     [JsonProperty("id")] public long Id { get; set; }
     [JsonProperty("backdrop")] public string? Backdrop { get; set; }
@@ -32,13 +32,13 @@ public class LoloMoRowItemDto
     [JsonProperty("titleSort")] public string? TitleSort { get; set; }
     [JsonProperty("type")] public string? Type { get; set; }
     [JsonProperty("year")] public int? Year { get; set; }
-    [JsonProperty("mediaType")] public string? MediaType { get; set; }
+    [JsonProperty("media_type")] public string? MediaType { get; set; }
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("genres")] public GenreDto[]? LoloMos { get; set; }
     [JsonProperty("rating")] public RatingClass? Rating { get; set; }
     [JsonProperty("videos")] public VideoDto[]? Videos { get; set; }
-    
-    
+
+
     public LoloMoRowItemDto(GenreMovie genreMovie)
     {
         Id = genreMovie.Movie.Id;
@@ -64,6 +64,5 @@ public class LoloMoRowItemDto
         Year = genreTv.Tv.FirstAirDate.ParseYear();
         MediaType = "tv";
         ColorPalette = genreTv.Tv.ColorPalette;
-        
     }
 }

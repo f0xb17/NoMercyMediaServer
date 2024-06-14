@@ -15,12 +15,12 @@ public class QueueContext : DbContext
     public QueueContext()
     {
     }
-    
+
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
         options.UseSqlite($"Data Source={AppFiles.QueueDatabase}; Pooling=True; Cache=Shared");
     }
-    
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         base.ConfigureConventions(configurationBuilder);
@@ -28,7 +28,7 @@ public class QueueContext : DbContext
         configurationBuilder.Properties<string>()
             .HaveMaxLength(256);
     }
-    
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Model.GetEntityTypes()
@@ -36,15 +36,15 @@ public class QueueContext : DbContext
             .Where(p => p.Name is "CreatedAt" or "UpdatedAt")
             .ToList()
             .ForEach(p => p.SetDefaultValueSql("CURRENT_TIMESTAMP"));
-        
+
         modelBuilder.Model.GetEntityTypes()
             .SelectMany(t => t.GetForeignKeys())
             .ToList()
             .ForEach(p => p.DeleteBehavior = DeleteBehavior.Cascade);
-        
+
         base.OnModelCreating(modelBuilder);
     }
-    
+
     public virtual DbSet<QueueJob> QueueJobs { get; set; }
     public virtual DbSet<FailedJob> FailedJobs { get; set; }
 }

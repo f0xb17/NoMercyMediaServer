@@ -1,62 +1,65 @@
-using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
-using NoMercy.Database.Models;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Music;
+using NoMercy.Server.app.Http.Middleware;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 
 [ApiController]
 [ApiVersion("1")]
-[Authorize, Route("api/v{Version:apiVersion}/userData")]
+[Authorize]
+[Route("api/v{Version:apiVersion}/userData")]
 public class UserDataController : Controller
 {
-    [NonAction]
-    private Guid GetUserId()
-    {
-        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-    }
-
     [HttpGet]
     public IActionResult Index()
     {
-        return Ok();
+        return Ok(new PlaceholderResponse()
+        {
+            Data = []
+        });
     }
 
     [HttpGet]
     [Route("continue")]
     public async Task<ContinueWatchingDto> ContinueWatching()
     {
-        Guid userId = GetUserId();
+        var userId = HttpContext.User.UserId();
 
         await using MediaContext mediaContext = new();
         var continueWatching = await mediaContext.UserData
             .AsNoTracking()
-            
             .Where(user => user.UserId == userId)
-            
             .Include(userData => userData.Movie)
-                .ThenInclude(movie => movie.Media
-                    .Where(media => media.Site == "Youtube")
-                )
-            
+            .ThenInclude(movie => movie.Media
+                .Where(media => media.Site == "Youtube")
+            )
+            .Include(userData => userData.Movie)
+            .ThenInclude(movie => movie.VideoFiles)
             .Include(userData => userData.Tv)
-                .ThenInclude(tv => tv.Media
-                    .Where(media => media.Site == "Youtube")
-                )
-            
+            .ThenInclude(tv => tv.Media
+                .Where(media => media.Site == "Youtube")
+            )
+            .Include(userData => userData.Tv)
+            .ThenInclude(tv => tv.Episodes
+                .Where(episode => episode.SeasonNumber > 0 && episode.VideoFiles.Count != 0))
+            .ThenInclude(episode => episode.VideoFiles)
             .Include(userData => userData.Collection)
-                .ThenInclude(collection => collection.CollectionMovies)
-                    .ThenInclude(collectionMovie => collectionMovie.Movie)
-                        .ThenInclude(movie => movie.Media
-                            .Where(media => media.Site == "Youtube")
-                        )
-            
+            .ThenInclude(collection => collection.CollectionMovies)
+            .ThenInclude(collectionMovie => collectionMovie.Movie)
+            .ThenInclude(movie => movie.Media
+                .Where(media => media.Site == "Youtube")
+            )
+            .Include(userData => userData.Collection)
+            .ThenInclude(collection => collection.CollectionMovies)
+            .ThenInclude(collectionMovie => collectionMovie.Movie)
+            .ThenInclude(movie => movie.VideoFiles)
             .Include(userData => userData.Special)
             .OrderByDescending(userData => userData.UpdatedAt)
             .ToListAsync();
@@ -81,11 +84,11 @@ public class UserDataController : Controller
     [Route("continue")]
     public async Task<StatusResponseDto<string>> RemoveContinue(UserRequest body)
     {
-        Guid userId = GetUserId();
+        var userId = HttpContext.User.UserId();
 
         await using MediaContext mediaContext = new();
 
-        UserData? userData = body.Type switch
+        var userData = body.Type switch
         {
             "movie" => await mediaContext.UserData
                 .AsNoTracking()
@@ -111,13 +114,11 @@ public class UserDataController : Controller
         };
 
         if (userData == null)
-        {
             return new StatusResponseDto<string>
             {
                 Status = "error",
                 Message = "Item not found"
             };
-        }
 
         mediaContext.UserData.Remove(userData);
         await mediaContext.SaveChangesAsync();
@@ -133,11 +134,11 @@ public class UserDataController : Controller
     [Route("watched")]
     public async Task<StatusResponseDto<string>> Watched([FromBody] UserRequest body)
     {
-        Guid userId = GetUserId();
+        var userId = HttpContext.User.UserId();
 
         await using MediaContext mediaContext = new();
 
-        UserData? userData = body.Type switch
+        var userData = body.Type switch
         {
             "movie" => await mediaContext.UserData
                 .AsNoTracking()
@@ -163,13 +164,11 @@ public class UserDataController : Controller
         };
 
         if (userData == null)
-        {
             return new StatusResponseDto<string>
             {
                 Status = "error",
                 Message = "Item not found"
             };
-        }
 
         await mediaContext.SaveChangesAsync();
 
@@ -184,11 +183,11 @@ public class UserDataController : Controller
     [Route("favorites")]
     public async Task<StatusResponseDto<string>> Favorites([FromBody] UserRequest body)
     {
-        Guid userId = GetUserId();
+        var userId = HttpContext.User.UserId();
 
         await using MediaContext mediaContext = new();
 
-        UserData? userData = body.Type switch
+        var userData = body.Type switch
         {
             "movie" => await mediaContext.UserData
                 .AsNoTracking()
@@ -214,13 +213,11 @@ public class UserDataController : Controller
         };
 
         if (userData is null)
-        {
             return new StatusResponseDto<string>
             {
                 Status = "error",
                 Message = "Item not found"
             };
-        }
 
         await mediaContext.SaveChangesAsync();
 

@@ -3,19 +3,25 @@ using NoMercy.Server.system;
 
 namespace NoMercy.Server.app.Jobs;
 
+[Serializable]
 public class SeasonImagesJob : IShouldQueue
 {
-    private readonly int _id;
-    private readonly int _seasonNumber;
-    
-    public SeasonImagesJob(long id, long seasonNumber)
+    public int Id { get; set; }
+    public int SeasonNumber { get; set; }
+
+    public SeasonImagesJob()
     {
-        _id = (int)id;
-        _seasonNumber = (int)seasonNumber;
+        //
     }
-    
+
+    public SeasonImagesJob(int id, int seasonNumber)
+    {
+        Id = id;
+        SeasonNumber = seasonNumber;
+    }
+
     public async Task Handle()
     {
-        await SeasonLogic.StoreImages(_id, _seasonNumber);
+        await SeasonLogic.StoreImages(Id, SeasonNumber);
     }
 }

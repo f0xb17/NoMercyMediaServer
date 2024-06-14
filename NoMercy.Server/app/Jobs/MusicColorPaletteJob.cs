@@ -5,47 +5,56 @@ using LogLevel = NoMercy.Helpers.LogLevel;
 
 namespace NoMercy.Server.app.Jobs;
 
+[Serializable]
 public class MusicColorPaletteJob : IShouldQueue
 {
-    private readonly string? _id;
-    private readonly string _model;
-    private readonly string? _filePath;
-    private readonly bool _download;
-    
+    public string? Id { get; set; }
+    public string? Model { get; set; }
+    public string? FilePath { get; set; }
+    public bool? Download { get; set; }
+
+    public MusicColorPaletteJob()
+    {
+        //
+    }
+
     public MusicColorPaletteJob(string id, string model)
     {
-        _id = id;
-        _model = model;
+        Id = id;
+        Model = model;
     }
-    
-    public MusicColorPaletteJob(string filePath, string model, bool download)
+
+    public MusicColorPaletteJob(string filePath, string model, bool? download = false)
     {
-        _filePath = filePath;
-        _model = model;
-        _download = download;
+        FilePath = filePath;
+        Model = model;
+        Download = download;
     }
 
     public async Task Handle()
     {
-        switch (_model)
+        switch (Model)
         {
-            case "image" when _filePath == null:
+            case "image" when FilePath == null:
                 await Task.CompletedTask;
                 return;
             case "image":
-                await ImageLogic.GetMusicPalette(_filePath, _download);
+                // await ImageLogic2.MusicPalette(FilePath, Download ?? false);
                 break;
-            case "artist":
-                await MusicLogic.GetPalette(_id!, _model);
-                break;
-            case "album":
-                await MusicLogic.GetPalette(_id!, _model);
-                break;
-            case "track":
-                await MusicLogic.GetPalette(_id!, _model);
-                break;
+            // case "fanart":
+            //     await MusicLogic2.Palette(Id!, Model);
+            //     break;
+            // case "artist":
+            //     await MusicLogic2.Palette(Id!, Model);
+            //     break;
+            // case "album":
+            //     await MusicLogic2.Palette(Id!, Model);
+            //     break;
+            // case "track":
+            //     await MusicLogic2.Palette(Id!, Model);
+            //     break;
             default:
-                Logger.Queue(@"Invalid model Type: " + _model + @" id: " + _id, LogLevel.Error);
+                Logger.Queue(@"Invalid model Type: " + Model + @" id: " + Id, LogLevel.Error);
                 break;
         }
     }

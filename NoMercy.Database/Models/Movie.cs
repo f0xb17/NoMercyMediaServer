@@ -41,84 +41,71 @@ public class Movie : ColorPaletteTimeStamps
     [JsonProperty("vote_count")] public int? VoteCount { get; set; }
 
     [JsonProperty("library_id")] public Ulid LibraryId { get; set; }
-    public virtual Library Library { get; set; }
+    public Library Library { get; set; }
 
-    [JsonProperty("alternative_titles")]
-    public virtual ICollection<AlternativeTitle> AlternativeTitles { get; set; }
+    [JsonProperty("alternative_titles")] public ICollection<AlternativeTitle> AlternativeTitles { get; set; }
 
-    [JsonProperty("cast")] public virtual ICollection<Cast> Cast { get; set; } = new HashSet<Cast>();
+    [JsonProperty("cast")] public ICollection<Cast> Cast { get; set; } = new HashSet<Cast>();
 
     [JsonProperty("certifications")]
-    public virtual ICollection<CertificationMovie> CertificationMovies { get; set; } = new HashSet<CertificationMovie>();
-    
-    [JsonProperty("crew")] 
-    public virtual ICollection<Crew> Crew { get; set; } = new HashSet<Crew>();
-    
-    [JsonProperty("genre")] 
-    public virtual ICollection<GenreMovie> GenreMovies { get; set; }
-    
-    [JsonProperty("keywords")] 
-    public virtual ICollection<KeywordMovie> KeywordMovies { get; set; }
-    
-    [JsonProperty("media")] 
-    public virtual ICollection<Media> Media { get; set; }
-    
-    [JsonProperty("images")] 
-    public virtual ICollection<Image> Images { get; set; }
-    
-    [JsonProperty("seasons")] 
-    public virtual ICollection<Season> Seasons { get; set; }
-    
-    [JsonProperty("translations")] 
-    public virtual ICollection<Translation> Translations { get; set; }
-    
-    [JsonProperty("user_data")] 
-    public virtual ICollection<UserData> UserData { get; set; }
-    
-    [InverseProperty("MovieFrom")] 
-    public virtual ICollection<Recommendation> RecommendationFrom { get; set; }
-    
-    [InverseProperty("MovieTo")] 
-    public virtual ICollection<Recommendation> RecommendationTo { get; set; }
-    
-    [InverseProperty("MovieFrom")] 
-    public virtual ICollection<Similar> SimilarFrom { get; set; }
-    
-    [InverseProperty("MovieTo")] 
-    public virtual ICollection<Similar> SimilarTo { get; set; }
-    
-    [JsonProperty("movie_user")] 
-    public virtual ICollection<MovieUser> MovieUser { get; set; }
-    
-    [JsonProperty("video_files")] 
-    public virtual ICollection<VideoFile> VideoFiles { get; set; } = new HashSet<VideoFile>();
+    public ICollection<CertificationMovie> CertificationMovies { get; set; } =
+        new HashSet<CertificationMovie>();
 
-    public Movie(MovieAppends movie, Ulid libraryId, string folder)
+    [JsonProperty("crew")] public ICollection<Crew> Crew { get; set; } = new HashSet<Crew>();
+
+    [JsonProperty("genre")] public ICollection<GenreMovie> GenreMovies { get; set; }
+
+    [JsonProperty("keywords")] public ICollection<KeywordMovie> KeywordMovies { get; set; }
+
+    [JsonProperty("media")] public ICollection<Media> Media { get; set; }
+
+    [JsonProperty("images")] public ICollection<Image> Images { get; set; }
+
+    [JsonProperty("seasons")] public ICollection<Season> Seasons { get; set; }
+
+    [JsonProperty("translations")] public ICollection<Translation> Translations { get; set; }
+
+    [JsonProperty("user_data")] public ICollection<UserData> UserData { get; set; }
+
+    [InverseProperty("MovieFrom")] public ICollection<Recommendation> RecommendationFrom { get; set; }
+
+    [InverseProperty("MovieTo")] public ICollection<Recommendation> RecommendationTo { get; set; }
+
+    [InverseProperty("MovieFrom")] public ICollection<Similar> SimilarFrom { get; set; }
+
+    [InverseProperty("MovieTo")] public ICollection<Similar> SimilarTo { get; set; }
+
+    [JsonProperty("movie_user")] public ICollection<MovieUser> MovieUser { get; set; }
+
+    [JsonProperty("video_files")]
+    public ICollection<VideoFile> VideoFiles { get; set; } = new HashSet<VideoFile>();
+
+    public Movie(TmdbMovieAppends tmdbMovie, Ulid libraryId, string folder)
     {
-        Id = movie.Id;
-        Title = movie.Title;
-        TitleSort = movie.Title.TitleSort(movie.ReleaseDate);
-        Duration = movie.Runtime;
+        Id = tmdbMovie.Id;
+        Title = tmdbMovie.Title;
+        TitleSort = tmdbMovie.Title.TitleSort(tmdbMovie.ReleaseDate);
+        Duration = tmdbMovie.Runtime;
         Folder = folder;
-        Adult = movie.Adult;
-        Backdrop = movie.BackdropPath;
-        Budget = movie.Budget;
-        Homepage = movie.Homepage?.ToString();
-        ImdbId = movie.ImdbId;
-        OriginalTitle = movie.OriginalTitle;
-        OriginalLanguage = movie.OriginalLanguage;
-        Overview = movie.Overview;
-        Popularity = movie.Popularity;
-        Poster = movie.PosterPath;
-        ReleaseDate = movie.ReleaseDate;
-        Revenue = movie.Revenue;
-        Runtime = movie.Runtime;
-        Status = movie.Status;
-        Tagline = movie.Tagline;
-        Trailer = movie.Video;
-        Video = movie.Video;
-        VoteAverage = movie.VoteAverage;
-        VoteCount = movie.VoteCount;
+        Adult = tmdbMovie.Adult;
+        Backdrop = tmdbMovie.BackdropPath;
+        Budget = tmdbMovie.Budget;
+        Homepage = tmdbMovie.Homepage?.ToString();
+        ImdbId = tmdbMovie.ImdbId;
+        OriginalTitle = tmdbMovie.OriginalTitle;
+        OriginalLanguage = tmdbMovie.OriginalLanguage;
+        Overview = tmdbMovie.Overview;
+        Popularity = tmdbMovie.Popularity;
+        Poster = tmdbMovie.PosterPath;
+        ReleaseDate = tmdbMovie.ReleaseDate;
+        Revenue = tmdbMovie.Revenue;
+        Runtime = tmdbMovie.Runtime;
+        Status = tmdbMovie.Status;
+        Tagline = tmdbMovie.Tagline;
+        Trailer = tmdbMovie.Video;
+        Video = tmdbMovie.Video;
+        VoteAverage = tmdbMovie.VoteAverage;
+        VoteCount = tmdbMovie.VoteCount;
 
         LibraryId = libraryId;
     }
@@ -127,7 +114,7 @@ public class Movie : ColorPaletteTimeStamps
     {
     }
 
-    public Movie(Providers.TMDB.Models.Movies.Movie input, Ulid libraryId)
+    public Movie(Providers.TMDB.Models.Movies.TmdbMovie input, Ulid libraryId)
     {
         Id = input.Id;
         Title = input.Title;

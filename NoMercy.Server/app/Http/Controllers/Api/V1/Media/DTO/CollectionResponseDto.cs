@@ -11,99 +11,87 @@ using Collection = NoMercy.Database.Models.Collection;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
-public class CollectionResponseDto
+public record CollectionResponseDto
 {
     [JsonProperty("nextId")] public object NextId { get; set; }
 
     [JsonProperty("data")] public CollectionResponseItemDto? Data { get; set; }
-    
+
     public static readonly Func<MediaContext, Guid, int, string, string, Task<Collection?>> GetCollection =
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, int id, string language, string country) =>
             mediaContext.Collections.AsNoTracking()
                 .Where(collection => collection.Id == id)
-
                 .Where(collection => collection.Library.LibraryUsers
                     .FirstOrDefault(u => u.UserId == userId) != null)
-
                 .Include(collection => collection.CollectionUser
                     .Where(x => x.UserId == userId)
                 )
-
                 .Include(collection => collection.Library)
                 .ThenInclude(library => library.LibraryUsers)
-
                 .Include(collection => collection.CollectionMovies)
                 .ThenInclude(movie => movie.Movie)
                 .ThenInclude(movie => movie.Translations
                     .Where(translation => translation.Iso6391 == language))
-
                 .Include(collection => collection.CollectionMovies)
                 .ThenInclude(movie => movie.Movie)
                 .ThenInclude(movie => movie.VideoFiles)
-
                 .Include(collection => collection.CollectionMovies)
-                    .ThenInclude(movie => movie.Movie)
-                        .ThenInclude(movie => movie.MovieUser
-                            .Where(x => x.UserId == userId)
-                        )
-
-                .Include(collection => collection.CollectionMovies)
-                    .ThenInclude(movie => movie.Movie)
-                        .ThenInclude(movie => movie.CertificationMovies
-                            .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US" || certificationMovie.Certification.Iso31661 == country)
-                        )
-                            .ThenInclude(certificationMovie => certificationMovie.Certification)
-
-                .Include(collection => collection.CollectionMovies)
-                    .ThenInclude(movie => movie.Movie)
-                        .ThenInclude(movie => movie.GenreMovies)
-                            .ThenInclude(genreMovie => genreMovie.Genre)
-
-                .Include(collection => collection.CollectionMovies)
-                    .ThenInclude(movie => movie.Movie)
-                        .ThenInclude(movie => movie.Cast)
-                            .ThenInclude(genreMovie => genreMovie.Person)
-                
-                .Include(collection => collection.CollectionMovies)
-                    .ThenInclude(movie => movie.Movie)
-                        .ThenInclude(movie => movie.Cast)
-                            .ThenInclude(genreMovie => genreMovie.Role)
-
-                .Include(collection => collection.CollectionMovies)
-                    .ThenInclude(movie => movie.Movie)
-                        .ThenInclude(movie => movie.Crew)
-                            .ThenInclude(genreMovie => genreMovie.Job)
-                
-                .Include(collection => collection.CollectionMovies)
-                    .ThenInclude(movie => movie.Movie)
-                        .ThenInclude(movie => movie.Crew)
-                            .ThenInclude(genreMovie => genreMovie.Person)
-
-                .Include(collection => collection.CollectionMovies)
-                    .ThenInclude(movie => movie.Movie)
-                        .ThenInclude(movie => movie.Images
-                            .Where(image =>
-                                (image.Type == "logo" && image.Iso6391 == "en")
-                                || ((image.Type == "backdrop" || image.Type == "poster") &&
-                                    (image.Iso6391 == "en" || image.Iso6391 == null))
-                            )
+                .ThenInclude(movie => movie.Movie)
+                .ThenInclude(movie => movie.MovieUser
+                    .Where(x => x.UserId == userId)
                 )
-
+                .Include(collection => collection.CollectionMovies)
+                .ThenInclude(movie => movie.Movie)
+                .ThenInclude(movie => movie.CertificationMovies
+                    .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US" ||
+                                                 certificationMovie.Certification.Iso31661 == country)
+                )
+                .ThenInclude(certificationMovie => certificationMovie.Certification)
+                .Include(collection => collection.CollectionMovies)
+                .ThenInclude(movie => movie.Movie)
+                .ThenInclude(movie => movie.GenreMovies)
+                .ThenInclude(genreMovie => genreMovie.Genre)
+                .Include(collection => collection.CollectionMovies)
+                .ThenInclude(movie => movie.Movie)
+                .ThenInclude(movie => movie.Cast)
+                .ThenInclude(genreMovie => genreMovie.Person)
+                .Include(collection => collection.CollectionMovies)
+                .ThenInclude(movie => movie.Movie)
+                .ThenInclude(movie => movie.Cast)
+                .ThenInclude(genreMovie => genreMovie.Role)
+                .Include(collection => collection.CollectionMovies)
+                .ThenInclude(movie => movie.Movie)
+                .ThenInclude(movie => movie.Crew)
+                .ThenInclude(genreMovie => genreMovie.Job)
+                .Include(collection => collection.CollectionMovies)
+                .ThenInclude(movie => movie.Movie)
+                .ThenInclude(movie => movie.Crew)
+                .ThenInclude(genreMovie => genreMovie.Person)
+                .Include(collection => collection.CollectionMovies)
+                .ThenInclude(movie => movie.Movie)
+                .ThenInclude(movie => movie.Images
+                    .Where(image =>
+                        (image.Type == "logo" && image.Iso6391 == "en")
+                        || ((image.Type == "backdrop" || image.Type == "poster") &&
+                            (image.Iso6391 == "en" || image.Iso6391 == null))
+                    )
+                    .OrderByDescending(image => image.VoteAverage)
+                    .Take(30)
+                )
                 .Include(collection => collection.Translations
                     .Where(translation => translation.Iso6391 == language))
-
                 .Include(collection => collection.Images
                     .Where(image =>
                         (image.Type == "logo" && image.Iso6391 == "en")
                         || ((image.Type == "backdrop" || image.Type == "poster") &&
                             (image.Iso6391 == "en" || image.Iso6391 == null))
                     )
+                    .OrderByDescending(image => image.VoteAverage)
                 )
-
                 .FirstOrDefault());
 }
 
-public class CollectionResponseItemDto
+public record CollectionResponseItemDto
 {
     [JsonProperty("id")] public long Id { get; set; }
     [JsonProperty("title")] public string Title { get; set; }
@@ -112,42 +100,57 @@ public class CollectionResponseItemDto
     [JsonProperty("poster")] public string? Poster { get; set; }
     [JsonProperty("titleSort")] public string? TitleSort { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
-    [JsonProperty("mediaType")] public string MediaType { get; set; }
+    [JsonProperty("media_type")] public string MediaType { get; set; }
+    [JsonProperty("duration")] public double Duration { get; set; }
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("collection")] public CollectionMovieDto[] Collection { get; set; }
-    [JsonProperty("number_of_episodes")] public int? NumberOfEpisodes { get; set; }
-    [JsonProperty("have_episodes")] public int? HaveEpisodes { get; set; }
+    [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
+    [JsonProperty("have_items")] public int? HaveItems { get; set; }
     [JsonProperty("favorite")] public bool Favorite { get; set; }
+    [JsonProperty("watched")] public bool Watched { get; set; }
     [JsonProperty("genres")] public GenreDto[] Genres { get; set; }
+    [JsonProperty("total_duration")] public int TotalDuration { get; set; }
 
     [JsonProperty("cast")] public PeopleDto[] Cast { get; set; }
     [JsonProperty("crew")] public PeopleDto[] Crew { get; set; }
     [JsonProperty("backdrops")] public ImageDto[] Backdrops { get; set; }
     [JsonProperty("posters")] public ImageDto[] Posters { get; set; }
-    
-    [JsonProperty("contentRatings")] public ContentRating[] ContentRatings { get; set; }
+
+    [JsonProperty("content_ratings")] public ContentRating[] ContentRatings { get; set; }
 
     public CollectionResponseItemDto(Collection collection, string? country)
     {
-        string? title = collection.Translations.FirstOrDefault()?.Title;
-        string? overview = collection.Translations.FirstOrDefault()?.Overview;
+        var title = collection.Translations.FirstOrDefault()?.Title;
+        var overview = collection.Translations.FirstOrDefault()?.Overview;
 
         Id = collection.Id;
-        Title = !string.IsNullOrEmpty(title) 
-            ? title 
+        Title = !string.IsNullOrEmpty(title)
+            ? title
             : collection.Title;
-        Overview = !string.IsNullOrEmpty(overview) 
-            ? overview 
+        Overview = !string.IsNullOrEmpty(overview)
+            ? overview
             : collection.Overview;
         Backdrop = collection.Backdrop;
         Poster = collection.Poster;
         TitleSort = collection.TitleSort;
+
         Type = "collection";
         MediaType = "collection";
+
         ColorPalette = collection.ColorPalette;
-        NumberOfEpisodes = collection.Parts;
-        HaveEpisodes = collection.CollectionMovies.Count(collectionMovie => collectionMovie.Movie.VideoFiles.Count > 0);
+        NumberOfItems = collection.Parts;
+        HaveItems = collection.CollectionMovies.Count(collectionMovie => collectionMovie.Movie.VideoFiles.Count > 0);
+
+        TotalDuration = collection.CollectionMovies.Sum(item => item.Movie.Runtime * 60 ?? 0);
+
         Favorite = collection.CollectionUser.Count != 0;
+        Watched = collection.CollectionMovies.Count(collectionMovie => collectionMovie.Movie.MovieUser.Count != 0) ==
+                  collection.CollectionMovies.Count;
+
+        Duration = collection.CollectionMovies
+            .Select(movie => movie.Movie.Runtime)
+            .Average() ?? 0;
+
         Genres = collection.CollectionMovies
             .SelectMany(movie => movie.Movie.GenreMovies)
             .DistinctBy(genreMovie => genreMovie.GenreId)
@@ -158,10 +161,10 @@ public class CollectionResponseItemDto
             .SelectMany(collectionMovie => collectionMovie.Movie.CertificationMovies)
             .DistinctBy(certification => certification.Certification.Iso31661)
             .Select(certificationMovie => new ContentRating
-                {
-                    Rating = certificationMovie.Certification.Rating,
-                    Iso31661 = certificationMovie.Certification.Iso31661
-                })
+            {
+                Rating = certificationMovie.Certification.Rating,
+                Iso31661 = certificationMovie.Certification.Iso31661
+            })
             .ToArray();
 
         Collection = collection.CollectionMovies
@@ -173,75 +176,77 @@ public class CollectionResponseItemDto
             .SelectMany(movie => movie.Movie.Images)
             .Where(media => media.Type == "backdrop")
             .Select(media => new ImageDto(media))
+            .OrderByDescending(image => image.VoteAverage)
             .ToArray();
 
         Posters = collection.CollectionMovies
             .SelectMany(movie => movie.Movie.Images)
             .Where(media => media.Type == "poster")
             .Select(media => new ImageDto(media))
+            .OrderByDescending(image => image.VoteAverage)
             .ToArray();
-        
+
         Cast = collection.CollectionMovies
             .SelectMany(movie => movie.Movie.Cast)
-            .OrderBy(cast => cast.Role.Order)
             .Select(cast => new PeopleDto(cast))
+            .OrderBy(cast => cast.Order)
             .ToArray();
-        
+
         Crew = collection.CollectionMovies
             .SelectMany(movie => movie.Movie.Crew)
-            .OrderBy(cast => cast.Job.Order)
             .Select(crew => new PeopleDto(crew))
+            .OrderBy(crew => crew.Order)
             .ToArray();
-
     }
 
-    public CollectionResponseItemDto(CollectionAppends collectionAppends)
+    public CollectionResponseItemDto(TmdbCollectionAppends tmdbCollectionAppends)
     {
-        string? title = collectionAppends.Translations.Translations.FirstOrDefault()?.Data.Title;
-        string? overview = collectionAppends.Translations.Translations.FirstOrDefault()?.Data.Overview;
+        var title = tmdbCollectionAppends.Translations.Translations.FirstOrDefault()?.Data.Title;
+        var overview = tmdbCollectionAppends.Translations.Translations.FirstOrDefault()?.Data.Overview;
 
-        Id = collectionAppends.Id;
-        Title = !string.IsNullOrEmpty(title) 
-            ? title 
-            : collectionAppends.Name;
-        Overview = !string.IsNullOrEmpty(overview) 
-            ? overview 
-            : collectionAppends.Overview;
-        Id = collectionAppends.Id;
-        Title = collectionAppends.Name;
-        Overview = collectionAppends.Overview;
-        Backdrop = collectionAppends.BackdropPath;
-        Poster = collectionAppends.PosterPath;
-        TitleSort = collectionAppends.Name.TitleSort();
+        Id = tmdbCollectionAppends.Id;
+        Title = !string.IsNullOrEmpty(title)
+            ? title
+            : tmdbCollectionAppends.Name;
+        Overview = !string.IsNullOrEmpty(overview)
+            ? overview
+            : tmdbCollectionAppends.Overview;
+        Id = tmdbCollectionAppends.Id;
+        Title = tmdbCollectionAppends.Name;
+        Overview = tmdbCollectionAppends.Overview;
+        Backdrop = tmdbCollectionAppends.BackdropPath;
+        Poster = tmdbCollectionAppends.PosterPath;
+        TitleSort = tmdbCollectionAppends.Name.TitleSort();
         Type = "collection";
         MediaType = "collection";
         ColorPalette = new IColorPalettes();
-        NumberOfEpisodes = collectionAppends.Parts.Length;
-        HaveEpisodes = 0;
+        NumberOfItems = tmdbCollectionAppends.Parts.Length;
+        HaveItems = 0;
         Favorite = false;
 
-        Collection = collectionAppends.Parts
+        Collection = tmdbCollectionAppends.Parts
             .Select(movie => new CollectionMovieDto(movie))
             .ToArray();
-        
-        Backdrops = collectionAppends.Images.Backdrops
+
+        Backdrops = tmdbCollectionAppends.Images.Backdrops
             .Select(media => new ImageDto(media))
+            .OrderByDescending(image => image.VoteAverage)
             .ToArray();
-        Posters = collectionAppends.Images.Posters
+        Posters = tmdbCollectionAppends.Images.Posters
             .Select(media => new ImageDto(media))
+            .OrderByDescending(image => image.VoteAverage)
             .ToArray();
-        
     }
 }
 
-public class CollectionMovieDto
+public record CollectionMovieDto
 {
     [JsonProperty("id")] public long Id { get; set; }
     [JsonProperty("backdrop")] public string? Backdrop { get; set; }
     [JsonProperty("favorite")] public bool Favorite { get; set; }
     [JsonProperty("watched")] public bool Watched { get; set; }
     [JsonProperty("logo")] public string? Logo { get; set; }
-    [JsonProperty("mediaType")] public string MediaType { get; set; }
+    [JsonProperty("media_type")] public string MediaType { get; set; }
     [JsonProperty("overview")] public string? Overview { get; set; }
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("poster")] public string? Poster { get; set; }
@@ -250,26 +255,24 @@ public class CollectionMovieDto
     [JsonProperty("year")] public long Year { get; set; }
     [JsonProperty("genres")] public GenreDto[] Genres { get; set; }
 
-    [JsonProperty("rating", NullValueHandling = NullValueHandling.Ignore)]
-    public Certification? Rating { get; set; }
+    [JsonProperty("rating")] public Certification? Rating { get; set; }
 
-    [JsonProperty("videoId", NullValueHandling = NullValueHandling.Ignore)]
-    public string? VideoId { get; set; }
-    
-    [JsonProperty("number_of_episodes")] public int? NumberOfEpisodes { get; set; }
-    [JsonProperty("have_episodes")] public int? HaveEpisodes { get; set; }
+    [JsonProperty("videoId")] public string? VideoId { get; set; }
+
+    [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
+    [JsonProperty("have_items")] public int? HaveItems { get; set; }
 
     public CollectionMovieDto(Movie movie)
     {
-        string? title = movie.Translations.FirstOrDefault()?.Title;
-        string? overview = movie.Translations.FirstOrDefault()?.Overview;
+        var title = movie.Translations.FirstOrDefault()?.Title;
+        var overview = movie.Translations.FirstOrDefault()?.Overview;
 
         Id = movie.Id;
-        Title = !string.IsNullOrEmpty(title) 
-            ? title 
+        Title = !string.IsNullOrEmpty(title)
+            ? title
             : movie.Title;
-        Overview = !string.IsNullOrEmpty(overview) 
-            ? overview 
+        Overview = !string.IsNullOrEmpty(overview)
+            ? overview
             : movie.Overview;
 
         Backdrop = movie.Backdrop;
@@ -291,34 +294,34 @@ public class CollectionMovieDto
         Rating = movie.CertificationMovies
             .Select(certificationMovie => certificationMovie.Certification)
             .FirstOrDefault();
-        
-        NumberOfEpisodes = 1;
-        HaveEpisodes = movie.VideoFiles.Count > 0 ? 1 : 0;
+
+        NumberOfItems = 1;
+        HaveItems = movie.VideoFiles.Count > 0 ? 1 : 0;
 
         VideoId = movie.Video;
     }
 
-    public CollectionMovieDto(Providers.TMDB.Models.Movies.Movie movie)
+    public CollectionMovieDto(Providers.TMDB.Models.Movies.TmdbMovie tmdbMovie)
     {
-        Id = movie.Id;
-        Title = movie.Title;
-        Overview = movie.Overview;
-        Id = movie.Id;
-        Title = movie.Title;
-        Overview = movie.Overview;
-        Backdrop = movie.BackdropPath;
+        Id = tmdbMovie.Id;
+        Title = tmdbMovie.Title;
+        Overview = tmdbMovie.Overview;
+        Id = tmdbMovie.Id;
+        Title = tmdbMovie.Title;
+        Overview = tmdbMovie.Overview;
+        Backdrop = tmdbMovie.BackdropPath;
         Favorite = false;
         Watched = false;
         // Logo = movie.LogoPath;
         MediaType = "movie";
         ColorPalette = new IColorPalettes();
-        Poster = movie.PosterPath;
+        Poster = tmdbMovie.PosterPath;
         Type = "movie";
-        Year = movie.ReleaseDate.ParseYear();
-        
-        NumberOfEpisodes = 1;
-        HaveEpisodes = 0;
+        Year = tmdbMovie.ReleaseDate.ParseYear();
 
-        VideoId = movie.Video;
+        NumberOfItems = 1;
+        HaveItems = 0;
+
+        VideoId = tmdbMovie.Video;
     }
 }

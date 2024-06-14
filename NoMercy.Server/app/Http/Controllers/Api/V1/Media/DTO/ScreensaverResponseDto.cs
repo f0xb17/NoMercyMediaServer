@@ -5,35 +5,27 @@ using NoMercy.Database;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
-public class ScreensaverResponseDto
+public record ScreensaverResponseDto
 {
-    [JsonProperty("aspectRatio")]
-    public double AspectRatio { get; set; }
+    [JsonProperty("aspectRatio")] public double AspectRatio { get; set; }
 
-    [JsonProperty("src")]
-    public string Src { get; set; }
+    [JsonProperty("src")] public string Src { get; set; }
 
-    [JsonProperty("color_palette")]
-    public IColorPalettes ColorPaletteDto { get; set; }
+    [JsonProperty("color_palette")] public IColorPalettes ColorPaletteDto { get; set; }
 
-    [JsonProperty("meta")]
-    public MetaDto MetaDto { get; set; }
+    [JsonProperty("meta")] public MetaDto MetaDto { get; set; }
 }
 
-public class MetaDto
+public record MetaDto
 {
-    [JsonProperty("title")]
-    public string Title { get; set; }
+    [JsonProperty("title")] public string Title { get; set; }
 
-    [JsonProperty("logo")]
-    public LogoDto LogoDto { get; set; }
+    [JsonProperty("logo")] public LogoDto LogoDto { get; set; }
 }
 
-public class LogoDto
+public record LogoDto
 {
-    [JsonProperty("aspectRatio")]
-    public double AspectRatio { get; set; }
+    [JsonProperty("aspectRatio")] public double AspectRatio { get; set; }
 
-    [JsonProperty("src")]
-    public string Src { get; set; }
+    [JsonProperty("src")] public string Src { get; set; }
 }

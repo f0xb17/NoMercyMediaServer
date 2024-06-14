@@ -1,9 +1,6 @@
-using Newtonsoft.Json;
 using NoMercy.Helpers;
 using Exception = System.Exception;
 using LogLevel = NoMercy.Helpers.LogLevel;
-
-// ReSharper disable All
 
 namespace NoMercy.Server.system;
 
@@ -17,10 +14,12 @@ public class Worker(JobQueue queue, string name = "default")
     private int CurrentIndex => QueueRunner.GetWorkerIndex(name, this);
 
     public event WorkCompletedEventHandler WorkCompleted = delegate { };
-    
+
     public void Start()
     {
-        // Logger.Queue($"Worker {name} - {CurrentIndex}: started", LogLevel.Info);
+        Logger.Queue($"Worker {name} - {CurrentIndex}: started", LogLevel.Debug);
+
+        Thread.CurrentThread.Priority = ThreadPriority.Lowest;
 
         while (_isRunning)
         {
@@ -29,55 +28,45 @@ public class Worker(JobQueue queue, string name = "default")
             if (job != null)
             {
                 _currentJobId = job.Id;
-                var payload = JsonConvert.DeserializeObject<Dictionary<string, string>>(job.Payload);
-                if (payload != null)
+
+                try
                 {
-                    Type className = Type.GetType(payload["className"])!;
-                    var jobMethod = className?.GetMethod(payload["jobMethod"]);
-                    
-                    var jobParams = JsonConvert.DeserializeObject<dynamic[]>(payload["jobParams"]);
+                    var jobWithArguments = SerializationHelper.Deserialize<object>(job.Payload);
 
-                    if (className != null)
+                    if (jobWithArguments is IShouldQueue classInstance)
                     {
-                        try
-                        {
-                            var jobInstance = Activator.CreateInstance(className, jobParams);
-                            Logger.Queue($"Worker {name} - {CurrentIndex}: Processing job {job.Id} of Type {payload["className"]}...");
+                        classInstance.Handle().Wait();
 
-                            if (jobMethod != null) jobMethod.Invoke(jobInstance, null);
-                            // If the job was processed successfully, delete it from the Jobs table
-                            queue.DeleteJob(job);
-                            _currentJobId = null;
+                        queue.DeleteJob(job);
+                        _currentJobId = null;
+                        OnWorkCompleted(EventArgs.Empty);
 
-                            OnWorkCompleted(EventArgs.Empty);
-
-                            Logger.Queue(
-                                $"Worker {name} - {CurrentIndex}: Job {job.Id} of Type {payload["className"]} processed successfully.");
-                        }
-                        catch (Exception ex)
-                        {
-                            // If the job's Handle method throws an exception, add it to the FailedJobs table
-                            queue.FailJob(job, ex);
-                            _currentJobId = null;
-
-                            Logger.Queue(
-                                $"Worker {name} - {CurrentIndex}: Job {job.Id} of Type {payload["className"]} failed with error: {ex.Message}");
-                        }
+                        Logger.Queue(
+                            $"Worker {name} - {CurrentIndex}: Job {job.Id} of Type {classInstance} processed successfully.");
                     }
                 }
+                catch (Exception ex)
+                {
+                    queue.FailJob(job, ex);
 
-                Thread.Sleep(5000);
+                    _currentJobId = null;
+
+                    Logger.Queue(
+                        $"Worker {name} - {CurrentIndex}: Job {job.Id} of Type {job.Payload} failed with error: {ex}",
+                        LogLevel.Error);
+                }
+
+                Thread.Sleep(1000);
             }
             else
-            {                            
+            {
                 OnWorkCompleted(EventArgs.Empty);
 
-                // If there are no jobs to process, sleep for a while before checking again
-                Thread.Sleep(5000);
+                Thread.Sleep(1000);
             }
         }
     }
-    
+
     protected virtual void OnWorkCompleted(EventArgs e)
     {
         WorkCompleted.Invoke(this, e);
@@ -97,10 +86,7 @@ public class Worker(JobQueue queue, string name = "default")
 
     public void StopWhenReady()
     {
-        while (_currentJobId != null)
-        {
-            Thread.Sleep(1000);
-        }
+        while (_currentJobId != null) Thread.Sleep(1000);
 
         Stop();
     }

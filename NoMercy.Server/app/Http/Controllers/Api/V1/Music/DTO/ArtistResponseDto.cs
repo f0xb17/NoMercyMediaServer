@@ -1,64 +1,96 @@
-using System.Collections.Immutable;
-using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.Server.app.Helper;
+using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Music.DTO;
 
-public class ArtistResponseDto
+public record ArtistResponseDto
 {
     [JsonProperty("data")] public ArtistResponseItemDto? Data { get; set; }
-    
-        public static readonly Func<MediaContext, Guid, Guid, Task<Artist?>> GetArtist =
-            EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, Guid id) => 
-                mediaContext.Artists.AsNoTracking()
 
+    public static readonly Func<MediaContext, Guid, Guid, Task<Artist?>> GetArtist =
+        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, Guid id) =>
+            mediaContext.Artists
+                // .AsNoTracking()
                 .Where(album => album.Id == id)
-
-                .OrderBy(artist => artist.Name)
-
                 .Where(artist => artist.Library.LibraryUsers
                     .FirstOrDefault(u => u.UserId == userId) != null)
-
+                
                 .Include(artist => artist.Library)
-
+                
                 .Include(artist => artist.ArtistUser
                     .Where(artistUser => artistUser.UserId == userId)
                 )
-
+                    .ThenInclude(artistUser => artistUser.User)
+                        .ThenInclude(user => user.TrackUser)
+                            .ThenInclude(trackUser => trackUser.Track)
+                
+                .Include(artist => artist.AlbumArtist
+                    .Where(albumArtist => albumArtist.Album.AlbumTrack
+                        .Any(track => track.Track.Duration != null)
+                    )
+                )
+                    .ThenInclude(albumArtist => albumArtist.Album)
+                        .ThenInclude(artist => artist.AlbumArtist)
+                
                 .Include(artist => artist.AlbumArtist)
-                .ThenInclude(albumArtist => albumArtist.Album)
-
+                    .ThenInclude(albumArtist => albumArtist.Album)
+                        .ThenInclude(artist => artist.Translations)
+                
                 .Include(artist => artist.ArtistTrack
-                        .OrderBy(albumTrack => albumTrack.Track.TrackNumber)
-                        .ThenBy(albumTrack => albumTrack.Track.DiscNumber)
-                    // .Where(artistTrack => artistTrack.Track.Duration != null)
+                    .OrderBy(artistTrack => artistTrack.Track.TrackNumber)
+                    .ThenBy(artistTrack => artistTrack.Track.DiscNumber)
+                    .Where(artistTrack => artistTrack.Track.Duration != null)
                 )
-
+                    .ThenInclude(artistTrack => artistTrack.Track)
+                        .ThenInclude(track => track.AlbumTrack)
+                            .ThenInclude(albumTrack => albumTrack.Album)
+                                .ThenInclude(album => album.AlbumArtist)
+                
                 .Include(artist => artist.ArtistTrack)
-                .ThenInclude(artistTrack => artistTrack.Track)
-                .ThenInclude(track => track.AlbumTrack)
-                .ThenInclude(albumTrack => albumTrack.Album)
-
+                    .ThenInclude(artistTrack => artistTrack.Track)
+                        .ThenInclude(track => track.AlbumTrack)
+                            .ThenInclude(albumTrack => albumTrack.Album)
+                                .ThenInclude(artist => artist.Translations)
+                
                 .Include(artist => artist.ArtistTrack)
-                .ThenInclude(artistTrack => artistTrack.Track)
-                .ThenInclude(track => track.TrackUser
-                    .Where(trackUser => trackUser.UserId == userId)
-                )
-                .ThenInclude(trackUser => trackUser.User)
+                    .ThenInclude(artistTrack => artistTrack.Track)
+                        .ThenInclude(track => track.TrackUser
+                            .Where(trackUser => trackUser.UserId == userId)
+                        )
+                            .ThenInclude(trackUser => trackUser.User)
+                
+                .Include(artist => artist.ArtistReleaseGroup)
+                    .ThenInclude(artistReleaseGroup => artistReleaseGroup.ReleaseGroup)
+                        .ThenInclude(releaseGroup => releaseGroup.AlbumReleaseGroup)
+                            .ThenInclude(albumReleaseGroup => albumReleaseGroup.Album)
+                                .ThenInclude(artist => artist.Translations)
+                
+                .Include(artist => artist.ArtistReleaseGroup)
+                    .ThenInclude(artistReleaseGroup => artistReleaseGroup.ReleaseGroup)
+                        .ThenInclude(releaseGroup => releaseGroup.AlbumReleaseGroup)
+                            .ThenInclude(albumReleaseGroup => albumReleaseGroup.Album)
+                                .ThenInclude(album => album.AlbumArtist)
+                
+                .Include(artist => artist.Images)
+                .Include(artist => artist.Translations)
+                
+                .Include(artist => artist.ArtistMusicGenre)
+                    .ThenInclude(artistMusicGenre => artistMusicGenre.MusicGenre)
 
                 .FirstOrDefault());
 }
 
-public class ArtistResponseItemDto
+public record ArtistResponseItemDto
 {
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("country")] public string? Country { get; set; }
     [JsonProperty("cover")] public string? Cover { get; set; }
+    [JsonProperty("disambiguation")] public string? Disambiguation { get; set; }
     [JsonProperty("description")] public string? Description { get; set; }
     [JsonProperty("favorite")] public bool Favorite { get; set; }
     [JsonProperty("folder")] public string? Folder { get; set; }
@@ -67,14 +99,19 @@ public class ArtistResponseItemDto
     [JsonProperty("name")] public string Name { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("year")] public int? Year { get; set; }
-    
-    [JsonProperty("albums")] public IEnumerable<AlbumDto> Albums { get; set; }
-    [JsonProperty("tracks")] public IEnumerable<ArtistTrackDto> Tracks { get; set; }
 
-    public ArtistResponseItemDto(Artist artist)
+    [JsonProperty("playlists")] public IEnumerable<AlbumDto> Playlists { get; set; }
+    [JsonProperty("tracks")] public IEnumerable<ArtistTrackDto> Tracks { get; set; }
+    [JsonProperty("favorite_tracks")] public IEnumerable<ArtistTrackDto> FavoriteTracks { get; set; }
+    [JsonProperty("images")] public IEnumerable<ImageDto> Images { get; set; }
+    [JsonProperty("genres")] public IEnumerable<GenreDto> Genres { get; set; }
+    [JsonProperty("albums")] public IEnumerable<AlbumDto> Albums { get; set; }
+
+    public ArtistResponseItemDto(Artist artist, Guid userId, string? country = "US")
     {
         ColorPalette = artist.ColorPalette;
         Cover = artist.Cover;
+        Disambiguation = artist.Disambiguation;
         Description = artist.Description;
         Favorite = artist.ArtistUser.Any();
         Folder = artist.Folder;
@@ -83,28 +120,50 @@ public class ArtistResponseItemDto
         Name = artist.Name;
         Type = "artists";
         
-        Albums = artist.AlbumArtist
-            .Select(trackAlbum => new AlbumDto(trackAlbum));
+        Playlists = artist.AlbumArtist
+            .DistinctBy(albumArtist => albumArtist.AlbumId)
+            .Select(trackAlbum => new AlbumDto(trackAlbum, country!))
+            .OrderBy(album => album.Year);
         
-        var artists = Databases.MediaContext.ArtistTrack
-            .Where(at => at.ArtistId == artist.Id)
-            .Include(at => at.Artist)
-            .Include(artistTrack => artistTrack.Track)
-            .ThenInclude(track => track.AlbumTrack)
-            .ThenInclude(albumTrack => albumTrack.Album)
-            .Include(artistTrack => artistTrack.Track)
-            .ThenInclude(track => track.TrackUser)
-            .ToList();
+        Genres = artist.ArtistMusicGenre
+            .Select(artistMusicGenre => new GenreDto(artistMusicGenre));
         
-        Tracks = artists
-            .DistinctBy(artistTrack => Regex.Replace(artistTrack.Track.Filename ?? "", @"[\d+-]\s", "").ToLower())
-            // .DistinctBy(artistTrack => artistTrack.Track.Name.ToLower())
-            .Select(albumTrack => new ArtistTrackDto(albumTrack));
-    }
+        Images = artist.Images.Select(image => new ImageDto(image));
 
+        Albums = artist.ArtistReleaseGroup
+            .SelectMany(artistReleaseGroup => artistReleaseGroup.ReleaseGroup.AlbumReleaseGroup)
+            .GroupBy(albumReleaseGroup => albumReleaseGroup.Album.Tracks)
+            .Select(artistReleaseGroup => new AlbumDto(artistReleaseGroup.First().Album, country!));
+
+        Tracks = artist.ArtistTrack
+            .Select(artistTrack => new ArtistTrackDto(artistTrack, country!));
+
+        MediaContext context = new();
+        FavoriteTracks = context.MusicPlays
+            .Where(musicPlay => musicPlay.UserId == userId)
+            .Where(musicPlay => musicPlay.Track.ArtistTrack
+                .Any(artistTrack => artistTrack.ArtistId == artist.Id))
+            
+            .Include(musicPlay => musicPlay.Track)
+                .ThenInclude(track => track.TrackUser)
+            
+            .Include(musicPlay => musicPlay.Track)
+                .ThenInclude(track => track.AlbumTrack)
+                    .ThenInclude(albumTrack => albumTrack.Album)
+                        .ThenInclude(albumTrack => albumTrack.Translations)
+            
+            .Include(musicPlay => musicPlay.Track)
+                .ThenInclude(track => track.ArtistTrack)
+                    .ThenInclude(albumTrack => albumTrack.Artist)
+                        .ThenInclude(album => album.Translations)
+            
+            .Select(artistTrack => new ArtistTrackDto(artistTrack.Track, country!));
+        
+
+    }
 }
 
-public class ArtistTrackDto
+public record ArtistTrackDto
 {
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("cover")] public string? Cover { get; set; }
@@ -124,14 +183,14 @@ public class ArtistTrackDto
     [JsonProperty("track")] public int? Track { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("lyrics")] public Lyric[]? Lyrics { get; set; }
-    
+
     [JsonProperty("album_track")] public IEnumerable<AlbumDto> Album { get; set; }
     [JsonProperty("artist_track")] public IEnumerable<ArtistDto> Artist { get; set; }
 
-    public ArtistTrackDto(ArtistTrack artistTrack)
+    public ArtistTrackDto(ArtistTrack artistTrack, string country)
     {
-        ColorPalette = artistTrack.Track.AlbumTrack.First().Album.ColorPalette ?? artistTrack.Track.ArtistTrack.First().Artist.ColorPalette;
-        Cover = artistTrack.Track.AlbumTrack.First().Album.Cover ?? artistTrack.Track.ArtistTrack.First().Artist.Cover;
+        ColorPalette = artistTrack.Track.AlbumTrack.FirstOrDefault()?.Album.ColorPalette;
+        Cover = artistTrack.Track.AlbumTrack.FirstOrDefault()?.Album.Cover;
         Date = artistTrack.Track.Date;
         Disc = artistTrack.Track.DiscNumber;
         Duration = artistTrack.Track.Duration;
@@ -148,21 +207,24 @@ public class ArtistTrackDto
         Track = artistTrack.Track.TrackNumber;
         Lyrics = artistTrack.Track.Lyrics;
         Type = "tracks";
-        
+
         Album = artistTrack.Track.AlbumTrack
             .DistinctBy(trackAlbum => trackAlbum.AlbumId)
-            .Select(albumTrack => new AlbumDto(albumTrack));
-        
-        var artists = Databases.MediaContext.ArtistTrack
+            .Select(albumTrack => new AlbumDto(albumTrack, country));
+
+        using MediaContext context = new();
+        var artists = context.ArtistTrack
+            .AsNoTracking()
             .Where(at => at.TrackId == artistTrack.TrackId)
             .Include(at => at.Artist)
-            .ToList();
-        
+            .ToList() ?? [];
+
         Artist = artists
-            .Select(albumTrack => new ArtistDto(albumTrack));
+            .Select(albumTrack => new ArtistDto(albumTrack, country));
     }
 
-    public ArtistTrackDto(Track track)    {
+    public ArtistTrackDto(Track track, string? country = "US")
+    {
         ColorPalette = track.AlbumTrack.First().Album.ColorPalette ?? track.ArtistTrack.First().Artist.ColorPalette;
         Cover = track.AlbumTrack.First().Album.Cover ?? track.ArtistTrack.First().Artist.Cover;
         Date = track.UpdatedAt;
@@ -180,50 +242,102 @@ public class ArtistTrackDto
         Quality = track.Quality;
         Track = track.TrackNumber;
         Type = "tracks";
-        
+
         Album = track.AlbumTrack
             .DistinctBy(trackAlbum => trackAlbum.AlbumId)
-            .Select(albumTrack => new AlbumDto(albumTrack));
-        
+            .Select(albumTrack => new AlbumDto(albumTrack, country!));
+
         Artist = track.ArtistTrack
             .DistinctBy(trackArtist => trackArtist.ArtistId)
-            .Select(trackArtist => new ArtistDto(trackArtist));
-
+            .Select(trackArtist => new ArtistDto(trackArtist, country!));
     }
 }
 
-public class ArtistDto
+public record ArtistDto
 {
     [JsonProperty("id")] public Guid Id { get; set; }
     [JsonProperty("name")] public string Name { get; set; }
+    [JsonProperty("disambiguation")] public string? Disambiguation { get; set; }
     [JsonProperty("description")] public string? Description { get; set; }
     [JsonProperty("cover")] public string? Cover { get; set; }
     [JsonProperty("folder")] public string? Folder { get; set; }
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("library_id")] public Ulid? LibraryId { get; set; }
     [JsonProperty("origin")] public Guid Origin { get; set; }
+    [JsonProperty("type")] public string Type { get; set; }
 
-    public ArtistDto(AlbumArtist albumArtist)
+    public ArtistDto(AlbumArtist albumArtist, string country)
     {
+        var description = albumArtist.Artist.Translations
+            .FirstOrDefault(translation => translation.Iso31661 == country)?
+            .Description;
+
+        Description = !string.IsNullOrEmpty(description)
+            ? description
+            : albumArtist.Album.Description;
+        
         Id = albumArtist.Artist.Id;
         Name = albumArtist.Artist.Name;
-        Description = albumArtist.Artist.Description;
+        Disambiguation = albumArtist.Artist.Disambiguation;
         Cover = albumArtist.Artist.Cover;
         Folder = albumArtist.Artist.Folder;
         ColorPalette = albumArtist.Artist.ColorPalette;
         LibraryId = albumArtist.Artist.LibraryId;
         Origin = SystemInfo.DeviceId;
+        Type = "artists";
     }
 
-    public ArtistDto(ArtistTrack artistTrack)
+    public ArtistDto(ArtistTrack artistTrack, string country)
     {
+        var description = artistTrack.Artist.Translations?
+            .FirstOrDefault(translation => translation.Iso31661 == country)?
+            .Description;
+
+        Description = !string.IsNullOrEmpty(description)
+            ? description
+            : artistTrack.Artist.Description;
+        
         Id = artistTrack.Artist.Id;
         Name = artistTrack.Artist.Name;
-        Description = artistTrack.Artist.Description;
+        Disambiguation = artistTrack.Artist.Disambiguation;
         Cover = artistTrack.Artist.Cover;
         Folder = artistTrack.Artist.Folder;
         ColorPalette = artistTrack.Artist.ColorPalette;
         LibraryId = artistTrack.Artist.LibraryId;
         Origin = SystemInfo.DeviceId;
+        Type = "artists";
+    }
+}
+
+public record ReleaseGroupDto
+{
+    [JsonProperty("id")] public Guid Id { get; set; }
+    [JsonProperty("title")] public string Title { get; set; }
+    [JsonProperty("description")] public string? Description { get; set; }
+    [JsonProperty("cover")] public string? Cover { get; set; }
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
+    [JsonProperty("library_id")] public Ulid? LibraryId { get; set; }
+    [JsonProperty("origin")] public Guid Origin { get; set; }
+    [JsonProperty("type")] public string Type { get; set; }
+    [JsonProperty("year")] public int Year { get; set; }
+    
+    public ReleaseGroupDto(AlbumReleaseGroup artistReleaseGroup, string country)
+    {
+        var description = artistReleaseGroup.ReleaseGroup.Translations
+            .FirstOrDefault(translation => translation.Iso31661 == country)?
+            .Description;
+
+        Description = !string.IsNullOrEmpty(description)
+            ? description
+            : artistReleaseGroup.ReleaseGroup.Description;
+        
+        Id = artistReleaseGroup.ReleaseGroupId;
+        Title = artistReleaseGroup.ReleaseGroup.Title;
+        Cover = artistReleaseGroup.ReleaseGroup.Cover;
+        ColorPalette = artistReleaseGroup.ReleaseGroup.ColorPalette;
+        LibraryId = artistReleaseGroup.ReleaseGroup.LibraryId;
+        Origin = SystemInfo.DeviceId;
+        Type = "release_groups";
+        Year = artistReleaseGroup.ReleaseGroup.Year;
     }
 }

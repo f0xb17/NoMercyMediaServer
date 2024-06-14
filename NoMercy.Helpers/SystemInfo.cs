@@ -19,11 +19,11 @@ public static class SystemInfo
     public static readonly DateTime BootTime = GetBootTime();
     public static readonly DateTime StartTime = DateTime.UtcNow;
     public static readonly string ExecSuffix = Platform == "windows" ? ".exe" : "";
-    public static ushort ServerPort { get; set; } = 7626;
-    
+    public static ushort ServerPort => Config.ServerPort;
+
     private static Guid GetDeviceId()
     {
-        string generatedId = new DeviceIdBuilder()
+        var generatedId = new DeviceIdBuilder()
             .AddMachineName()
             .AddOsVersion()
             .OnWindows(windows => windows
@@ -38,10 +38,11 @@ public static class SystemInfo
                 .AddPlatformSerialNumber())
             .ToString();
 
-        byte[] hash = MD5.HashData(Encoding.UTF8.GetBytes(generatedId));
+        var hash = MD5.HashData(Encoding.UTF8.GetBytes(generatedId));
 
         return new Guid(hash);
     }
+
     private static string GetPlatform()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -50,7 +51,7 @@ public static class SystemInfo
             return "mac";
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return "linux";
-        
+
         throw new Exception("Unknown platform");
     }
 
@@ -58,7 +59,7 @@ public static class SystemInfo
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher("select Name from Win32_Processor");
+            var searcher = new ManagementObjectSearcher("select Name from Win32_Processor");
             foreach (var o in searcher.Get())
             {
                 var item = (ManagementObject)o;
@@ -70,6 +71,7 @@ public static class SystemInfo
             var output = ExecuteBashCommand("lscpu | grep 'Model name:'");
             return output.Trim().Split(':')[1].Trim();
         }
+
         return "Unknown";
     }
 
@@ -77,7 +79,7 @@ public static class SystemInfo
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher("select Version from Win32_OperatingSystem");
+            var searcher = new ManagementObjectSearcher("select Version from Win32_OperatingSystem");
             foreach (var o in searcher.Get())
             {
                 var item = (ManagementObject)o;
@@ -89,6 +91,7 @@ public static class SystemInfo
             var output = ExecuteBashCommand("uname -r");
             return output.Trim();
         }
+
         return "Unknown";
     }
 
@@ -96,7 +99,7 @@ public static class SystemInfo
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher("select LastBootUpTime from Win32_OperatingSystem");
+            var searcher = new ManagementObjectSearcher("select LastBootUpTime from Win32_OperatingSystem");
             foreach (var o in searcher.Get())
             {
                 var item = (ManagementObject)o;
@@ -108,13 +111,14 @@ public static class SystemInfo
             var output = ExecuteBashCommand("uptime -s");
             return DateTime.Parse(output.Trim());
         }
+
         return DateTime.MinValue;
     }
 
     private static string ExecuteBashCommand(string command)
     {
         command = command.Replace("\"", "\\\"");
-        var process = new Process
+        Process process = new()
         {
             StartInfo = new ProcessStartInfo
             {
@@ -126,7 +130,7 @@ public static class SystemInfo
             }
         };
         process.Start();
-        string result = process.StandardOutput.ReadToEnd();
+        var result = process.StandardOutput.ReadToEnd();
         process.WaitForExit();
         return result;
     }

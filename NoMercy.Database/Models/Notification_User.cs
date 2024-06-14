@@ -3,25 +3,24 @@
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
-namespace NoMercy.Database.Models
+namespace NoMercy.Database.Models;
+
+[PrimaryKey(nameof(NotificationId), nameof(UserId))]
+public class NotificationUser
 {
-    [PrimaryKey(nameof(NotificationId), nameof(UserId))]
-    public class NotificationUser
+    [JsonProperty("notification_id")] public Ulid NotificationId { get; set; }
+    public Notification Notification { get; set; }
+
+    [JsonProperty("user_id")] public Guid UserId { get; set; }
+    public User User { get; set; }
+
+    public NotificationUser()
     {
-        [JsonProperty("notification_id")] public Ulid NotificationId { get; set; }
-        public virtual Notification Notification { get; set; }
+    }
 
-        [JsonProperty("user_id")] public Guid UserId { get; set; }
-        public virtual User User { get; set; }
-
-        public NotificationUser()
-        {
-        }
-
-        public NotificationUser(Ulid notificationId, Guid userId)
-        {
-            NotificationId = notificationId;
-            UserId = userId;
-        }
+    public NotificationUser(Ulid notificationId, Guid userId)
+    {
+        NotificationId = notificationId;
+        UserId = userId;
     }
 }

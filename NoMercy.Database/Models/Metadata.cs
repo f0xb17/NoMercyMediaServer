@@ -4,14 +4,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
-namespace NoMercy.Database.Models
+namespace NoMercy.Database.Models;
+
+[PrimaryKey(nameof(Id))]
+public class Metadata
 {
-    [PrimaryKey(nameof(Id))]
-    public class Metadata
-    {
-        [DatabaseGenerated(DatabaseGeneratedOption.None)]
-        [JsonProperty("id")]
-        public required Ulid Id { get; set; } = Ulid.NewUlid();
-        
-    }
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    [JsonProperty("id")]
+    public required Ulid Id { get; set; } = Ulid.NewUlid();
 }

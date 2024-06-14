@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,40 +5,49 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Music;
+using NoMercy.Server.app.Http.Middleware;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 
 [ApiController]
 [Tags("Dashboard Configuration")]
 [ApiVersion("1")]
-[Authorize, Route("api/v{Version:apiVersion}/dashboard/configuration", Order = 10)]
+[Authorize]
+[Route("api/v{Version:apiVersion}/dashboard/configuration", Order = 10)]
 public class ConfigurationController : Controller
 {
-    [NonAction]
-    private Guid GetUserId()
-    {
-        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-    }
-
     [HttpGet]
     public IActionResult Index()
     {
-        Guid userId = GetUserId();
-        return Ok();
+        var userId = HttpContext.User.UserId();
+
+        return Ok(new PlaceholderResponse()
+        {
+            Data = []
+        });
     }
 
     [HttpPost]
     public IActionResult Store()
     {
-        Guid userId = GetUserId();
-        return Ok();
+        var userId = HttpContext.User.UserId();
+
+        return Ok(new PlaceholderResponse
+        {
+            Data = []
+        });
     }
 
     [HttpPatch]
     public IActionResult Update()
     {
-        Guid userId = GetUserId();
-        return Ok();
+        var userId = HttpContext.User.UserId();
+
+        return Ok(new PlaceholderResponse
+        {
+            Data = []
+        });
     }
 
     [HttpGet]

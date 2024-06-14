@@ -3,25 +3,24 @@
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
-namespace NoMercy.Database.Models
+namespace NoMercy.Database.Models;
+
+[PrimaryKey(nameof(SpecialId), nameof(UserId))]
+public class SpecialUser
 {
-    [PrimaryKey(nameof(SpecialId), nameof(UserId))]
-    public class SpecialUser
+    [JsonProperty("special_id")] public Ulid SpecialId { get; set; }
+    public Special Special { get; set; }
+
+    [JsonProperty("user_id")] public Guid UserId { get; set; }
+    public User User { get; set; }
+
+    public SpecialUser()
     {
-        [JsonProperty("special_id")] public Ulid SpecialId { get; set; }
-        public virtual Special Special { get; set; }
+    }
 
-        [JsonProperty("user_id")] public Guid UserId { get; set; }
-        public virtual User User { get; set; }
-
-        public SpecialUser()
-        {
-        }
-
-        public SpecialUser(Ulid specialId, Guid userId)
-        {
-            SpecialId = specialId;
-            UserId = userId;
-        }
+    public SpecialUser(Ulid specialId, Guid userId)
+    {
+        SpecialId = specialId;
+        UserId = userId;
     }
 }

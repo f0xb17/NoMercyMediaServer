@@ -3,25 +3,24 @@
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
-namespace NoMercy.Database.Models
+namespace NoMercy.Database.Models;
+
+[PrimaryKey(nameof(LibraryId), nameof(TrackId))]
+public class LibraryTrack
 {
-    [PrimaryKey(nameof(LibraryId), nameof(TrackId))]
-    public class LibraryTrack
+    [JsonProperty("library_id")] public Ulid LibraryId { get; set; }
+    public Library Library { get; set; }
+
+    [JsonProperty("track_id")] public Guid TrackId { get; set; }
+    public Track Track { get; set; }
+
+    public LibraryTrack()
     {
-        [JsonProperty("library_id")] public Ulid LibraryId { get; set; }
-        public virtual Library Library { get; set; }
-        
-        [JsonProperty("track_id")] public Guid TrackId { get; set; }
-        public virtual Track Track { get; set; }
+    }
 
-        public LibraryTrack()
-        {
-        }
-
-        public LibraryTrack(Ulid libraryId, Guid trackId)
-        {
-            LibraryId = libraryId;
-            TrackId = trackId;
-        }
+    public LibraryTrack(Ulid libraryId, Guid trackId)
+    {
+        LibraryId = libraryId;
+        TrackId = trackId;
     }
 }

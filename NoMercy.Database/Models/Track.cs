@@ -1,16 +1,16 @@
 ﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;using NoMercy.Database;
-using NoMercy.Providers.MusixMatch.Models;
+using Newtonsoft.Json;
 
 namespace NoMercy.Database.Models
 {
     [PrimaryKey(nameof(Id))]
     [Index(nameof(Folder))]
     [Index(nameof(Filename), nameof(HostFolder), IsUnique = true)]
-    public class Track: ColorPaletteTimeStamps
+    public class Track : ColorPaletteTimeStamps
     {
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         [JsonProperty("id")]
@@ -24,44 +24,50 @@ namespace NoMercy.Database.Models
         [JsonProperty("filename")] public string? Filename { get; set; }
         [JsonProperty("duration")] public string? Duration { get; set; }
         [JsonProperty("quality")] public int? Quality { get; set; }
-        
+
         [Column("Lyrics")]
         [System.Text.Json.Serialization.JsonIgnore]
-        
+
         public string? _lyrics { get; set; }
 
         [NotMapped]
         [JsonProperty("lyrics")]
         public Lyric[]? Lyrics
         {
-            get => _lyrics is null ? null : JsonConvert.DeserializeObject<Lyric[]>(_lyrics);
+            get
+            {
+                if (_lyrics is null) return null;
+                try
+                {
+                    return JsonConvert.DeserializeObject<Lyric[]>(_lyrics);
+                }
+                catch (Exception e)
+                {
+                    return _lyrics.Split("\\n")
+                        .Select(l => new Lyric
+                        {
+                            Text = Regex.Replace(l, "^\"|\"$", "")
+                        }).ToArray();
+                }
+            }
             set => _lyrics = JsonConvert.SerializeObject(value);
         }
-        
+
         [JsonProperty("folder")] public string? Folder { get; set; }
         [JsonProperty("host_folder")] public string? HostFolder { get; set; }
-        
+
         [JsonProperty("folder_id")] public Ulid? FolderId { get; set; }
-        public virtual Folder LibraryFolder { get; set; }
-        
-        [JsonProperty("album_track")]
-        public virtual ICollection<AlbumTrack> AlbumTrack { get; set; }
-        [JsonProperty("artist_track")]
-        public virtual ICollection<ArtistTrack> ArtistTrack { get; set; }
-        [JsonProperty("library_track")]
-        public virtual ICollection<LibraryTrack> LibraryTrack { get; set; }
-        [JsonProperty("playlist_track")]
-        public virtual ICollection<PlaylistTrack> PlaylistTrack { get; set; }
-        [JsonProperty("images")]
-        public virtual ICollection<Image> Images { get; set; }
-        [JsonProperty("track_user")]
-        public virtual ICollection<TrackUser> TrackUser { get; set; }
-        [JsonProperty("music_genre_track")]
-        public virtual ICollection<MusicGenreTrack> MusicGenreTrack { get; set; }
-        [JsonProperty("music_plays")]
-        public virtual ICollection<MusicPlay> MusicPlays { get; set; }
+        public Folder LibraryFolder { get; set; }
+
+        [JsonProperty("album_track")] public ICollection<AlbumTrack> AlbumTrack { get; set; }
+        [JsonProperty("artist_track")] public ICollection<ArtistTrack> ArtistTrack { get; set; }
+        [JsonProperty("library_track")] public ICollection<LibraryTrack> LibraryTrack { get; set; }
+        [JsonProperty("playlist_track")] public ICollection<PlaylistTrack> PlaylistTrack { get; set; }
+        [JsonProperty("images")] public ICollection<Image> Images { get; set; }
+        [JsonProperty("track_user")] public ICollection<TrackUser> TrackUser { get; set; }
+        [JsonProperty("genre_track")] public ICollection<MusicGenreTrack> MusicGenreTrack { get; set; }
+        [JsonProperty("music_plays")] public ICollection<MusicPlay> MusicPlays { get; set; }
     }
-    
 }
 
 public class Lyric

@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net.Http.Headers;
-using System.Security.Claims;
+using System.Runtime.InteropServices;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +13,8 @@ using NoMercy.Helpers;
 using NoMercy.Helpers.Monitoring;
 using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Music;
+using NoMercy.Server.app.Http.Middleware;
 using NoMercy.Server.system;
 using LogLevel = NoMercy.Helpers.LogLevel;
 
@@ -23,7 +25,8 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [ApiController]
 [Tags("Dashboard Server Management")]
 [ApiVersion("1")]
-[Authorize, Route("api/v{Version:apiVersion}/dashboard/server", Order = 10)]
+[Authorize]
+[Route("api/v{Version:apiVersion}/dashboard/server", Order = 10)]
 public class ServerController : Controller
 {
     private IHostApplicationLifetime ApplicationLifetime { get; }
@@ -32,49 +35,44 @@ public class ServerController : Controller
     {
         ApplicationLifetime = appLifetime;
     }
-    
-    [NonAction]
-    private Guid GetUserId()
-    {
-        return Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
-    }
-    
+
     [HttpGet]
     public IActionResult Index()
     {
-        Guid userId = GetUserId();
-        return Ok();
+        var userId = HttpContext.User.UserId();
+
+        return Ok(new PlaceholderResponse
+        {
+            Data = []
+        });
     }
 
     [HttpGet]
     [Route("setup")]
     public async Task<StatusResponseDto<SetupResponseDto>> Setup()
     {
-        Guid userId = GetUserId();
+        var userId = HttpContext.User.UserId();
 
         await using MediaContext mediaContext = new();
         List<Library> libraries = await mediaContext.Libraries
-                
             .Include(library => library.FolderLibraries)
-                .ThenInclude(folderLibrary => folderLibrary.Folder)
-                    .ThenInclude(folder => folder.EncoderProfileFolder)
-                        .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
-            
+            .ThenInclude(folderLibrary => folderLibrary.Folder)
+            .ThenInclude(folder => folder.EncoderProfileFolder)
+            .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
             .Include(library => library.LibraryUsers
-                    .Where(x => x.UserId == userId)
-                )
-                .ThenInclude(libraryUser => libraryUser.User)
-            
+                .Where(x => x.UserId == userId)
+            )
+            .ThenInclude(libraryUser => libraryUser.User)
             .ToListAsync();
 
-        int libraryCount = libraries.Count;
+        var libraryCount = libraries.Count;
 
-        int folderCount = libraries
+        var folderCount = libraries
             .SelectMany(library => library.FolderLibraries)
             .Select(folderLibrary => folderLibrary.Folder)
             .Count();
 
-        int encoderProfileCount = libraries
+        var encoderProfileCount = libraries
             .SelectMany(library => library.FolderLibraries)
             .Select(folderLibrary => folderLibrary.Folder)
             .Count(folder => folder.EncoderProfileFolder.Count > 0);
@@ -87,7 +85,7 @@ public class ServerController : Controller
                 SetupComplete = libraryCount > 0
                                 && folderCount > 0
                                 && encoderProfileCount > 0
-            },
+            }
         };
     }
 
@@ -95,7 +93,7 @@ public class ServerController : Controller
     [Route("start")]
     public IActionResult StartServer()
     {
-        Guid userId = GetUserId();
+        var userId = HttpContext.User.UserId();
         // ApplicationLifetime.StopApplication();
         return Content("Done");
     }
@@ -104,7 +102,7 @@ public class ServerController : Controller
     [Route("stop")]
     public IActionResult StopServer()
     {
-        Guid userId = GetUserId();
+        var userId = HttpContext.User.UserId();
         // ApplicationLifetime.StopApplication();
         return Content("Done");
     }
@@ -113,7 +111,7 @@ public class ServerController : Controller
     [Route("restart")]
     public IActionResult RestartServer()
     {
-        Guid userId = GetUserId();
+        var userId = HttpContext.User.UserId();
         // ApplicationLifetime.StopApplication();
         return Content("Done");
     }
@@ -122,7 +120,7 @@ public class ServerController : Controller
     [Route("shutdown")]
     public IActionResult Shutdown()
     {
-        Guid userId = GetUserId();
+        var userId = HttpContext.User.UserId();
         ApplicationLifetime.StopApplication();
         return Content("Done");
     }
@@ -131,7 +129,7 @@ public class ServerController : Controller
     [Route("loglevel")]
     public IActionResult LogLevel(LogLevel level)
     {
-        Guid userId = GetUserId();
+        var userId = HttpContext.User.UserId();
         Logger.SetLogLevel(level);
 
         return Content("Log level set to " + level);
@@ -141,15 +139,15 @@ public class ServerController : Controller
     [Route("directorytree")]
     public StatusResponseDto<List<DirectoryTreeDto>> DirectoryTree([FromBody] PathRequest request)
     {
-        Guid userId = GetUserId();
+        var userId = HttpContext.User.UserId();
 
-        string? path = request.Path ?? request.Folder;
+        var path = request.Path ?? request.Folder;
 
         List<DirectoryTreeDto> array = [];
 
         if (string.IsNullOrEmpty(path) || path == "/")
         {
-            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform
+            if (RuntimeInformation.IsOSPlatform(OSPlatform
                     .Windows))
             {
                 DriveInfo[] driveInfo = DriveInfo.GetDrives();
@@ -164,15 +162,13 @@ public class ServerController : Controller
 
             path = "/";
         }
-        
+
         if (!Directory.Exists(path))
-        {
             return new StatusResponseDto<List<DirectoryTreeDto>>
             {
                 Status = "ok",
                 Data = array
             };
-        }
 
         try
         {
@@ -197,20 +193,20 @@ public class ServerController : Controller
 
     private DirectoryTreeDto CreateDirectoryTreeDto(string parent, string path)
     {
-        string fullPath = Path.Combine(parent, path);
+        var fullPath = Path.Combine(parent, path);
 
-        FileInfo fileInfo = new FileInfo(fullPath);
+        FileInfo fileInfo = new(fullPath);
 
-        string type = fileInfo.Attributes.HasFlag(FileAttributes.Directory) ? "folder" : "file";
+        var type = fileInfo.Attributes.HasFlag(FileAttributes.Directory) ? "folder" : "file";
 
-        string newPath = string.IsNullOrEmpty(fileInfo.Name)
+        var newPath = string.IsNullOrEmpty(fileInfo.Name)
             ? path
             : fileInfo.Name;
-        
-        string parentPath = string.IsNullOrEmpty(parent)
+
+        var parentPath = string.IsNullOrEmpty(parent)
             ? "/"
             : Path.Combine(fullPath, @"..\..");
-        
+
         return new DirectoryTreeDto
         {
             Path = newPath,
@@ -222,10 +218,10 @@ public class ServerController : Controller
         };
     }
 
-    public static string GetDeviceName()
+    public static string DeviceName()
     {
         MediaContext mediaContext = new();
-        Configuration? device = mediaContext.Configuration.FirstOrDefault(device => device.Key == "server_name");
+        var device = mediaContext.Configuration.FirstOrDefault(device => device.Key == "server_name");
         return device?.Value ?? Environment.MachineName;
     }
 
@@ -233,16 +229,16 @@ public class ServerController : Controller
     [Route("info")]
     public ServerInfoDto ServerInfo()
     {
-        Guid userId = GetUserId();
+        var userId = HttpContext.User.UserId();
 
         return new ServerInfoDto
         {
-            Server = GetDeviceName(),
+            Server = DeviceName(),
             Cpu = SystemInfo.Cpu,
             Os = SystemInfo.Platform.ToTitleCase(),
             Arch = SystemInfo.Architecture,
             Version = SystemInfo.Version,
-            BootTime = SystemInfo.StartTime,
+            BootTime = SystemInfo.StartTime
         };
     }
 
@@ -250,20 +246,17 @@ public class ServerController : Controller
     [Route("resources")]
     public ResourceInfoDto Resources()
     {
-        Guid userId = GetUserId();
+        var userId = HttpContext.User.UserId();
 
-        double totalCpu = 0.0;
-        double totalMemory = 0.0;
-        foreach (var aProc in Process.GetProcesses())
-        {
-            totalMemory += aProc.WorkingSet64 / 1024.0;
-        }
-        
+        var totalCpu = 0.0;
+        var totalMemory = 0.0;
+        foreach (var aProc in Process.GetProcesses()) totalMemory += aProc.WorkingSet64 / 1024.0;
+
         return new ResourceInfoDto
         {
             Cpu = totalCpu / Environment.ProcessorCount,
             Ram = totalMemory / 1024.0 / 1024.0,
-            Storage = StorageMonitor.Main(),
+            Storage = StorageMonitor.Main()
         };
     }
 
@@ -271,7 +264,7 @@ public class ServerController : Controller
     [Route("info")]
     public async Task<StatusResponseDto<string>> Update([FromBody] ServerUpdateRequest request)
     {
-        Guid userId = GetUserId();
+        var userId = HttpContext.User.UserId();
         await using MediaContext mediaContext = new();
         var configuration = await mediaContext.Configuration
             .AsTracking()
@@ -285,7 +278,7 @@ public class ServerController : Controller
                 {
                     Key = "server_name",
                     Value = request.Name,
-                    ModifiedBy = userId,
+                    ModifiedBy = userId
                 };
                 await mediaContext.Configuration.AddAsync(configuration);
             }
@@ -297,7 +290,7 @@ public class ServerController : Controller
 
             await mediaContext.SaveChangesAsync();
 
-            HttpClient client = new HttpClient();
+            var client = new HttpClient();
 
             client.BaseAddress = new Uri("https://api-dev.nomercy.tv/v1/");
 
@@ -320,20 +313,18 @@ public class ServerController : Controller
             var data = JsonConvert.DeserializeObject<StatusResponseDto<string>>(response);
 
             if (data == null)
-            {
                 return new StatusResponseDto<string>()
                 {
                     Status = "error",
                     Message = "Server name could not be updated",
                     Args = []
                 };
-            }
 
             return new StatusResponseDto<string>
             {
                 Status = data.Status,
                 Message = data.Message,
-                Args = [],
+                Args = []
             };
         }
         catch (Exception e)
@@ -342,7 +333,7 @@ public class ServerController : Controller
             {
                 Status = "error",
                 Message = "Server name could not be updated: {0}",
-                Args = [e.Message],
+                Args = [e.Message]
             };
         }
     }
@@ -400,10 +391,7 @@ public class ServerController : Controller
     [Route("workers/{worker}/{count:int:min(0)}")]
     public async Task<IActionResult> UpdateWorkers(string worker, int count)
     {
-        if (await QueueRunner.SetWorkerCount(worker, count))
-        {
-            return Ok($"{worker} worker count set to {count}");
-        }
+        if (await QueueRunner.SetWorkerCount(worker, count)) return Ok($"{worker} worker count set to {count}");
 
         return BadRequest($"{worker} worker count could not be set to {count}");
     }

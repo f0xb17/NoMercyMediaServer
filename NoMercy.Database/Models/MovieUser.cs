@@ -3,25 +3,24 @@
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
-namespace NoMercy.Database.Models
+namespace NoMercy.Database.Models;
+
+[PrimaryKey(nameof(MovieId), nameof(UserId))]
+public class MovieUser
 {
-    [PrimaryKey(nameof(MovieId), nameof(UserId))]
-    public class MovieUser
+    [JsonProperty("movie_id")] public int MovieId { get; set; }
+    public Movie Movie { get; set; }
+
+    [JsonProperty("user_id")] public Guid UserId { get; set; }
+    public User User { get; set; }
+
+    public MovieUser()
     {
-        [JsonProperty("movie_id")] public int MovieId { get; set; }
-        public virtual Movie Movie { get; set; }
+    }
 
-        [JsonProperty("user_id")] public Guid UserId { get; set; }
-        public virtual User User { get; set; }
-
-        public MovieUser()
-        {
-        }
-
-        public MovieUser(int movieId, Guid userId)
-        {
-            MovieId = movieId;
-            UserId = userId;
-        }
+    public MovieUser(int movieId, Guid userId)
+    {
+        MovieId = movieId;
+        UserId = userId;
     }
 }

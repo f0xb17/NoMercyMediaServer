@@ -9,70 +9,40 @@ using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
-public class SpecialsResponseDto
+public record SpecialsResponseDto
 {
     [JsonProperty("nextId")] public object NextId { get; set; }
 
-    [JsonProperty("data")] public IEnumerable<SpecialsResponseItemDto> Data { get; set; }
+    [JsonProperty("data")] public IOrderedEnumerable<SpecialsResponseItemDto> Data { get; set; }
 
     public static readonly Func<MediaContext, Guid, string, IAsyncEnumerable<Special?>> GetSpecials =
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, string language) =>
             mediaContext.Specials.AsNoTracking()
                 .Include(special => special.Items)
-                    .ThenInclude(item => item.Episode)
-                        .ThenInclude(episode => episode.Tv)
-            
+                .ThenInclude(item => item.Episode)
+                .ThenInclude(episode => episode!.Tv)
                 .Include(special => special.Items)
-                    .ThenInclude(item => item.Movie)
-            );
-
-
-    // .Where(special => special.Library.LibraryUsers
-    //     .FirstOrDefault(u => u.UserId == userId) != null)
-    // .Where(special => special.SpecialMovies
-    //     .Any(movie => movie.Movie.VideoFiles.Any()))
-    //
-    // .Include(special => special.Library)
-    // .ThenInclude(library => library.FolderLibraries)
-    // .ThenInclude(folderLibrary => folderLibrary.Folder)
-    //
-    // .Include(special => special.Images)
-    // .Include(special => special.Translations
-    //     .Where(translation => translation.Iso6391 == language))
-    //
-    // .Include(special => special.SpecialMovies)
-    // .ThenInclude(movie => movie.Movie)
-    // .ThenInclude(movie => movie.VideoFiles)
-    //
-    // .Include(special => special.SpecialMovies)
-    // .ThenInclude(movie => movie.Movie)
-    // .ThenInclude(movie => movie.Images)
-    //
-    // .Include(special => special.SpecialMovies)
-    // .ThenInclude(movie => movie.Movie)
-    // .ThenInclude(movie => movie.Media)
-    //
-    // .Include(special => special.SpecialMovies)
-    // .ThenInclude(movie => movie.Movie)
-    // .ThenInclude(movie => movie.GenreMovies)
-    // .ThenInclude(genreMovie => genreMovie.Genre));
-
+                .ThenInclude(item => item.Episode)
+                .ThenInclude(episode => episode!.VideoFiles)
+                .Include(special => special.Items)
+                .ThenInclude(item => item.Movie)
+                .ThenInclude(movie => movie!.VideoFiles)
+        );
 }
 
-public class SpecialsResponseItemDto
+public record SpecialsResponseItemDto
 {
     [JsonProperty("id")] public string Id { get; set; }
     [JsonProperty("backdrop")] public string? Backdrop { get; set; }
     [JsonProperty("favorite")] public bool Favorite { get; set; }
     [JsonProperty("watched")] public bool Watched { get; set; }
     [JsonProperty("logo")] public string? Logo { get; set; }
-    [JsonProperty("mediaType")] public string MediaType { get; set; }
-    [JsonProperty("number_of_episodes")] public int? NumberOfEpisodes { get; set; }
-    [JsonProperty("have_episodes")] public int? HaveEpisodes { get; set; }
+    [JsonProperty("media_type")] public string MediaType { get; set; }
+    [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
+    [JsonProperty("have_items")] public int? HaveItems { get; set; }
     [JsonProperty("overview")] public string? Overview { get; set; }
 
-    [JsonProperty("color_palette")] 
-    public IColorPalettes? ColorPalette { get; set; }
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
 
     [JsonProperty("poster")] public string? Poster { get; set; }
     [JsonProperty("title")] public string Title { get; set; }
@@ -82,20 +52,22 @@ public class SpecialsResponseItemDto
     [JsonProperty("genres")] public GenreDto[]? Genres { get; set; }
     [JsonProperty("videoId")] public string? VideoId { get; set; }
     [JsonProperty("videos")] public VideoDto[]? Videos { get; set; } = [];
-    
+
+    [JsonProperty("total_duration")] public int TotalDuration { get; set; }
+
     public SpecialsResponseItemDto(SpecialItem item)
     {
         if (item.Movie is null) return;
-        
-        string? title = item.Movie.Translations.FirstOrDefault()?.Title;
-        string? overview = item.Movie.Translations.FirstOrDefault()?.Overview;
+
+        var title = item.Movie.Translations.FirstOrDefault()?.Title;
+        var overview = item.Movie.Translations.FirstOrDefault()?.Overview;
 
         Id = item.Movie.Id.ToString();
-        Title = !string.IsNullOrEmpty(title) 
-            ? title 
+        Title = !string.IsNullOrEmpty(title)
+            ? title
             : item.Movie.Title;
-        Overview = !string.IsNullOrEmpty(overview) 
-            ? overview 
+        Overview = !string.IsNullOrEmpty(overview)
+            ? overview
             : item.Movie.Overview;
 
         Backdrop = item.Movie.Backdrop;
@@ -126,20 +98,42 @@ public class SpecialsResponseItemDto
         Backdrop = special.Backdrop;
         // Logo = special.Images
         //     .FirstOrDefault(media => media.Type == "logo")?.FilePath;
-        
+
         MediaType = "specials";
         Year = special.CreatedAt.ParseYear();
-        
+
         ColorPalette = special.ColorPalette;
         Poster = special.Poster;
         TitleSort = special.Title.TitleSort();
-        
-        Type = "specials";
-        
-        NumberOfEpisodes = special.Items
-            .Select(item => item.Episode?.Tv?.NumberOfEpisodes).Count() + special.Items.Count(item => item.MovieId != null);
 
-        HaveEpisodes = special.Items.Count;
+        Type = "specials";
+
+        NumberOfItems = special.Items.Count;
+
+        var haveMovies = special.Items
+            .Select(item => item.Movie)
+            .Where(movie => movie is not null && movie.VideoFiles.Any())
+            .Count();
+
+        var haveEpisodes = special.Items
+            .Select(item => item.Episode)
+            .Where(movie => movie is not null && movie.VideoFiles.Any())
+            .Count();
+
+        HaveItems = haveMovies + haveEpisodes;
+
+        var movies = special.Items
+            .Where(item => item.MovieId is not null)
+            .Select(item => item.Movie?.VideoFiles.FirstOrDefault()?.Duration?.ToSeconds() ?? 0)
+            .ToArray();
+
+        var episodes = special.Items
+            .Where(item => item.EpisodeId is not null)
+            .Select(item => item.Episode?.VideoFiles.FirstOrDefault()?.Duration?.ToSeconds() ?? 0)
+            .ToArray();
+
+        TotalDuration = movies.Sum() + episodes.Sum();
+
 
         // VideoId = special.SpecialMovies?
         //     .FirstOrDefault()

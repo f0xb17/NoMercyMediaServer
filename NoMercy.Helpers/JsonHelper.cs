@@ -13,18 +13,15 @@ public static class JsonHelper
         Formatting = Formatting.Indented,
         PreserveReferencesHandling = PreserveReferencesHandling.Objects,
         ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-        
+
         NullValueHandling = NullValueHandling.Ignore,
         DefaultValueHandling = DefaultValueHandling.Ignore,
         MissingMemberHandling = MissingMemberHandling.Ignore,
 
         TypeNameHandling = TypeNameHandling.None,
-        
-        Error = (_, ev) =>
-        {
-            ev.ErrorContext.Handled = true;
-        },
-        
+
+        Error = (_, ev) => { ev.ErrorContext.Handled = true; },
+
         Converters =
         {
             new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal },
@@ -41,8 +38,8 @@ public static class JsonHelper
     {
         return JsonConvert.SerializeObject(self, Settings);
     }
-    
 }
+
 public class ParseNumbersAsInt32Converter : JsonConverter
 {
     public override bool CanConvert(Type objectType)
@@ -55,10 +52,11 @@ public class ParseNumbersAsInt32Converter : JsonConverter
         serializer.Serialize(writer, value);
     }
 
-    public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+    public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue,
+        JsonSerializer serializer)
     {
-        return reader.Value is long 
-            ? Convert.ToInt64(reader.Value ?? 0) 
+        return reader.Value is long
+            ? Convert.ToInt64(reader.Value ?? 0)
             : reader.Value;
     }
 }

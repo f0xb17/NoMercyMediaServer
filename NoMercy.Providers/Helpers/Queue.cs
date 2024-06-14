@@ -1,7 +1,6 @@
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 using System.Collections.Concurrent;
-using System.Drawing;
 using NoMercy.Helpers;
 using LogLevel = NoMercy.Helpers.LogLevel;
 
@@ -29,15 +28,15 @@ public class QueueEventArgs : EventArgs
 
 public class Queue(QueueOptions options)
 {
-    private readonly Dictionary<string, Func<Task>> _tasks = new();
-    
+    private readonly Dictionary<string, Func<Task>> _tasks = [];
+
     private int _lastRan;
     private int _currentlyHandled;
-    
+
     private State _state = State.Idle;
     private QueueOptions Options { get; } = options;
     private SemaphoreSlim Semaphore { get; } = new(options.Concurrent, options.Concurrent);
-    
+
     private readonly Random _r = new();
 
     public event EventHandler<QueueEventArgs> Resolve;
@@ -49,7 +48,7 @@ public class Queue(QueueOptions options)
     private void StartQueue()
     {
         if (_state == State.Running || IsEmpty) return;
-        
+
         _state = State.Running;
         Start?.Invoke(this, EventArgs.Empty);
         RunTasks();
@@ -66,7 +65,7 @@ public class Queue(QueueOptions options)
         _currentlyHandled--;
 
         if (_currentlyHandled != 0 || !IsEmpty) return;
-        
+
         // StopQueue();
         _state = State.Idle;
         End?.Invoke(this, EventArgs.Empty);
@@ -75,41 +74,41 @@ public class Queue(QueueOptions options)
     private async void RunTasks()
     {
         while (ShouldRun)
-        {
             try
             {
                 await Dequeue();
             }
-            catch (Exception _)
+            catch (Exception)
             {
                 //
             }
-        }
     }
 
     private Task Execute()
     {
-        var tasks = new ConcurrentDictionary<string, Func<Task>?>(_tasks ?? [])
-            .Where(_ => _currentlyHandled < Options.Concurrent).ToList();
-        
-        foreach (KeyValuePair<string, Func<Task>?> task in tasks ?? [])
+        lock (_tasks)
         {
-            _currentlyHandled++;
-            lock (_tasks ?? [])
+            var tasks = new ConcurrentDictionary<string, Func<Task>?>(_tasks)
+                .Where(_ => _currentlyHandled < Options.Concurrent).ToList();
+
+            foreach (KeyValuePair<string, Func<Task>?> task in tasks ?? [])
+            {
+                _currentlyHandled++;
                 _tasks?.Remove(task.Key);
-                
-            try
-            {
-                var result = task.Value?.Invoke();
-                Resolve?.Invoke(this, new QueueEventArgs { Result = result });
-            }
-            catch (Exception ex)
-            {
-                Reject?.Invoke(this, new QueueEventArgs { Error = ex });
-            }
-            finally
-            {
-                Finish();
+
+                try
+                {
+                    var result = task.Value?.Invoke();
+                    Resolve?.Invoke(this, new QueueEventArgs { Result = result });
+                }
+                catch (Exception ex)
+                {
+                    Reject?.Invoke(this, new QueueEventArgs { Error = ex });
+                }
+                finally
+                {
+                    Finish();
+                }
             }
         }
 
@@ -117,7 +116,7 @@ public class Queue(QueueOptions options)
     }
 
     private Task Dequeue()
-    {        
+    {
         var interval = Math.Max(0, Options.Interval - (Environment.TickCount - _lastRan));
         return Task.Run(async () =>
         {
@@ -130,17 +129,15 @@ public class Queue(QueueOptions options)
     public async Task<T> Enqueue<T>(Func<Task<T>> task, string? url, bool? priority = false)
     {
         await Semaphore.WaitAsync();
-        
-        var tcs = new TaskCompletionSource<T>();
 
-        string uniqueId = Ulid.NewUlid().ToString();
-        
-        if (priority is true)
+        TaskCompletionSource<T> tcs = new();
+
+        var uniqueId = Ulid.NewUlid().ToString();
+
+        if (priority is true) uniqueId = _r.Next(0, int.MaxValue).ToString();
+
+        lock (_tasks)
         {
-            uniqueId = _r.Next(0, int.MaxValue).ToString();
-        }
-        
-        lock(_tasks)
             _tasks.Add(uniqueId, async () =>
             {
                 try
@@ -153,6 +150,7 @@ public class Queue(QueueOptions options)
                 {
                     Reject?.Invoke(this, new QueueEventArgs { Error = ex });
                     tcs.SetException(ex);
+                    if(ex.Message.Contains("404")) return;
                     Logger.App($"Url failed: {url} {ex.Message}", LogLevel.Error);
                 }
                 finally
@@ -164,6 +162,7 @@ public class Queue(QueueOptions options)
                     }
                 }
             });
+        }
 
         if (Options.Start && _state != State.Stopped) StartQueue();
 
@@ -173,7 +172,9 @@ public class Queue(QueueOptions options)
     private void Clear()
     {
         lock (_tasks)
+        {
             _tasks.Clear();
+        }
     }
 
     private int Size
@@ -191,4 +192,3 @@ public class Queue(QueueOptions options)
 
     private bool ShouldRun => !IsEmpty && _state != State.Stopped;
 }
-
