@@ -29,21 +29,9 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - name: Install MAUI Workloads
-        run: |
-          dotnet workload install maui-android
-          dotnet workload restore
-
       # Restore dependencies for the NoMercy.Server project
       - name: Restore dependencies
         run: dotnet restore NoMercy.Server.sln
-
-      # Build the NoMercy.Server project
-      - name: Build NoMercy.Server
-        run: |
-          dotnet build ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime linux-x64
-          dotnet build ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime win-x64
-          dotnet build ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime osx-x64
 
       # Publish the NoMercy.Server project for the target OS
       - name: Publish NoMercy.Server
@@ -78,6 +66,35 @@ jobs:
           dotnet publish ./src/NoMercy.Updater/NoMercy.Updater.csproj --configuration Release --runtime osx-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false /p:OutputFileName=NoMercyUpdater --output ./output
           mv ./output/NoMercyUpdater ./output/NoMercyUpdater-macos-x64
 
+      - name: Pull App Files
+        uses: actions/checkout@v4
+        with:
+          repository: NoMercy-Entertainment/NoMercyApp
+          path: ./src/NoMercy.App/wwwroot
+          fetch-depth: 0
+          ref: gh-pages
+
+      - name: List App Files
+        run: |
+          ls -la ./src/NoMercy.App/wwwroot
+
+      # Publish the NoMercy.Server project for the target OS
+      - name: Publish NoMercy.App
+        run: |
+          mkdir -p ./output
+      
+          # Publish for Linux
+          dotnet publish ./src/NoMercy.App/NoMercy.App.csproj --configuration Release --runtime linux-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false /p:OutputFileName=NoMercyApp --output ./output
+          mv ./output/NoMercyApp ./output/NoMercyApp-linux-x64
+      
+          # Publish for Windows
+          dotnet publish ./src/NoMercy.App/NoMercy.App.csproj --configuration Release --runtime win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false /p:OutputFileName=NoMercyApp --output ./output
+          mv ./output/NoMercyApp.exe ./output/NoMercyApp-windows-x64.exe
+      
+          # Publish for macOS
+          dotnet publish ./src/NoMercy.App/NoMercy.App.csproj --configuration Release --runtime osx-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false /p:OutputFileName=NoMercyApp --output ./output
+          mv ./output/NoMercyApp ./output/NoMercyApp-macos-x64
+          
       # Get the version of the project
       - name: Get Version
         uses: kzrnm/get-net-sdk-project-versions-action@v2
@@ -86,23 +103,48 @@ jobs:
           proj-path: ./src/NoMercy.Server/NoMercy.Server.csproj
       - run: echo "${{steps.get-version.outputs.version}}"
           
+      - name: Get Short SHA
+        id: get_short_sha
+        run: echo "::set-output name=short_sha::${GITHUB_SHA::7}"
+        
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=today::$(date +'%B %d, %Y')"
+
       # Create the GitHub release
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         with:
           tag_name: v${{ steps.get-version.outputs.version }}
-          release_name: NoMercy MediaServer Release
+          release_name: NoMercy MediaServer v${{ steps.get-version.outputs.version }}
           body: |
-            New release for NoMercy MediaServer is ready.
+            # NoMercy MediaServer v${{ steps.get-version.outputs.version }}
+            
+            Release date: ${{ steps.date.outputs.today }}
+            
+            ## What's New
+            This release includes the latest features, improvements, and bug fixes for NoMercy MediaServer.
+            
+            ## Downloads
+            Binary executables are available for:
+            - Windows (x64)
+            - macOS (x64)
+            - Linux (x64)
+            
+            Each platform includes the MediaServer, Updater, and App components.
+            
+            ## Installation
+            Download the appropriate files for your platform and follow the installation instructions in our documentation.
+            
+            ## Feedback
+            If you encounter any issues, please report them on our GitHub repository.
+
+            Build: ${{ steps.get_short_sha.outputs.short_sha }}
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Get Short SHA
-        id: get_short_sha
-        run: echo "::set-output name=short_sha::${GITHUB_SHA::7}"
 
       # Upload Windows Release Asset
       - name: Upload Windows Release Asset
@@ -123,6 +165,16 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./output/NoMercyUpdater-windows-x64.exe
           asset_name: NoMercyUpdater-windows-x64-${{ steps.get_short_sha.outputs.short_sha }}.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
+
+      - name: Upload Windows App Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/NoMercyApp-windows-x64.exe
+          asset_name: NoMercyApp-windows-x64-${{ steps.get_short_sha.outputs.short_sha }}.exe
           asset_content_type: application/vnd.microsoft.portable-executable
 
       # Upload macOS Release Asset
@@ -146,6 +198,16 @@ jobs:
           asset_name: NoMercyUpdater-macos-x64-${{ steps.get_short_sha.outputs.short_sha }}
           asset_content_type: application/x-apple-diskimage
 
+      - name: Upload macOS App Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/NoMercyApp-macos-x64
+          asset_name: NoMercyApp-macos-x64-${{ steps.get_short_sha.outputs.short_sha }}
+          asset_content_type: application/x-apple-diskimage
+
       # Upload Linux Release Asset
       - name: Upload Linux Release Asset
         uses: actions/upload-release-asset@v1
@@ -165,4 +227,14 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./output/NoMercyUpdater-linux-x64
           asset_name: NoMercyUpdater-linux-x64-${{ steps.get_short_sha.outputs.short_sha }}
+          asset_content_type: application/x-executable
+
+      - name: Upload Linux App Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/NoMercyApp-linux-x64
+          asset_name: NoMercyApp-linux-x64-${{ steps.get_short_sha.outputs.short_sha }}
           asset_content_type: application/x-executable
